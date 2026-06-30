@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Local LaTeX Studio</title>
+  <title>AgentDesk</title>
   <link rel="stylesheet" href="node_modules/codemirror/lib/codemirror.css">
   <link rel="stylesheet" href="node_modules/codemirror/addon/dialog/dialog.css">
   <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css">
@@ -22,31 +22,6 @@
             <button class="settingsButton" type="button">Settings</button>
           </div>
         </header>
-
-        <section id="newProjectPanel" class="new-project-panel" hidden>
-          <div class="project-import-options" aria-label="New project type">
-            <button type="button" data-project-kind="blank">
-              <span>Blank</span>
-              <small>Start with a new main.tex</small>
-            </button>
-            <button type="button" data-project-kind="tex">
-              <span>TeX File</span>
-              <small>Open an existing entry file</small>
-            </button>
-            <button type="button" data-project-kind="folder">
-              <span>Folder</span>
-              <small>Use a local project directory</small>
-            </button>
-            <button type="button" data-project-kind="archive">
-              <span>Archive</span>
-              <small>Import zip, tar, tar.gz, tgz</small>
-            </button>
-          </div>
-          <div id="projectDropZone" class="project-drop-zone" role="button" tabindex="0">
-            <span>Drop a project here</span>
-            <small>.tex file, folder, .zip, .tar, .tar.gz, or .tgz</small>
-          </div>
-        </section>
 
         <div class="project-tools">
           <input id="projectSearch" type="search" placeholder="Search projects" aria-label="Search projects">
@@ -77,13 +52,11 @@
 
     <section class="editor-screen" id="editorScreen" hidden>
       <header class="topbar">
-        <div class="topbar-left">
-          <button id="backToProjectsButton" class="project-back-button" type="button" title="Back to projects">
-            <span aria-hidden="true">&larr;</span>
-            <span>Projects</span>
-          </button>
-          <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
-        </div>
+        <button id="backToProjectsButton" class="project-back-button" type="button" title="Back to projects">
+          <span aria-hidden="true">&larr;</span>
+          <span>Projects</span>
+        </button>
+        <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
         <div class="topbar-actions">
           <div id="topSaveStatusButton" class="save-status" aria-live="polite" data-save-status="neutral">
             <span id="topSaveStatusLabel">Not loaded</span>
@@ -111,19 +84,17 @@
               <h2>Files</h2>
             </div>
           </div>
-          <button id="addFilesButton" class="file-drop-zone" type="button">
-            <span>Drop files here</span>
-            <small>or add files</small>
-          </button>
           <div id="fileTree" class="file-tree" aria-label="Project files"></div>
           <div id="filePreview" class="file-preview" hidden></div>
           <footer class="file-pane-footer">
             <div class="file-footer-actions">
               <button id="refreshFilesButton" class="file-footer-icon" type="button" aria-label="Refresh files" title="Refresh files">
                 <span aria-hidden="true">&#8635;</span>
+                <span class="file-footer-label">Refresh Project</span>
               </button>
               <button class="settingsButton file-footer-icon" type="button" aria-label="Open settings" title="Settings">
                 <span aria-hidden="true">&#9881;</span>
+                <span class="file-footer-label">Settings</span>
               </button>
             </div>
             <div class="file-status">
@@ -142,7 +113,7 @@
               <p id="sourceStats">0 lines · 0 words · 0 XX</p>
             </div>
             <div class="source-mode-actions" aria-label="Editor mode">
-              <button class="mode-button active" id="sourceModeButton" type="button">Text</button>
+              <button class="mode-button active" id="sourceModeButton" type="button">Code</button>
               <button class="mode-button" id="visualModeButton" type="button">Visual</button>
             </div>
           </div>
@@ -150,9 +121,14 @@
           <div class="editor-stack">
             <textarea id="latexSource" spellcheck="false" aria-label="LaTeX source"></textarea>
             <div id="visualEditor" class="visual-editor" hidden></div>
+            <div id="sourceMinimap" class="source-minimap" aria-hidden="true">
+              <div class="source-minimap-lines"></div>
+              <div class="source-minimap-viewport"></div>
+            </div>
           </div>
           <section class="terminal-panel" id="terminalPanel">
             <div id="terminalResizeHandle" class="terminal-resize-handle" role="separator" aria-label="Resize terminal panel" tabindex="0"></div>
+            <button id="terminalCollapsedButton" class="collapsed-panel-rail terminal-collapsed-rail" type="button" aria-label="Expand terminal">Terminal</button>
             <header class="terminal-header">
               <div class="terminal-tabs" id="terminalTabs" aria-label="Terminal sessions"></div>
               <div class="terminal-actions">
@@ -208,9 +184,12 @@
               <p id="pdfMeta">main.pdf</p>
             </div>
             <div class="pdf-header-actions">
-              <button id="saveButton" class="pdf-action-button" type="button">Save</button>
-              <button id="compileButton" class="pdf-action-button" type="button">Compile PDF</button>
-              <button id="openPdfButton" class="pdf-action-button" type="button">Open PDF</button>
+              <div class="pdf-action-segment" aria-label="PDF actions">
+                <button id="saveButton" class="pdf-action-button" type="button">Save</button>
+                <button id="compileButton" class="pdf-action-button" type="button">Compile PDF</button>
+                <button id="openPdfButton" class="pdf-action-button" type="button">Open PDF</button>
+                <button id="downloadPdfButton" class="pdf-action-button" type="button">Download PDF</button>
+              </div>
               <div class="pdf-controls">
                 <button id="pdfZoomOutButton" type="button" aria-label="Zoom PDF out">-</button>
                 <span id="pdfZoomLabel">100%</span>
@@ -221,6 +200,7 @@
           <div id="pdfViewer" class="pdf-viewer" aria-label="Compiled manuscript pages"></div>
           <section class="log-panel" id="compileLogPanel">
             <div id="compileLogResizeHandle" class="log-resize-handle" role="separator" aria-label="Resize compile log" tabindex="0"></div>
+            <button id="compileLogCollapsedButton" class="collapsed-panel-rail log-collapsed-rail" type="button" aria-label="Expand compile log">Compile log</button>
             <header class="log-header">
               <span>Compile log</span>
               <button id="fixCompileLogButton" type="button">Fix with Codex</button>
@@ -232,6 +212,43 @@
     </section>
 
     <div class="settings-backdrop" id="settingsBackdrop" hidden></div>
+    <section id="newProjectPanel" class="new-project-panel" role="dialog" aria-modal="true" aria-labelledby="newProjectTitle" hidden>
+      <header class="new-project-header">
+        <div>
+          <p>AgentDesk</p>
+          <h2 id="newProjectTitle">New project</h2>
+        </div>
+        <button id="closeNewProjectButton" class="settings-close-button" type="button" aria-label="Close new project" title="Close">
+          <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+      </header>
+      <div class="new-project-body">
+        <div class="project-import-options" aria-label="New project type">
+          <button type="button" data-project-kind="blank">
+            <span>Blank</span>
+            <small>Start with a new main.tex</small>
+          </button>
+          <button type="button" data-project-kind="tex">
+            <span>TeX File</span>
+            <small>Open an existing entry file</small>
+          </button>
+          <button type="button" data-project-kind="folder">
+            <span>Folder</span>
+            <small>Use a local project directory</small>
+          </button>
+          <button type="button" data-project-kind="archive">
+            <span>Archive</span>
+            <small>Import zip, tar, tar.gz, tgz</small>
+          </button>
+        </div>
+        <div id="projectDropZone" class="project-drop-zone" role="button" tabindex="0">
+          <span>Drop a project here</span>
+          <small>.tex file, folder, .zip, .tar, .tar.gz, or .tgz</small>
+        </div>
+      </div>
+    </section>
     <aside class="settings-drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
       <nav class="settings-sidebar" aria-label="Settings sections">
         <button id="closeSettingsButton" class="settings-close-button" type="button" aria-label="Close settings" title="Close">
@@ -370,7 +387,7 @@
               <div><span>Find</span><kbd>Cmd/Ctrl</kbd><kbd>F</kbd></div>
               <div><span>Find next</span><kbd>Cmd/Ctrl</kbd><kbd>G</kbd></div>
               <div><span>Compile PDF</span><kbd>Cmd/Ctrl</kbd><kbd>Enter</kbd></div>
-              <div><span>Toggle Text / Visual</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>M</kbd></div>
+              <div><span>Toggle Code / Visual</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>M</kbd></div>
               <div><span>Toggle files</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>F</kbd></div>
               <div><span>Toggle terminal</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>T</kbd></div>
               <div><span>Open settings</span><kbd>Cmd/Ctrl</kbd><kbd>,</kbd></div>

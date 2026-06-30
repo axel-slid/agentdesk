@@ -8,6 +8,7 @@ const projectGridButton = document.getElementById("projectGridButton");
 const projectRowsButton = document.getElementById("projectRowsButton");
 const addProjectButton = document.getElementById("addProjectButton");
 const newProjectPanel = document.getElementById("newProjectPanel");
+const closeNewProjectButton = document.getElementById("closeNewProjectButton");
 const projectDropZone = document.getElementById("projectDropZone");
 const projectImportButtons = Array.from(document.querySelectorAll("[data-project-kind]"));
 const refreshProjectsButton = document.getElementById("refreshProjectsButton");
@@ -18,11 +19,13 @@ const filePane = document.getElementById("filePane");
 const fileSplitter = document.getElementById("fileSplitter");
 const refreshFilesButton = document.getElementById("refreshFilesButton");
 const railRefreshFilesButton = document.getElementById("railRefreshFilesButton");
-const addFilesButton = document.getElementById("addFilesButton");
 const fileTree = document.getElementById("fileTree");
 const filePreview = document.getElementById("filePreview");
 const latexSource = document.getElementById("latexSource");
 const visualEditor = document.getElementById("visualEditor");
+const sourceMinimap = document.getElementById("sourceMinimap");
+const sourceMinimapLines = sourceMinimap && sourceMinimap.querySelector(".source-minimap-lines");
+const sourceMinimapViewport = sourceMinimap && sourceMinimap.querySelector(".source-minimap-viewport");
 const textTabs = document.getElementById("textTabs");
 const workspace = document.getElementById("workspace");
 const sourcePane = document.querySelector(".source-pane");
@@ -36,11 +39,13 @@ const pdfViewer = document.getElementById("pdfViewer");
 const previewPane = document.querySelector(".preview-pane");
 const compileLogPanel = document.getElementById("compileLogPanel");
 const compileLogResizeHandle = document.getElementById("compileLogResizeHandle");
+const compileLogCollapsedButton = document.getElementById("compileLogCollapsedButton");
 const fixCompileLogButton = document.getElementById("fixCompileLogButton");
 const compileLog = document.getElementById("compileLog");
 const saveButton = document.getElementById("saveButton");
 const compileButton = document.getElementById("compileButton");
 const openPdfButton = document.getElementById("openPdfButton");
+const downloadPdfButton = document.getElementById("downloadPdfButton");
 const autoCompileToggle = document.getElementById("autoCompileToggle");
 const autoSaveToggle = document.getElementById("autoSaveToggle");
 const sourceModeButton = document.getElementById("sourceModeButton");
@@ -73,6 +78,7 @@ const terminalTabs = document.getElementById("terminalTabs");
 const terminalBody = document.getElementById("terminalBody");
 const terminalEmpty = document.getElementById("terminalEmpty");
 const terminalResizeHandle = document.getElementById("terminalResizeHandle");
+const terminalCollapsedButton = document.getElementById("terminalCollapsedButton");
 const terminalNewButton = document.getElementById("terminalNewButton");
 const terminalShellButton = document.getElementById("terminalShellButton");
 const terminalCodexButton = document.getElementById("terminalCodexButton");
@@ -653,7 +659,11 @@ let terminalFitTimer = null;
 let suggestionState = null;
 let agentsLoadToken = 0;
 let fileContextMenu = null;
+let projectContextMenu = null;
 let copiedProjectItem = null;
+let draggedTextTabPath = "";
+let sourceMinimapFrame = 0;
+let sourceMinimapDragging = false;
 let aiProfile = {};
 
 init();
@@ -686,6 +696,9 @@ function setupSourceEditor() {
     }
     handleSourceChanged({ renderVisual: !visualEditor.hidden });
   });
+  editor.on("scroll", updateSourceMinimapViewport);
+  setupSourceMinimap();
+  scheduleSourceMinimapUpdate();
 }
 
 function setupSettings() {
@@ -1159,6 +1172,7 @@ function switchTextTab(relativePath) {
     updateEditorFileTitle();
     updateActiveDocumentTitle();
     updateStats();
+    scheduleSourceMinimapUpdate();
     renderVisualEditor();
     renderFileTree();
     setSaveState(tab.dirty ? "Unsaved changes" : "Saved", tab.dirty ? undefined : "ok");
@@ -1198,6 +1212,7 @@ function closeTextTab(relativePath) {
     updateEditorFileTitle();
     updateActiveDocumentTitle();
     updateStats();
+    scheduleSourceMinimapUpdate();
     renderVisualEditor();
   }
 
@@ -1227,6 +1242,7 @@ function removeTextTabsUnderPath(relativePath) {
       updateEditorFileTitle();
       updateActiveDocumentTitle();
       updateStats();
+      scheduleSourceMinimapUpdate();
     }
   }
 
@@ -1242,13 +1258,47 @@ function renderTextTabs() {
     button.className = "text-tab";
     button.classList.toggle("active", tab.relativePath === activeTextTabPath);
     button.type = "button";
+    button.draggable = true;
     button.title = tab.relativePath;
+    button.dataset.relativePath = tab.relativePath;
     button.innerHTML = `
       <span class="text-tab-name">${escapeHtml(tab.name)}</span>
       <span class="text-tab-dirty" aria-hidden="true">${tab.dirty ? "•" : ""}</span>
       <span class="text-tab-close" role="button" aria-label="Close ${escapeHtml(tab.name)}">${CLOSE_ICON_SVG}</span>
     `;
     button.addEventListener("click", () => switchTextTab(tab.relativePath));
+    button.addEventListener("dragstart", (event) => {
+      syncActiveTextTabFromEditor();
+      draggedTextTabPath = tab.relativePath;
+      event.dataTransfer.setData("text/plain", tab.relativePath);
+      event.dataTransfer.effectAllowed = "move";
+      button.classList.add("dragging");
+    });
+    button.addEventListener("dragover", (event) => {
+      const sourcePath = draggedTextTabPath || event.dataTransfer.getData("text/plain");
+      if (!sourcePath || sourcePath === tab.relativePath) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      const rect = button.getBoundingClientRect();
+      const placeAfter = event.clientX > rect.left + rect.width / 2;
+      clearTextTabDropIndicators();
+      button.classList.toggle("drop-before", !placeAfter);
+      button.classList.toggle("drop-after", placeAfter);
+    });
+    button.addEventListener("dragleave", () => {
+      button.classList.remove("drop-before", "drop-after");
+    });
+    button.addEventListener("drop", (event) => {
+      const sourcePath = draggedTextTabPath || event.dataTransfer.getData("text/plain");
+      if (!sourcePath || sourcePath === tab.relativePath) return;
+      event.preventDefault();
+      const rect = button.getBoundingClientRect();
+      reorderTextTabs(sourcePath, tab.relativePath, event.clientX > rect.left + rect.width / 2);
+    });
+    button.addEventListener("dragend", () => {
+      draggedTextTabPath = "";
+      clearTextTabDropIndicators();
+    });
     button.querySelector(".text-tab-close").addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -1256,6 +1306,26 @@ function renderTextTabs() {
     });
     textTabs.appendChild(button);
   });
+}
+
+function clearTextTabDropIndicators() {
+  if (!textTabs) return;
+  textTabs.querySelectorAll(".text-tab").forEach((tab) => {
+    tab.classList.remove("dragging", "drop-before", "drop-after");
+  });
+}
+
+function reorderTextTabs(sourcePath, targetPath, placeAfter = false) {
+  const sourceIndex = openTextTabs.findIndex((tab) => tab.relativePath === sourcePath);
+  if (sourceIndex === -1 || sourcePath === targetPath) return;
+
+  const [tab] = openTextTabs.splice(sourceIndex, 1);
+  const targetIndex = openTextTabs.findIndex((item) => item.relativePath === targetPath);
+  if (targetIndex === -1) openTextTabs.push(tab);
+  else openTextTabs.splice(placeAfter ? targetIndex + 1 : targetIndex, 0, tab);
+
+  draggedTextTabPath = "";
+  renderTextTabs();
 }
 
 function clampNumber(value, min, max, fallback) {
@@ -1282,7 +1352,8 @@ function hexToRgb(value) {
 function wireEvents() {
   settingsButtons.forEach((button) => button.addEventListener("click", openSettings));
   closeSettingsButton.addEventListener("click", closeSettings);
-  settingsBackdrop.addEventListener("click", closeSettings);
+  settingsBackdrop.addEventListener("click", closeOverlayModals);
+  closeNewProjectButton.addEventListener("click", closeNewProjectPanel);
   fileRailButton.addEventListener("click", () => setFileSidebarVisible(true));
   addProjectButton.addEventListener("click", () => toggleNewProjectPanel());
   projectImportButtons.forEach((button) => {
@@ -1296,12 +1367,11 @@ function wireEvents() {
   backToProjectsButton.addEventListener("click", showProjects);
   refreshFilesButton.addEventListener("click", loadProjectFiles);
   railRefreshFilesButton.addEventListener("click", loadProjectFiles);
-  addFilesButton.addEventListener("click", chooseProjectFiles);
-  wireFileDrop(addFilesButton);
   wireFileDrop(filePane);
   saveButton.addEventListener("click", saveManuscript);
   compileButton.addEventListener("click", () => compileManuscript({ manual: true }));
   openPdfButton.addEventListener("click", openPdf);
+  downloadPdfButton.addEventListener("click", downloadPdf);
   pdfZoomOutButton.addEventListener("click", () => changePdfZoom(-0.1));
   pdfZoomInButton.addEventListener("click", () => changePdfZoom(0.1));
   pdfViewer.addEventListener("wheel", handlePdfWheelZoom, { passive: false });
@@ -1312,6 +1382,8 @@ function wireEvents() {
   terminalShellButton.addEventListener("click", () => createTerminalSession("shell"));
   terminalCodexButton.addEventListener("click", () => createTerminalSession("codex"));
   terminalClaudeButton.addEventListener("click", () => createTerminalSession("claude"));
+  terminalCollapsedButton.addEventListener("click", () => setTerminalCollapsed(false));
+  compileLogCollapsedButton.addEventListener("click", () => setCompileLogCollapsed(false));
   suggestionModeButton.addEventListener("click", () => {
     closeSettings();
     setSuggestionPanelOpen(true);
@@ -1363,8 +1435,14 @@ function wireEvents() {
     pdfResizeTimer = setTimeout(() => renderPdf({ showLoading: false }), 180);
     scheduleTerminalFit();
   });
-  window.addEventListener("click", closeFileContextMenu);
-  window.addEventListener("scroll", closeFileContextMenu, true);
+  window.addEventListener("click", () => {
+    closeFileContextMenu();
+    closeProjectContextMenu();
+  });
+  window.addEventListener("scroll", () => {
+    closeFileContextMenu();
+    closeProjectContextMenu();
+  }, true);
   window.addEventListener("keydown", handleGlobalShortcut);
 
   if (window.localOverleaf) {
@@ -1386,6 +1464,18 @@ function handleGlobalShortcut(event) {
   if (event.defaultPrevented) return;
 
   if (event.key === "Escape") {
+    if (!newProjectPanel.hidden) {
+      event.preventDefault();
+      closeNewProjectPanel();
+      return;
+    }
+
+    if (projectContextMenu) {
+      event.preventDefault();
+      closeProjectContextMenu();
+      return;
+    }
+
     if (fileContextMenu) {
       event.preventDefault();
       closeFileContextMenu();
@@ -1468,15 +1558,26 @@ function handleGlobalShortcut(event) {
 }
 
 function openSettings() {
+  closeNewProjectPanel({ keepBackdrop: true });
   settingsBackdrop.hidden = false;
   settingsDrawer.hidden = false;
   const activeSection = settingsDrawer.dataset.activeSection || "appearance";
   setSettingsPanel(activeSection);
 }
 
-function closeSettings() {
-  settingsBackdrop.hidden = true;
+function closeSettings({ keepBackdrop = false } = {}) {
   settingsDrawer.hidden = true;
+  if (!keepBackdrop) updateOverlayBackdrop();
+}
+
+function closeOverlayModals() {
+  closeSettings({ keepBackdrop: true });
+  closeNewProjectPanel({ keepBackdrop: true });
+  updateOverlayBackdrop();
+}
+
+function updateOverlayBackdrop() {
+  settingsBackdrop.hidden = settingsDrawer.hidden && newProjectPanel.hidden;
 }
 
 function setSettingsPanel(section) {
@@ -1605,6 +1706,10 @@ function applyPdfLiveZoom() {
     pageShell.style.height = `${height}px`;
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
+    const linkLayer = pageShell.querySelector(".pdf-link-layer");
+    if (linkLayer) {
+      linkLayer.style.transform = ratio === 1 ? "" : `scale(${ratio})`;
+    }
   });
 
   pdfViewer.scrollLeft = (centerX / oldScrollWidth) * pdfViewer.scrollWidth - pdfViewer.clientWidth / 2;
@@ -2120,8 +2225,18 @@ function renderProjectGrid() {
         <span class="project-meta">Edited ${escapeHtml(relativeTime(project.modifiedAt))}</span>
       </span>
     `;
-    card.addEventListener("click", () => openProject(project.id));
+    card.addEventListener("click", (event) => {
+      if (card.classList.contains("renaming") || event.target.closest("button, input")) return;
+      openProject(project.id);
+    });
+    card.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (card.classList.contains("renaming")) return;
+      showProjectContextMenu(event, project);
+    });
     card.addEventListener("keydown", (event) => {
+      if (card.classList.contains("renaming")) return;
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       openProject(project.id);
@@ -2136,7 +2251,120 @@ function renderProjectGrid() {
   });
 }
 
+function showProjectContextMenu(event, project) {
+  closeProjectContextMenu();
+  closeFileContextMenu();
+
+  const menu = document.createElement("div");
+  menu.className = "project-context-segment";
+  menu.setAttribute("role", "menu");
+
+  const renameButton = document.createElement("button");
+  renameButton.type = "button";
+  renameButton.textContent = "Rename";
+  renameButton.addEventListener("click", (clickEvent) => {
+    clickEvent.stopPropagation();
+    renameProject(project);
+  });
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.textContent = "Remove";
+  removeButton.className = "danger";
+  removeButton.addEventListener("click", (clickEvent) => {
+    clickEvent.stopPropagation();
+    removeProject(project);
+  });
+
+  menu.append(renameButton, removeButton);
+  document.body.appendChild(menu);
+
+  const margin = 8;
+  const rect = menu.getBoundingClientRect();
+  const left = Math.min(event.clientX, window.innerWidth - rect.width - margin);
+  const top = Math.min(event.clientY, window.innerHeight - rect.height - margin);
+  menu.style.left = `${Math.max(margin, left)}px`;
+  menu.style.top = `${Math.max(margin, top)}px`;
+  projectContextMenu = menu;
+}
+
+function closeProjectContextMenu() {
+  if (!projectContextMenu) return;
+  projectContextMenu.remove();
+  projectContextMenu = null;
+}
+
+async function renameProject(project) {
+  closeProjectContextMenu();
+  const card = Array.from(projectGrid.querySelectorAll(".project-card")).find((item) => item.dataset.projectId === project.id);
+  if (!card) return;
+  startProjectRename(card, project);
+}
+
+function startProjectRename(card, project) {
+  const nameElement = card.querySelector(".project-name");
+  if (!nameElement || card.querySelector(".project-rename-input")) return;
+
+  const input = document.createElement("input");
+  input.className = "project-rename-input";
+  input.type = "text";
+  input.value = project.name;
+  input.setAttribute("aria-label", "Project name");
+  input.spellcheck = false;
+
+  nameElement.replaceWith(input);
+  card.classList.add("renaming");
+  card.tabIndex = -1;
+
+  let finished = false;
+  const finish = async (commit) => {
+    if (finished) return;
+    finished = true;
+    input.disabled = true;
+    const name = input.value.trim();
+    if (!commit || !name || name === project.name) {
+      renderProjectGrid();
+      return;
+    }
+    await saveProjectName(project, name);
+  };
+
+  input.addEventListener("click", (event) => event.stopPropagation());
+  input.addEventListener("pointerdown", (event) => event.stopPropagation());
+  input.addEventListener("contextmenu", (event) => event.stopPropagation());
+  input.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === "Enter") {
+      event.preventDefault();
+      finish(true);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      finish(false);
+    }
+  });
+  input.addEventListener("blur", () => finish(true));
+
+  requestAnimationFrame(() => {
+    input.focus();
+    input.select();
+  });
+}
+
+async function saveProjectName(project, name) {
+  setProjectBusy(true);
+  try {
+    const result = await window.localOverleaf.renameProject(project.id, name);
+    projects = result.projects || projects.map((item) => (item.id === project.id ? { ...item, name } : item));
+    renderProjectGrid();
+  } catch (error) {
+    projectGrid.innerHTML = `<div class="project-loading project-error">${escapeHtml(formatError(error))}</div>`;
+  } finally {
+    setProjectBusy(false);
+  }
+}
+
 async function removeProject(project) {
+  closeProjectContextMenu();
   const confirmed = window.confirm(`Remove "${project.name}" from the editor?\n\nThis will not delete any files from disk.`);
   if (!confirmed) return;
 
@@ -2194,9 +2422,24 @@ async function renderProjectPreview(card, project) {
 
 function toggleNewProjectPanel(force) {
   const show = typeof force === "boolean" ? force : newProjectPanel.hidden;
-  newProjectPanel.hidden = !show;
-  addProjectButton.classList.toggle("active", show);
-  if (show) projectDropZone.focus();
+  if (show) openNewProjectPanel();
+  else closeNewProjectPanel();
+}
+
+function openNewProjectPanel() {
+  closeSettings({ keepBackdrop: true });
+  settingsBackdrop.hidden = false;
+  newProjectPanel.hidden = false;
+  addProjectButton.classList.add("active");
+  projectDropZone.focus();
+}
+
+function closeNewProjectPanel({ keepBackdrop = false } = {}) {
+  newProjectPanel.hidden = true;
+  newProjectPanel.classList.remove("drop-active");
+  projectDropZone.classList.remove("drop-active");
+  addProjectButton.classList.remove("active");
+  if (!keepBackdrop) updateOverlayBackdrop();
 }
 
 async function addProject(kind) {
@@ -2320,6 +2563,7 @@ async function loadManuscript(projectId = activeProject && activeProject.id) {
     pdfMeta.textContent = "Loading pages...";
     updateActiveDocumentTitle();
     updateStats();
+    scheduleSourceMinimapUpdate();
     renderVisualEditor();
     await setPdf();
     setSaveState("Saved", "ok");
@@ -2359,6 +2603,7 @@ async function loadProjectFile(relativePath, { confirmUnsaved = true } = {}) {
     updateEditorFileTitle();
     updateActiveDocumentTitle();
     updateStats();
+    scheduleSourceMinimapUpdate();
     renderVisualEditor();
     setSaveState("Saved", "ok");
     compileLog.textContent = `Loaded ${activeFile.relativePath}.`;
@@ -2755,6 +3000,24 @@ async function openPdf() {
   }
 }
 
+async function downloadPdf() {
+  if (!activeProject) return;
+
+  setBusy(true);
+  setCompileState("Preparing PDF download...");
+
+  try {
+    const result = await window.localOverleaf.downloadPdf(activeProject.id);
+    if (result && result.filePath) setCompileState("PDF downloaded", "ok");
+    else setCompileState("Download canceled");
+  } catch (error) {
+    setCompileState("Download failed", "error");
+    compileLog.textContent = formatError(error);
+  } finally {
+    setBusy(false);
+  }
+}
+
 async function loadAgentsFile() {
   const token = ++agentsLoadToken;
   if (!activeProject) {
@@ -2846,12 +3109,86 @@ function compileLogFixPrompt(logText) {
 
 function handleSourceChanged({ renderVisual = false } = {}) {
   updateStats();
+  scheduleSourceMinimapUpdate();
   updateActiveDocumentTitle();
   updateActiveTextTabDirtyState();
   setSaveState(getSourceText() === savedText ? "Saved" : "Unsaved changes");
   if (renderVisual) renderVisualEditor();
   scheduleAutoSave();
   scheduleAutoCompile("Waiting for edits to settle...");
+}
+
+function setupSourceMinimap() {
+  if (!sourceMinimap || !editor) return;
+
+  const jumpToPointer = (clientY) => {
+    const rect = sourceMinimap.getBoundingClientRect();
+    if (!rect.height) return;
+
+    const info = editor.getScrollInfo();
+    const ratio = clampNumber((clientY - rect.top) / rect.height, 0, 1, 0);
+    const maxTop = Math.max(0, info.height - info.clientHeight);
+    const top = ratio * info.height - info.clientHeight / 2;
+    editor.scrollTo(null, Math.max(0, Math.min(maxTop, top)));
+  };
+
+  sourceMinimap.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    sourceMinimapDragging = true;
+    sourceMinimap.setPointerCapture(event.pointerId);
+    jumpToPointer(event.clientY);
+  });
+
+  sourceMinimap.addEventListener("pointermove", (event) => {
+    if (!sourceMinimapDragging) return;
+    event.preventDefault();
+    jumpToPointer(event.clientY);
+  });
+
+  sourceMinimap.addEventListener("pointerup", (event) => {
+    sourceMinimapDragging = false;
+    if (sourceMinimap.hasPointerCapture(event.pointerId)) sourceMinimap.releasePointerCapture(event.pointerId);
+  });
+}
+
+function scheduleSourceMinimapUpdate() {
+  if (!sourceMinimap || !sourceMinimapLines || !editor) return;
+  cancelAnimationFrame(sourceMinimapFrame);
+  sourceMinimapFrame = requestAnimationFrame(updateSourceMinimap);
+}
+
+function updateSourceMinimap() {
+  if (!sourceMinimap || !sourceMinimapLines || !editor) return;
+
+  const lines = editor.getValue().split("\n");
+  sourceMinimapLines.style.setProperty("--minimap-lines", String(Math.max(lines.length, 1)));
+  sourceMinimapLines.innerHTML = lines.map((line) => {
+    const trimmed = line.trim();
+    const kind = sourceMinimapLineKind(trimmed);
+    const previewText = escapeHtml(line.replace(/\t/g, "  ").slice(0, 150) || " ");
+    return `<span class="source-minimap-line ${kind}">${previewText}</span>`;
+  }).join("");
+  updateSourceMinimapViewport();
+}
+
+function sourceMinimapLineKind(line) {
+  if (!line) return "empty";
+  if (line.startsWith("%")) return "comment";
+  if (/\\(section|subsection|subsubsection|title|author)\b/.test(line)) return "heading";
+  if (/\\(includegraphics|caption|label)\b/.test(line)) return "figure";
+  if (/^\\|\\(begin|end|usepackage|documentclass|newcommand)\b/.test(line)) return "command";
+  return "text";
+}
+
+function updateSourceMinimapViewport() {
+  if (!sourceMinimapViewport || !editor) return;
+
+  const info = editor.getScrollInfo();
+  const fullHeight = Math.max(info.height, 1);
+  const top = clampNumber((info.top / fullHeight) * 100, 0, 100, 0);
+  const height = clampNumber((info.clientHeight / fullHeight) * 100, 8, 100, 100);
+  sourceMinimapViewport.style.top = `${top}%`;
+  sourceMinimapViewport.style.height = `${Math.min(height, 100 - top)}%`;
 }
 
 function scheduleAutoSave() {
@@ -2886,11 +3223,15 @@ function setMode(mode) {
   sourceModeButton.classList.toggle("active", !visual);
   visualModeButton.classList.toggle("active", visual);
   editor.getWrapperElement().hidden = visual;
+  if (sourceMinimap) sourceMinimap.hidden = visual;
   visualEditor.hidden = !visual;
   updateEditorFileTitle();
 
   if (visual) renderVisualEditor();
-  else editor.refresh();
+  else {
+    editor.refresh();
+    scheduleSourceMinimapUpdate();
+  }
 }
 
 function renderVisualEditor() {
@@ -3420,8 +3761,11 @@ async function renderPdf({ showLoading = true } = {}) {
       const textContent = await page.getTextContent();
       nextPageTextLines.set(pageNumber, buildPdfTextLines(textContent, viewport, pdfjsLib));
       pageShell.addEventListener("click", (event) => jumpToSourceFromPdfClick(event, pageNumber));
+      const annotations = await page.getAnnotations({ intent: "display" });
+      const linkLayer = buildPdfLinkLayer(annotations, viewport);
 
       pageShell.appendChild(canvas);
+      if (linkLayer) pageShell.appendChild(linkLayer);
       fragment.appendChild(pageShell);
       await page.render({ canvasContext: context, viewport }).promise;
       if (pdfDarkMode && pdfRenderMode === "adaptive") applyDarkPdfCanvas(context, canvas);
@@ -3444,6 +3788,73 @@ async function renderPdf({ showLoading = true } = {}) {
     if (token !== pdfRenderToken) return;
     pdfViewer.innerHTML = '<div class="pdf-loading pdf-error">Could not render PDF. Compile once if this project has no PDF yet.</div>';
     compileLog.textContent = formatError(error);
+  }
+}
+
+function buildPdfLinkLayer(annotations, viewport) {
+  const links = annotations
+    .map((annotation) => ({
+      rect: Array.isArray(annotation.rect) ? annotation.rect : null,
+      url: normalizePdfLinkUrl(annotation.url || annotation.unsafeUrl)
+    }))
+    .filter((link) => link.rect && link.url);
+
+  if (!links.length) return null;
+
+  const layer = document.createElement("div");
+  layer.className = "pdf-link-layer";
+  layer.style.width = `${Math.floor(viewport.width)}px`;
+  layer.style.height = `${Math.floor(viewport.height)}px`;
+
+  links.forEach((link) => {
+    const rect = viewport.convertToViewportRectangle(link.rect);
+    const left = Math.min(rect[0], rect[2]);
+    const top = Math.min(rect[1], rect[3]);
+    const width = Math.abs(rect[0] - rect[2]);
+    const height = Math.abs(rect[1] - rect[3]);
+    if (width <= 0 || height <= 0) return;
+
+    const button = document.createElement("button");
+    button.className = "pdf-link-region";
+    button.type = "button";
+    button.title = link.url;
+    button.setAttribute("aria-label", `Open ${link.url}`);
+    button.style.left = `${left}px`;
+    button.style.top = `${top}px`;
+    button.style.width = `${width}px`;
+    button.style.height = `${height}px`;
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openPdfLink(link.url);
+    });
+    layer.appendChild(button);
+  });
+
+  return layer.childElementCount ? layer : null;
+}
+
+function normalizePdfLinkUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  try {
+    const url = new URL(raw);
+    if (!["http:", "https:", "mailto:"].includes(url.protocol)) return "";
+    return url.toString();
+  } catch (error) {
+    return "";
+  }
+}
+
+async function openPdfLink(url) {
+  const confirmed = window.confirm(`Do you want to go to ${url}?`);
+  if (!confirmed) return;
+
+  try {
+    await window.localOverleaf.openExternalLink(url);
+  } catch (error) {
+    setCompileState(formatError(error), "error");
   }
 }
 
@@ -4054,6 +4465,7 @@ function setBusy(value) {
   saveButton.disabled = value;
   compileButton.disabled = value;
   openPdfButton.disabled = value;
+  downloadPdfButton.disabled = value;
 }
 
 function setProjectBusy(value) {

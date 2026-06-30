@@ -38,7 +38,7 @@ function createWindow() {
     height: 980,
     minWidth: 1180,
     minHeight: 700,
-    title: "Local LaTeX Studio",
+    title: "AgentDesk",
     backgroundColor: "#e9edf2",
     show: false,
     webPreferences: {
@@ -198,6 +198,20 @@ function inferProjectName(texPath) {
 
 function titleCase(value) {
   return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function normalizeExternalUrl(rawUrl) {
+  const url = new URL(String(rawUrl || "").trim());
+  if (!["http:", "https:", "mailto:"].includes(url.protocol)) {
+    throw new Error(`Unsupported link protocol: ${url.protocol || "unknown"}`);
+  }
+  return url.toString();
+}
+
+async function openExternalLink(_event, rawUrl) {
+  const url = normalizeExternalUrl(rawUrl);
+  await shell.openExternal(url);
+  return { ok: true };
 }
 
 async function readProjects() {
@@ -425,7 +439,7 @@ async function registerProjectFromPath(filePath) {
 }
 
 async function importArchiveToProject(archivePath) {
-  const importRoot = path.join(app.getPath("documents"), "Local LaTeX Studio");
+  const importRoot = path.join(app.getPath("documents"), "AgentDesk");
   const destination = await uniqueDirectory(importRoot, archiveBaseName(archivePath) || "Imported Project");
   await fsp.mkdir(destination, { recursive: true });
   await extractArchive(archivePath, destination);
@@ -561,6 +575,20 @@ async function removeProject(_event, projectId) {
   const projects = await readProjects();
   const nextProjects = projects.filter((project) => project.id !== projectId);
   await writeProjects(nextProjects);
+  return listProjects();
+}
+
+async function renameProject(_event, payload = {}) {
+  const name = String(payload.name || "").trim();
+  if (!name) throw new Error("Project name cannot be empty.");
+
+  const projects = await readProjects();
+  const project = projects.find((item) => item.id === payload.projectId);
+  if (!project) throw new Error("Project not found.");
+
+  project.name = name;
+  project.updatedAt = new Date().toISOString();
+  await writeProjects(projects);
   return listProjects();
 }
 
@@ -1312,6 +1340,27 @@ async function openPdf(_event, projectId) {
   return shell.openPath(pdfPathFor(project));
 }
 
+async function downloadPdf(_event, projectId) {
+  const project = await getProject(projectId);
+  const sourcePath = pdfPathFor(project);
+  if (!fs.existsSync(sourcePath)) throw new Error("No compiled PDF exists yet. Compile the project first.");
+
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: "Download PDF",
+    buttonLabel: "Download",
+    defaultPath: path.join(app.getPath("downloads"), path.basename(sourcePath)),
+    filters: [
+      { name: "PDF", extensions: ["pdf"] }
+    ]
+  });
+
+  if (result.canceled || !result.filePath) return { canceled: true };
+
+  const destination = result.filePath.endsWith(".pdf") ? result.filePath : `${result.filePath}.pdf`;
+  await fsp.copyFile(sourcePath, destination);
+  return { filePath: destination };
+}
+
 async function readAgents(_event, projectId) {
   const project = await getProject(projectId);
   const agentsPath = agentsPathFor(project);
@@ -1347,6 +1396,7 @@ async function saveAgents(_event, payload = {}) {
 ipcMain.handle("list-projects", listProjects);
 ipcMain.handle("add-project", addProject);
 ipcMain.handle("add-project-from-path", addProjectFromPath);
+ipcMain.handle("rename-project", renameProject);
 ipcMain.handle("remove-project", removeProject);
 ipcMain.handle("list-project-files", listProjectFiles);
 ipcMain.handle("project-file-action", projectFileAction);
@@ -1358,6 +1408,8 @@ ipcMain.handle("compile-manuscript", compileManuscript);
 ipcMain.handle("run-suggestion", runSuggestion);
 ipcMain.handle("read-pdf", readPdf);
 ipcMain.handle("open-pdf", openPdf);
+ipcMain.handle("download-pdf", downloadPdf);
+ipcMain.handle("open-external-link", openExternalLink);
 ipcMain.handle("read-agents", readAgents);
 ipcMain.handle("save-agents", saveAgents);
 ipcMain.handle("terminal-create", createTerminal);
@@ -1368,7 +1420,7 @@ ipcMain.on("terminal-resize", resizeTerminal);
 app.on("before-quit", killTerminalSessions);
 
 app.whenReady().then(() => {
-  app.setName("Local LaTeX Studio");
+  app.setName("AgentDesk");
   buildMenu();
   createWindow();
 

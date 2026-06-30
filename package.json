@@ -1,9 +1,9 @@
 {
-  "name": "local-latex-studio",
+  "name": "agentdesk",
   "version": "0.1.0",
   "private": true,
-  "productName": "Local LaTeX Studio",
-  "description": "Local desktop LaTeX project launcher, editor, and live PDF previewer.",
+  "productName": "AgentDesk",
+  "description": "Agent-native desktop workspace for LaTeX papers, PDFs, terminals, and review workflows.",
   "main": "main.js",
   "scripts": {
     "start": "node scripts/start.mjs",
