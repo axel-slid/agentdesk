@@ -6725,6 +6725,8 @@ body.window-fullscreen .project-back-button {
   align-self: start !important;
   justify-self: end !important;
   max-width: 100% !important;
+  position: static !important;
+  right: auto !important;
 }
 
 .file-rail[hidden],
@@ -6913,7 +6915,7 @@ body[data-theme="dark"] .vim-mode-indicator[data-vim-state="visual"] {
 
 /* Final terminal side-list, PDF reader, and minimap cleanup. */
 .terminal-panel {
-  grid-template-rows: 34px minmax(0, 1fr) !important;
+  grid-template-rows: 5px 34px minmax(0, 1fr) !important;
 }
 
 .terminal-header {
@@ -6938,6 +6940,7 @@ body[data-theme="dark"] .vim-mode-indicator[data-vim-state="visual"] {
 .terminal-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(120px, 184px);
+  grid-row: 3;
   min-height: 0;
 }
 
