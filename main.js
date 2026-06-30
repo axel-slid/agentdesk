@@ -2187,6 +2187,18 @@ async function loadManuscript(_event, payload) {
   };
 }
 
+async function readProjectFile(_event, payload = {}) {
+  const project = await getProject(payload.projectId);
+  const relativePath = payload.relativePath || relativeProjectPath(project, project.texPath);
+  const filePath = safeProjectPath(project, relativePath);
+  if (!isTextFile(filePath)) throw new Error("Only text project files can be watched in the editor.");
+  return {
+    project: decorateProject(project),
+    file: fileDescriptor(project, filePath),
+    tex: await fsp.readFile(filePath, "utf8")
+  };
+}
+
 async function listProjectFiles(_event, projectId) {
   const project = await getProject(projectId);
   return {
@@ -2448,13 +2460,23 @@ async function compileManuscript(_event, payload) {
 }
 
 function fileDescriptor(project, filePath) {
+  let stat = null;
+  try {
+    stat = fs.statSync(filePath);
+  } catch (error) {
+    stat = null;
+  }
+
   return {
     name: path.basename(filePath),
     relativePath: relativeProjectPath(project, filePath),
     editable: isTextFile(filePath),
     image: isImageFile(filePath),
     fileUrl: pathToFileURL(filePath).href,
-    isMain: path.resolve(filePath) === path.resolve(project.texPath)
+    isMain: path.resolve(filePath) === path.resolve(project.texPath),
+    modifiedAt: stat ? stat.mtime.toISOString() : "",
+    mtimeMs: stat ? stat.mtimeMs : 0,
+    size: stat ? stat.size : 0
   };
 }
 
@@ -2871,6 +2893,7 @@ ipcMain.handle("project-file-action", projectFileAction);
 ipcMain.handle("choose-project-files", chooseProjectFiles);
 ipcMain.handle("import-project-files", importProjectFiles);
 ipcMain.handle("load-manuscript", loadManuscript);
+ipcMain.handle("read-project-file", readProjectFile);
 ipcMain.handle("save-manuscript", saveManuscript);
 ipcMain.handle("compile-manuscript", compileManuscript);
 ipcMain.handle("read-pdf", readPdf);

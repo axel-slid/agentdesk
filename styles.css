@@ -7439,3 +7439,22 @@ body[data-contrast="high"] .terminal-collapsed-rail::before,
 body[data-contrast="high"] .log-collapsed-rail::before {
   background: var(--border-strong);
 }
+
+.file-rail-open,
+.source-rail-open,
+.preview-rail-open,
+.collapsed-panel-rail {
+  font-size: 12px !important;
+  letter-spacing: 0.04em !important;
+}
+
+.file-rail-open::before,
+.terminal-collapsed-rail::before,
+.log-collapsed-rail::before {
+  content: none !important;
+}
+
+#fileHeaderRefreshButton {
+  margin-left: auto !important;
+  order: 99 !important;
+}

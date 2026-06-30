@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld("localOverleaf", {
   listSshHosts: () => ipcRenderer.invoke("list-ssh-hosts"),
   toggleFullscreen: () => ipcRenderer.invoke("toggle-fullscreen"),
   load: (projectId, relativePath) => ipcRenderer.invoke("load-manuscript", { projectId, relativePath }),
+  readProjectFile: (projectId, relativePath) => ipcRenderer.invoke("read-project-file", { projectId, relativePath }),
   save: (projectId, relativePath, tex) => ipcRenderer.invoke("save-manuscript", { projectId, relativePath, tex }),
   compile: (projectId, relativePath, tex) => ipcRenderer.invoke("compile-manuscript", { projectId, relativePath, tex }),
   readPdf: (projectId) => ipcRenderer.invoke("read-pdf", projectId),

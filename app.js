@@ -1565,6 +1565,7 @@ const DEFAULT_COMPILE_LOG_HEIGHT = 170;
 const MIN_COMPILE_LOG_HEIGHT = 118;
 const MAX_COMPILE_LOG_HEIGHT = 430;
 const COMPILE_LOG_COLLAPSE_THRESHOLD = 72;
+const EXTERNAL_SOURCE_POLL_MS = 900;
 const DEFAULT_FILE_OUTLINE_HEIGHT = 220;
 const MIN_FILE_OUTLINE_HEIGHT = 92;
 const MAX_FILE_OUTLINE_HEIGHT = 420;
@@ -1618,6 +1619,9 @@ let isCompiling = false;
 let pendingCompile = false;
 let autoCompileTimer = null;
 let autoSaveTimer = null;
+let externalSourcePollTimer = null;
+let externalSourcePollBusy = false;
+let activeDiskSignature = "";
 let visualItems = [];
 let visualBlocks = [];
 let markdownVisualTimer = null;
@@ -2648,6 +2652,19 @@ function currentTextTab() {
   return openTextTabs.find((tab) => tab.relativePath === activeTextTabPath) || null;
 }
 
+function sourceDiskSignature(file, text = "") {
+  if (!file) return "";
+  return [
+    file.relativePath || file.name || "",
+    Number(file.mtimeMs || 0).toFixed(3),
+    Number(file.size || String(text || "").length || 0)
+  ].join(":");
+}
+
+function updateActiveDiskSignature(file = activeFile, text = savedText) {
+  activeDiskSignature = sourceDiskSignature(file, text);
+}
+
 function syncActiveTextTabFromEditor() {
   const tab = currentTextTab();
   if (!tab || !editor || tab.kind === "image") return;
@@ -2693,6 +2710,7 @@ function setActiveLoadedTextFile(file, text, { preview = false } = {}) {
   activeFile = file;
   activeMediaFile = null;
   savedText = text;
+  updateActiveDiskSignature(file, text);
   applyEditorModeForFile(file);
   mediaViewer.hidden = true;
   renderTextTabs();
@@ -2714,6 +2732,9 @@ function updateActiveTextTabAfterSave(file, text) {
   tab.dirty = false;
   tab.preview = false;
   tab.kind = "text";
+  activeFile = file || activeFile;
+  savedText = text;
+  updateActiveDiskSignature(activeFile, text);
   renderTextTabs();
   renderFileTree();
   updateFileOutline();
@@ -2727,6 +2748,71 @@ function updateActiveTextTabDirtyState() {
   tab.dirty = tab.text !== tab.savedText;
   renderTextTabs();
   updateFileOutline();
+}
+
+function startExternalSourcePolling() {
+  stopExternalSourcePolling();
+  externalSourcePollTimer = setInterval(pollExternalSourceUpdate, EXTERNAL_SOURCE_POLL_MS);
+}
+
+function stopExternalSourcePolling() {
+  if (externalSourcePollTimer) clearInterval(externalSourcePollTimer);
+  externalSourcePollTimer = null;
+  externalSourcePollBusy = false;
+}
+
+async function pollExternalSourceUpdate() {
+  if (
+    externalSourcePollBusy
+    || !activeProject
+    || !activeFile
+    || activeMediaFile
+    || editorScreen.hidden
+    || isLoading
+    || isCompiling
+    || !window.localOverleaf
+    || !window.localOverleaf.readProjectFile
+  ) {
+    return;
+  }
+
+  if (getSourceText() !== savedText) return;
+
+  externalSourcePollBusy = true;
+  try {
+    const result = await window.localOverleaf.readProjectFile(activeProject.id, activeFile.relativePath);
+    const nextSignature = sourceDiskSignature(result.file, result.tex);
+    if (nextSignature === activeDiskSignature) return;
+
+    activeDiskSignature = nextSignature;
+    activeProject = result.project || activeProject;
+    if (result.tex === savedText) {
+      activeFile = result.file || activeFile;
+      updateActiveTextTabAfterSave(activeFile, savedText);
+      return;
+    }
+
+    const wasVisual = !visualEditor.hidden;
+    suppressSourceChange = true;
+    setSourceText(result.tex);
+    suppressSourceChange = false;
+    activeFile = result.file || activeFile;
+    savedText = result.tex;
+    updateActiveTextTabAfterSave(activeFile, result.tex);
+    updateEditorFileTitle();
+    updateActiveDocumentTitle();
+    updateStats();
+    scheduleSourceMinimapUpdate();
+    await loadProjectFiles();
+    if (wasVisual) renderVisualEditor();
+    setSaveState("Synced from disk", "ok");
+    scheduleAutoCompile("External edits detected");
+  } catch (error) {
+    // Polling should never interrupt editing; surface details in the log only.
+    compileLog.textContent = formatError(error);
+  } finally {
+    externalSourcePollBusy = false;
+  }
 }
 
 function switchTextTab(relativePath) {
@@ -5046,6 +5132,7 @@ async function openProject(projectId) {
   setCompileLogCollapsed(true, { persist: false });
   await loadManuscript(projectId);
   await loadProjectFiles();
+  startExternalSourcePolling();
 }
 
 function showEditorShell() {
@@ -5063,6 +5150,7 @@ async function showProjects() {
   }
 
   clearTimeout(autoCompileTimer);
+  stopExternalSourcePolling();
   updateProjectHeroGreeting({ rotate: true });
   projectScreen.hidden = false;
   editorScreen.hidden = true;
@@ -5722,7 +5810,7 @@ async function refreshActiveProject() {
       return;
     }
     await loadProjectFiles();
-    await renderPdf({ showLoading: true });
+    await renderPdf({ showLoading: true, preserveView: true });
     setCompileState("Project refreshed", "ok");
   } catch (error) {
     setCompileState("Refresh failed", "error");
@@ -5792,7 +5880,7 @@ async function compileManuscript({ manual = false } = {}) {
     updateActiveTextTabAfterSave(activeFile, tex);
     updateEditorFileTitle();
     updateActiveDocumentTitle();
-    await setPdf();
+    await setPdf({ preserveView: true });
     setSaveState(`Saved ${timeStamp()}`, "ok");
     setCompileState(`${manual ? "Compiled" : "Auto compiled"} ${timeStamp()}`, "ok");
     compileLog.textContent = result.output.trim() || "Compiled successfully.";
@@ -6154,7 +6242,7 @@ function scheduleAutoSave() {
   setSaveState("Auto-save pending");
   autoSaveTimer = setTimeout(() => {
     saveManuscript({ auto: true });
-  }, 800);
+  }, 450);
 }
 
 function scheduleAutoCompile(message) {
@@ -6170,7 +6258,7 @@ function scheduleAutoCompile(message) {
   setCompileState(message);
   autoCompileTimer = setTimeout(() => {
     compileManuscript({ manual: false });
-  }, 1200);
+  }, 450);
 }
 
 function setMode(mode) {
@@ -6802,16 +6890,51 @@ function setSourceText(value) {
   editor.setCursor(cursor);
 }
 
-async function setPdf() {
-  await renderPdf();
+function capturePdfViewState() {
+  if (!pdfViewer || !pdfViewer.querySelector(".pdf-page")) return null;
+
+  const viewerCenter = pdfViewer.scrollTop + pdfViewer.clientHeight / 2;
+  const pages = Array.from(pdfViewer.querySelectorAll(".pdf-page"));
+  const centeredPage = pages.find((page) => {
+    const top = page.offsetTop;
+    return viewerCenter >= top && viewerCenter <= top + page.offsetHeight;
+  }) || pages[0];
+
+  if (!centeredPage) return null;
+  const pageHeight = Math.max(centeredPage.offsetHeight, 1);
+  return {
+    page: Number(centeredPage.dataset.page || 1),
+    pageRatio: clampNumber((viewerCenter - centeredPage.offsetTop) / pageHeight, 0, 1, 0),
+    leftRatio: clampNumber(pdfViewer.scrollLeft / Math.max(1, pdfViewer.scrollWidth - pdfViewer.clientWidth), 0, 1, 0),
+    scrollTop: pdfViewer.scrollTop,
+    scrollLeft: pdfViewer.scrollLeft
+  };
 }
 
-async function renderPdf({ showLoading = true } = {}) {
+function restorePdfViewState(state) {
+  if (!state || !pdfViewer) return;
+  const page = pdfViewer.querySelector(`.pdf-page[data-page="${state.page}"]`) || pdfViewer.querySelector(".pdf-page");
+  if (page) {
+    const center = page.offsetTop + page.offsetHeight * clampNumber(state.pageRatio, 0, 1, 0);
+    pdfViewer.scrollTop = Math.max(0, center - pdfViewer.clientHeight / 2);
+  } else {
+    pdfViewer.scrollTop = state.scrollTop || 0;
+  }
+  const maxLeft = Math.max(0, pdfViewer.scrollWidth - pdfViewer.clientWidth);
+  pdfViewer.scrollLeft = maxLeft ? maxLeft * clampNumber(state.leftRatio, 0, 1, 0) : (state.scrollLeft || 0);
+}
+
+async function setPdf(options = {}) {
+  await renderPdf(options);
+}
+
+async function renderPdf({ showLoading = true, preserveView = false } = {}) {
   if (!activeProject || editorScreen.hidden) return;
 
   const token = ++pdfRenderToken;
   const zoomForRender = pdfZoom;
   const hasExistingPages = Boolean(pdfViewer.querySelector(".pdf-page"));
+  const preservedViewState = preserveView ? capturePdfViewState() : null;
   applyPdfRenderMode();
   if (showLoading || !hasExistingPages) {
     pdfViewer.innerHTML = '<div class="pdf-loading">Rendering PDF...</div>';
@@ -6877,14 +7000,16 @@ async function renderPdf({ showLoading = true } = {}) {
     }
 
     if (token !== pdfRenderToken) return;
-    const preserveScroll = !showLoading && hasExistingPages;
+    const preserveScroll = !showLoading && hasExistingPages && !preservedViewState;
     const scrollLeft = pdfViewer.scrollLeft;
     const scrollTop = pdfViewer.scrollTop;
     pdfPageTextLines = nextPageTextLines;
     renderedPdfPageCount = pdf.numPages;
     renderedPdfZoom = zoomForRender;
     pdfViewer.replaceChildren(fragment);
-    if (preserveScroll) {
+    if (preservedViewState) {
+      restorePdfViewState(preservedViewState);
+    } else if (preserveScroll) {
       pdfViewer.scrollLeft = scrollLeft;
       pdfViewer.scrollTop = scrollTop;
     }
