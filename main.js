@@ -40,6 +40,7 @@ function createWindow() {
     minHeight: 700,
     title: "AgentDesk",
     backgroundColor: "#e9edf2",
+    frame: false,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -90,13 +91,18 @@ function buildMenu() {
       label: "File",
       submenu: [
         {
+          label: "Command Palette",
+          accelerator: "CommandOrControl+P",
+          click: () => sendEditorCommand("command-palette")
+        },
+        { type: "separator" },
+        {
           label: "New Project",
           accelerator: "CommandOrControl+Shift+O",
           click: () => sendEditorCommand("add-project")
         },
         {
           label: "Projects",
-          accelerator: "CommandOrControl+Shift+P",
           click: () => sendEditorCommand("projects")
         },
         { type: "separator" },
@@ -171,6 +177,18 @@ function buildMenu() {
 
 function storePath() {
   return path.join(app.getPath("userData"), "projects.json");
+}
+
+function templateStorePath() {
+  return path.join(app.getPath("userData"), "templates.json");
+}
+
+function templateRootPath() {
+  return path.join(app.getPath("userData"), "templates");
+}
+
+function projectLibraryRoot() {
+  return path.join(app.getPath("documents"), "AgentDesk");
 }
 
 function makeProjectId(texPath) {
@@ -439,8 +457,7 @@ async function registerProjectFromPath(filePath) {
 }
 
 async function importArchiveToProject(archivePath) {
-  const importRoot = path.join(app.getPath("documents"), "AgentDesk");
-  const destination = await uniqueDirectory(importRoot, archiveBaseName(archivePath) || "Imported Project");
+  const destination = await uniqueDirectory(projectLibraryRoot(), archiveBaseName(archivePath) || "Imported Project");
   await fsp.mkdir(destination, { recursive: true });
   await extractArchive(archivePath, destination);
 
@@ -493,6 +510,739 @@ function blankProjectTemplate(name) {
     "\\end{document}",
     ""
   ].join("\n");
+}
+
+function homeworkTemplate() {
+  return [
+    "\\documentclass[11pt]{article}",
+    "\\usepackage[margin=1in]{geometry}",
+    "\\usepackage{amsmath,amssymb}",
+    "\\usepackage{enumitem}",
+    "",
+    "\\title{Homework Assignment}",
+    "\\author{Your Name}",
+    "\\date{\\today}",
+    "",
+    "\\begin{document}",
+    "\\maketitle",
+    "",
+    "\\section*{Problem 1}",
+    "\\begin{enumerate}[label=(\\alph*)]",
+    "  \\item Write your solution here.",
+    "  \\item Add another part here.",
+    "\\end{enumerate}",
+    "",
+    "\\section*{Problem 2}",
+    "Show your work clearly.",
+    "",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function cs170HomeworkTemplate() {
+  return [
+    "\\documentclass[11pt]{article}",
+    "\\usepackage{amsmath,textcomp,amssymb,geometry,graphicx,enumerate}",
+    "\\usepackage{algorithm}",
+    "\\usepackage[noend]{algpseudocode}",
+    "\\usepackage{hyperref}",
+    "\\hypersetup{colorlinks=true, linkcolor=blue, filecolor=magenta, urlcolor=blue}",
+    "",
+    "\\def\\Name{Your Name}",
+    "\\def\\SID{Your SID}",
+    "\\def\\Login{cs170-xx}",
+    "\\def\\Homework{N}",
+    "\\def\\Session{Spring 2026}",
+    "",
+    "\\title{CS 170 -- \\Session{} -- Homework \\Homework}",
+    "\\author{\\Name, SID \\SID, \\texttt{\\Login}}",
+    "\\markboth{CS 170 -- \\Session{} Homework \\Homework{} \\Name}{CS 170 -- \\Session{} Homework \\Homework{} \\Name, \\texttt{\\Login}}",
+    "\\pagestyle{myheadings}",
+    "\\date{}",
+    "",
+    "\\newenvironment{qparts}{\\begin{enumerate}[{(}a{)}]}{\\end{enumerate}}",
+    "\\newenvironment{answer}{\\par\\noindent\\textbf{Answer.}}{\\medskip}",
+    "\\newenvironment{proofbox}{\\par\\noindent\\textbf{Proof.}}{\\hfill$\\square$\\medskip}",
+    "\\textheight=9in",
+    "\\textwidth=6.5in",
+    "\\topmargin=-0.75in",
+    "\\oddsidemargin=0.25in",
+    "\\evensidemargin=0.25in",
+    "",
+    "\\begin{document}",
+    "\\maketitle",
+    "",
+    "\\noindent\\textbf{Collaborators:} None",
+    "",
+    "\\section*{1. Study Group}",
+    "\\begin{answer}",
+    "List study group members here, or write none.",
+    "\\end{answer}",
+    "",
+    "\\section*{2. First Question}",
+    "\\begin{qparts}",
+    "  \\item Your answer to part (a).",
+    "  \\item Your answer to part (b).",
+    "\\end{qparts}",
+    "",
+    "\\newpage",
+    "\\section*{3. Algorithm Question}",
+    "\\noindent\\textbf{Main idea}\\\\",
+    "Explain the key insight in a few sentences.",
+    "",
+    "\\noindent\\textbf{Pseudocode}\\\\",
+    "\\begin{algorithmic}[0]",
+    "  \\Procedure{AlgorithmName}{input $x$}",
+    "    \\State Initialize the data structure.",
+    "    \\For{each item in $x$}",
+    "      \\State Update the answer.",
+    "    \\EndFor",
+    "    \\State \\Return answer",
+    "  \\EndProcedure",
+    "\\end{algorithmic}",
+    "",
+    "\\noindent\\textbf{Proof of correctness}\\\\",
+    "\\begin{proofbox}",
+    "Prove why the algorithm returns the correct answer.",
+    "\\end{proofbox}",
+    "",
+    "\\noindent\\textbf{Running time analysis}\\\\",
+    "State the running time and justify it.",
+    "",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function labReportTemplate() {
+  return [
+    "\\documentclass[11pt]{article}",
+    "\\usepackage[margin=1in]{geometry}",
+    "\\usepackage{booktabs}",
+    "\\usepackage{graphicx}",
+    "\\usepackage{siunitx}",
+    "",
+    "\\title{Lab Report}",
+    "\\author{Your Name}",
+    "\\date{\\today}",
+    "",
+    "\\begin{document}",
+    "\\maketitle",
+    "",
+    "\\section{Objective}",
+    "State the goal of the experiment.",
+    "",
+    "\\section{Methods}",
+    "Describe the setup, measurements, and assumptions.",
+    "",
+    "\\section{Results}",
+    "\\begin{table}[h]",
+    "  \\centering",
+    "  \\begin{tabular}{lll}",
+    "    \\toprule",
+    "    Trial & Measurement & Notes \\\\",
+    "    \\midrule",
+    "    1 & -- & -- \\\\",
+    "    \\bottomrule",
+    "  \\end{tabular}",
+    "  \\caption{Summary of measurements.}",
+    "\\end{table}",
+    "",
+    "\\section{Discussion}",
+    "Interpret the results and sources of error.",
+    "",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function articleTemplate() {
+  return [
+    "\\documentclass[11pt]{article}",
+    "\\usepackage[margin=1in]{geometry}",
+    "\\usepackage{graphicx}",
+    "\\usepackage{booktabs}",
+    "\\usepackage{hyperref}",
+    "",
+    "\\title{Research Article Title}",
+    "\\author{Author Name}",
+    "\\date{}",
+    "",
+    "\\begin{document}",
+    "\\maketitle",
+    "",
+    "\\begin{abstract}",
+    "Summarize the contribution, method, and findings.",
+    "\\end{abstract}",
+    "",
+    "\\section{Introduction}",
+    "Motivate the problem and cite related work~\\cite{example}.",
+    "",
+    "\\section{Methods}",
+    "Describe the approach.",
+    "",
+    "\\section{Results}",
+    "Present the evidence.",
+    "",
+    "\\section{Conclusion}",
+    "State the takeaway and next steps.",
+    "",
+    "\\bibliographystyle{plain}",
+    "\\bibliography{references}",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function ieeeTemplate() {
+  return [
+    "\\documentclass[conference]{IEEEtran}",
+    "\\usepackage{cite}",
+    "\\usepackage{amsmath,amssymb}",
+    "\\usepackage{graphicx}",
+    "",
+    "\\title{Conference Paper Title}",
+    "\\author{\\IEEEauthorblockN{Author Name}\\\\",
+    "\\IEEEauthorblockA{Department\\\\University\\\\email@example.com}}",
+    "",
+    "\\begin{document}",
+    "\\maketitle",
+    "",
+    "\\begin{abstract}",
+    "Write a concise abstract.",
+    "\\end{abstract}",
+    "",
+    "\\begin{IEEEkeywords}",
+    "LaTeX, paper, template",
+    "\\end{IEEEkeywords}",
+    "",
+    "\\section{Introduction}",
+    "Introduce the problem.",
+    "",
+    "\\section{Method}",
+    "Describe the method.",
+    "",
+    "\\section{Results}",
+    "Summarize results.",
+    "",
+    "\\bibliographystyle{IEEEtran}",
+    "\\bibliography{references}",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function acmTemplate() {
+  return [
+    "\\documentclass[sigconf]{acmart}",
+    "\\title{ACM Paper Title}",
+    "\\author{Author Name}",
+    "\\affiliation{%",
+    "  \\institution{Institution}",
+    "  \\city{City}",
+    "  \\country{Country}",
+    "}",
+    "\\email{email@example.com}",
+    "",
+    "\\begin{document}",
+    "\\begin{abstract}",
+    "Write the abstract here.",
+    "\\end{abstract}",
+    "",
+    "\\maketitle",
+    "",
+    "\\section{Introduction}",
+    "Introduce the work.",
+    "",
+    "\\section{System}",
+    "Describe the system or method.",
+    "",
+    "\\section{Evaluation}",
+    "Describe evaluation.",
+    "",
+    "\\bibliographystyle{ACM-Reference-Format}",
+    "\\bibliography{references}",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function lncsTemplate() {
+  return [
+    "\\documentclass[runningheads]{llncs}",
+    "\\usepackage{graphicx}",
+    "",
+    "\\title{LNCS Paper Title}",
+    "\\author{Author Name}",
+    "\\institute{Institution\\\\\\email{email@example.com}}",
+    "",
+    "\\begin{document}",
+    "\\maketitle",
+    "",
+    "\\begin{abstract}",
+    "Write the abstract here.",
+    "\\keywords{LaTeX \\and Template \\and Paper}",
+    "\\end{abstract}",
+    "",
+    "\\section{Introduction}",
+    "Introduce the work.",
+    "",
+    "\\section{Method}",
+    "Describe the method.",
+    "",
+    "\\section{Results}",
+    "Summarize results.",
+    "",
+    "\\bibliographystyle{splncs04}",
+    "\\bibliography{references}",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function beamerTemplate() {
+  return [
+    "\\documentclass{beamer}",
+    "\\usetheme{Madrid}",
+    "",
+    "\\title{Presentation Title}",
+    "\\author{Your Name}",
+    "\\date{\\today}",
+    "",
+    "\\begin{document}",
+    "",
+    "\\begin{frame}",
+    "  \\titlepage",
+    "\\end{frame}",
+    "",
+    "\\begin{frame}{Overview}",
+    "  \\begin{itemize}",
+    "    \\item Motivation",
+    "    \\item Method",
+    "    \\item Results",
+    "  \\end{itemize}",
+    "\\end{frame}",
+    "",
+    "\\begin{frame}{Key Result}",
+    "  Add the main figure or claim here.",
+    "\\end{frame}",
+    "",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function cvTemplate() {
+  return [
+    "\\documentclass[11pt]{article}",
+    "\\usepackage[margin=0.75in]{geometry}",
+    "\\usepackage{enumitem}",
+    "\\usepackage[hidelinks]{hyperref}",
+    "\\setlength{\\parindent}{0pt}",
+    "",
+    "\\begin{document}",
+    "",
+    "{\\LARGE Your Name}\\\\",
+    "\\href{mailto:email@example.com}{email@example.com} \\quad City, State \\quad \\href{https://example.com}{website}",
+    "",
+    "\\section*{Education}",
+    "\\textbf{University Name} \\hfill Expected 2027\\\\",
+    "Degree, Major",
+    "",
+    "\\section*{Experience}",
+    "\\textbf{Role, Organization} \\hfill Dates",
+    "\\begin{itemize}[leftmargin=*]",
+    "  \\item Describe impact with specific outcomes.",
+    "\\end{itemize}",
+    "",
+    "\\section*{Projects}",
+    "\\textbf{Project Name}: One-line description.",
+    "",
+    "\\section*{Skills}",
+    "Languages, tools, methods",
+    "",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function thesisTemplate() {
+  return [
+    "\\documentclass[12pt]{report}",
+    "\\usepackage[margin=1in]{geometry}",
+    "\\usepackage{graphicx}",
+    "\\usepackage{hyperref}",
+    "",
+    "\\title{Thesis Title}",
+    "\\author{Your Name}",
+    "\\date{\\today}",
+    "",
+    "\\begin{document}",
+    "\\maketitle",
+    "\\tableofcontents",
+    "",
+    "\\chapter{Introduction}",
+    "Introduce the research question.",
+    "",
+    "\\chapter{Background}",
+    "Review related work.",
+    "",
+    "\\chapter{Methods}",
+    "Describe the method.",
+    "",
+    "\\chapter{Results}",
+    "Present findings.",
+    "",
+    "\\chapter{Conclusion}",
+    "Summarize contributions.",
+    "",
+    "\\bibliographystyle{plain}",
+    "\\bibliography{references}",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+function posterTemplate() {
+  return [
+    "\\documentclass[final]{beamer}",
+    "\\usepackage[size=a0,scale=1.15]{beamerposter}",
+    "\\usetheme{default}",
+    "",
+    "\\title{Poster Title}",
+    "\\author{Your Name}",
+    "\\institute{Institution}",
+    "",
+    "\\begin{document}",
+    "\\begin{frame}[t]",
+    "\\begin{columns}[t]",
+    "  \\begin{column}{0.48\\linewidth}",
+    "    \\begin{block}{Motivation}",
+    "      State the problem and why it matters.",
+    "    \\end{block}",
+    "    \\begin{block}{Method}",
+    "      Describe the approach.",
+    "    \\end{block}",
+    "  \\end{column}",
+    "  \\begin{column}{0.48\\linewidth}",
+    "    \\begin{block}{Results}",
+    "      Add figures and key findings.",
+    "    \\end{block}",
+    "    \\begin{block}{Conclusion}",
+    "      Summarize the contribution.",
+    "    \\end{block}",
+    "  \\end{column}",
+    "\\end{columns}",
+    "\\end{frame}",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
+const BUILT_IN_TEMPLATES = [
+  {
+    id: "berkeley-cs170-homework",
+    name: "Berkeley CS 170 Homework",
+    description: "Problem-set starter for CS 170-style algorithms homework.",
+    sourceName: "CS 170 course template",
+    sourceUrl: "https://www.overleaf.com/latex/templates/cs170-homework-template/rrhswrgkrfnd",
+    entry: "main.tex",
+    files: {
+      "main.tex": cs170HomeworkTemplate()
+    }
+  },
+  {
+    id: "homework-assignment",
+    name: "Homework Assignment",
+    description: "A clean problem-set format for weekly class work.",
+    sourceName: "Overleaf homework templates",
+    sourceUrl: "https://www.overleaf.com/latex/templates/tagged/homework",
+    entry: "main.tex",
+    files: {
+      "main.tex": homeworkTemplate()
+    }
+  },
+  {
+    id: "lab-report",
+    name: "Lab Report",
+    description: "Sections for objective, methods, results, and discussion.",
+    sourceName: "Overleaf report templates",
+    sourceUrl: "https://www.overleaf.com/latex/templates/tagged/report",
+    entry: "main.tex",
+    files: {
+      "main.tex": labReportTemplate()
+    }
+  },
+  {
+    id: "research-article",
+    name: "Research Article",
+    description: "General manuscript starter with bibliography wiring.",
+    sourceName: "Overleaf academic journal templates",
+    sourceUrl: "https://www.overleaf.com/latex/templates/tagged/academic-journal",
+    entry: "main.tex",
+    files: {
+      "main.tex": articleTemplate(),
+      "references.bib": "@article{example,\n  title={Example Reference},\n  author={Author, A.},\n  journal={Journal Name},\n  year={2026}\n}\n"
+    }
+  },
+  {
+    id: "ieee-conference",
+    name: "IEEE Conference Paper",
+    description: "IEEEtran conference starter with keywords and references.",
+    sourceName: "IEEE templates",
+    sourceUrl: "https://www.ieee.org/conferences/publishing/templates.html",
+    entry: "main.tex",
+    files: {
+      "main.tex": ieeeTemplate(),
+      "references.bib": "@article{example,\n  title={Example Reference},\n  author={Author, A.},\n  journal={Journal Name},\n  year={2026}\n}\n"
+    }
+  },
+  {
+    id: "acm-paper",
+    name: "ACM Paper",
+    description: "ACM acmart starter for conference papers.",
+    sourceName: "ACM proceedings template",
+    sourceUrl: "https://www.acm.org/publications/proceedings-template",
+    entry: "main.tex",
+    files: {
+      "main.tex": acmTemplate(),
+      "references.bib": "@article{example,\n  title={Example Reference},\n  author={Author, A.},\n  journal={Journal Name},\n  year={2026}\n}\n"
+    }
+  },
+  {
+    id: "springer-lncs",
+    name: "Springer LNCS",
+    description: "LNCS-style paper starter for conference proceedings.",
+    sourceName: "Springer LNCS guidelines",
+    sourceUrl: "https://www.springer.com/gp/computer-science/lncs/conference-proceedings-guidelines",
+    entry: "main.tex",
+    files: {
+      "main.tex": lncsTemplate(),
+      "references.bib": "@article{example,\n  title={Example Reference},\n  author={Author, A.},\n  journal={Journal Name},\n  year={2026}\n}\n"
+    }
+  },
+  {
+    id: "beamer-presentation",
+    name: "Beamer Presentation",
+    description: "Slide deck starter with title, overview, and result frames.",
+    sourceName: "Overleaf presentation templates",
+    sourceUrl: "https://www.overleaf.com/latex/templates/tagged/presentation",
+    entry: "main.tex",
+    files: {
+      "main.tex": beamerTemplate()
+    }
+  },
+  {
+    id: "cv-resume",
+    name: "CV / Resume",
+    description: "Compact academic resume skeleton.",
+    sourceName: "Overleaf CV templates",
+    sourceUrl: "https://www.overleaf.com/latex/templates/tagged/cv",
+    entry: "main.tex",
+    files: {
+      "main.tex": cvTemplate()
+    }
+  },
+  {
+    id: "thesis-report",
+    name: "Thesis / Long Report",
+    description: "Chaptered report starter with table of contents.",
+    sourceName: "Overleaf thesis templates",
+    sourceUrl: "https://www.overleaf.com/latex/templates/tagged/thesis",
+    entry: "main.tex",
+    files: {
+      "main.tex": thesisTemplate(),
+      "references.bib": ""
+    }
+  },
+  {
+    id: "research-poster",
+    name: "Research Poster",
+    description: "Beamer poster layout for conference posters.",
+    sourceName: "Overleaf poster templates",
+    sourceUrl: "https://www.overleaf.com/latex/templates/tagged/poster",
+    entry: "main.tex",
+    files: {
+      "main.tex": posterTemplate()
+    }
+  }
+];
+
+function publicBuiltInTemplate(template) {
+  return {
+    id: template.id,
+    name: template.name,
+    description: template.description,
+    sourceName: template.sourceName,
+    sourceUrl: template.sourceUrl,
+    kind: "online",
+    fileCount: Object.keys(template.files || {}).length
+  };
+}
+
+async function readCustomTemplates() {
+  try {
+    const raw = await fsp.readFile(templateStorePath(), "utf8");
+    return (JSON.parse(raw).templates || []).filter((template) => template && template.id && template.rootPath);
+  } catch (error) {
+    return [];
+  }
+}
+
+async function writeCustomTemplates(templates) {
+  await fsp.mkdir(path.dirname(templateStorePath()), { recursive: true });
+  await fsp.writeFile(templateStorePath(), JSON.stringify({ templates }, null, 2), "utf8");
+}
+
+function decorateCustomTemplate(template) {
+  return {
+    id: template.id,
+    name: template.name,
+    description: template.description || "Saved local LaTeX template.",
+    sourceName: template.sourceName || "Custom template",
+    sourceUrl: "",
+    kind: "custom",
+    texName: template.texPath ? path.basename(template.texPath) : "main.tex",
+    rootPath: template.rootPath,
+    createdAt: template.createdAt,
+    updatedAt: template.updatedAt
+  };
+}
+
+async function listTemplates() {
+  const custom = await readCustomTemplates();
+  return {
+    builtIn: BUILT_IN_TEMPLATES.map(publicBuiltInTemplate),
+    custom: custom.map(decorateCustomTemplate)
+  };
+}
+
+async function importTemplate() {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Add LaTeX Template",
+    buttonLabel: "Add Template",
+    properties: ["openFile", "openDirectory"],
+    filters: [
+      { name: "LaTeX templates", extensions: ["tex", "zip", "tar", "gz", "tgz"] },
+      { name: "All files", extensions: ["*"] }
+    ]
+  });
+
+  if (result.canceled || !result.filePaths.length) {
+    return listTemplates();
+  }
+
+  const sourcePath = path.resolve(result.filePaths[0]);
+  const stat = await fsp.stat(sourcePath);
+  const id = crypto.randomUUID();
+  const destination = path.join(templateRootPath(), id);
+  await fsp.mkdir(destination, { recursive: true });
+
+  if (stat.isDirectory()) {
+    await copyTemplateDirectory(sourcePath, destination);
+  } else if (path.extname(sourcePath).toLowerCase() === ".tex") {
+    await fsp.copyFile(sourcePath, path.join(destination, path.basename(sourcePath)));
+  } else if (isArchivePath(sourcePath)) {
+    await extractArchive(sourcePath, destination);
+  } else {
+    throw new Error(`Unsupported template import: ${path.basename(sourcePath)}`);
+  }
+
+  const texPath = await findProjectTexEntry(destination);
+  if (!texPath) {
+    await fsp.rm(destination, { recursive: true, force: true });
+    throw new Error("Template does not contain a .tex file.");
+  }
+
+  const now = new Date().toISOString();
+  const templateName = stat.isDirectory()
+    ? path.basename(sourcePath)
+    : (isArchivePath(sourcePath) ? archiveBaseName(sourcePath) : path.basename(sourcePath, path.extname(sourcePath)));
+  const name = titleCase(templateName.replace(/[-_]+/g, " "));
+  const templates = await readCustomTemplates();
+  templates.unshift({
+    id,
+    name,
+    description: "Saved local LaTeX template.",
+    rootPath: destination,
+    texPath,
+    createdAt: now,
+    updatedAt: now
+  });
+  await writeCustomTemplates(templates);
+  return listTemplates();
+}
+
+async function removeTemplate(_event, templateId) {
+  const templates = await readCustomTemplates();
+  const template = templates.find((item) => item.id === templateId);
+  const nextTemplates = templates.filter((item) => item.id !== templateId);
+  await writeCustomTemplates(nextTemplates);
+
+  if (template && template.rootPath) {
+    const root = path.resolve(templateRootPath());
+    const templatePath = path.resolve(template.rootPath);
+    if (templatePath.startsWith(`${root}${path.sep}`)) {
+      await fsp.rm(templatePath, { recursive: true, force: true });
+    }
+  }
+
+  return listTemplates();
+}
+
+async function createProjectFromTemplate(_event, templateId) {
+  const id = String(templateId || "");
+  const builtIn = BUILT_IN_TEMPLATES.find((template) => template.id === id);
+  if (builtIn) {
+    const destination = await uniqueDirectory(projectLibraryRoot(), builtIn.name);
+    await writeTemplateFiles(destination, builtIn.files);
+    return registerProject(path.join(destination, builtIn.entry || "main.tex"), builtIn.name);
+  }
+
+  const templates = await readCustomTemplates();
+  const template = templates.find((item) => item.id === id);
+  if (!template) throw new Error("Template not found.");
+
+  const destination = await uniqueDirectory(projectLibraryRoot(), template.name || "Template Project");
+  await copyTemplateDirectory(template.rootPath, destination);
+
+  let texPath = "";
+  if (template.texPath) {
+    const relativeEntry = path.relative(path.resolve(template.rootPath), path.resolve(template.texPath));
+    if (relativeEntry && !relativeEntry.startsWith("..") && !path.isAbsolute(relativeEntry)) {
+      const candidate = path.join(destination, relativeEntry);
+      if (fs.existsSync(candidate)) texPath = candidate;
+    }
+  }
+  if (!texPath) texPath = await findProjectTexEntry(destination);
+  if (!texPath) throw new Error("Template copy did not contain a .tex file.");
+
+  return registerProject(texPath, template.name);
+}
+
+async function writeTemplateFiles(destination, files) {
+  await fsp.mkdir(destination, { recursive: true });
+  for (const [relativePath, content] of Object.entries(files || {})) {
+    const filePath = path.resolve(destination, relativePath);
+    if (filePath !== destination && !filePath.startsWith(`${path.resolve(destination)}${path.sep}`)) {
+      throw new Error("Template file path escapes destination.");
+    }
+    await fsp.mkdir(path.dirname(filePath), { recursive: true });
+    await fsp.writeFile(filePath, content, "utf8");
+  }
+}
+
+async function copyTemplateDirectory(sourceDir, destination) {
+  const skipNames = new Set([".git", "node_modules", "__pycache__"]);
+  await fsp.cp(sourceDir, destination, {
+    recursive: true,
+    filter: (source) => {
+      const name = path.basename(source);
+      if (name === ".DS_Store") return false;
+      return !skipNames.has(name);
+    }
+  });
 }
 
 async function findProjectTexEntry(rootDir) {
@@ -1396,6 +2146,10 @@ async function saveAgents(_event, payload = {}) {
 ipcMain.handle("list-projects", listProjects);
 ipcMain.handle("add-project", addProject);
 ipcMain.handle("add-project-from-path", addProjectFromPath);
+ipcMain.handle("list-templates", listTemplates);
+ipcMain.handle("import-template", importTemplate);
+ipcMain.handle("remove-template", removeTemplate);
+ipcMain.handle("create-project-from-template", createProjectFromTemplate);
 ipcMain.handle("rename-project", renameProject);
 ipcMain.handle("remove-project", removeProject);
 ipcMain.handle("list-project-files", listProjectFiles);

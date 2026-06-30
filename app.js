@@ -7,17 +7,21 @@ const projectSearch = document.getElementById("projectSearch");
 const projectGridButton = document.getElementById("projectGridButton");
 const projectRowsButton = document.getElementById("projectRowsButton");
 const addProjectButton = document.getElementById("addProjectButton");
+const templatesButton = document.getElementById("templatesButton");
 const newProjectPanel = document.getElementById("newProjectPanel");
 const closeNewProjectButton = document.getElementById("closeNewProjectButton");
 const projectDropZone = document.getElementById("projectDropZone");
 const projectImportButtons = Array.from(document.querySelectorAll("[data-project-kind]"));
 const refreshProjectsButton = document.getElementById("refreshProjectsButton");
 const backToProjectsButton = document.getElementById("backToProjectsButton");
+const commandPalette = document.getElementById("commandPalette");
+const commandPaletteInput = document.getElementById("commandPaletteInput");
+const commandPaletteList = document.getElementById("commandPaletteList");
 const fileRail = document.getElementById("fileRail");
 const fileRailButton = document.getElementById("fileRailButton");
 const filePane = document.getElementById("filePane");
 const fileSplitter = document.getElementById("fileSplitter");
-const refreshFilesButton = document.getElementById("refreshFilesButton");
+const topRefreshFilesButton = document.getElementById("topRefreshFilesButton");
 const railRefreshFilesButton = document.getElementById("railRefreshFilesButton");
 const fileTree = document.getElementById("fileTree");
 const filePreview = document.getElementById("filePreview");
@@ -52,11 +56,18 @@ const sourceModeButton = document.getElementById("sourceModeButton");
 const visualModeButton = document.getElementById("visualModeButton");
 const suggestionModeButton = document.getElementById("suggestionModeButton");
 const editorTitle = document.getElementById("editorTitle");
+const vimModeBadge = document.getElementById("vimModeBadge");
 const activeDocumentTitle = document.getElementById("activeDocumentTitle");
 const topSaveStatusButton = document.getElementById("topSaveStatusButton");
 const topSaveStatusLabel = document.getElementById("topSaveStatusLabel");
 const settingsButtons = Array.from(document.querySelectorAll(".settingsButton"));
 const settingsBackdrop = document.getElementById("settingsBackdrop");
+const templatesPanel = document.getElementById("templatesPanel");
+const closeTemplatesButton = document.getElementById("closeTemplatesButton");
+const importTemplateButton = document.getElementById("importTemplateButton");
+const onlineTemplateGrid = document.getElementById("onlineTemplateGrid");
+const customTemplateGrid = document.getElementById("customTemplateGrid");
+const customTemplateEmpty = document.getElementById("customTemplateEmpty");
 const settingsDrawer = document.getElementById("settingsDrawer");
 const closeSettingsButton = document.getElementById("closeSettingsButton");
 const settingsTitle = document.getElementById("settingsTitle");
@@ -72,6 +83,7 @@ const settingsPdfRenderModeButtons = Array.from(document.querySelectorAll("[data
 const settingsPdfGuardRange = document.getElementById("settingsPdfGuardRange");
 const settingsPdfGuardValue = document.getElementById("settingsPdfGuardValue");
 const settingsVimModeToggle = document.getElementById("settingsVimModeToggle");
+const settingsRelativeLineNumbersToggle = document.getElementById("settingsRelativeLineNumbersToggle");
 const pdfZoomOutButton = document.getElementById("pdfZoomOutButton");
 const pdfZoomInButton = document.getElementById("pdfZoomInButton");
 const pdfZoomLabel = document.getElementById("pdfZoomLabel");
@@ -126,6 +138,13 @@ const TRASH_ICON_SVG = `
     <path d="M10 10v6M14 10v6"></path>
   </svg>
 `;
+const EXTERNAL_LINK_ICON_SVG = `
+  <svg class="icon icon-external" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M14 3h7v7"></path>
+    <path d="M10 14 21 3"></path>
+    <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path>
+  </svg>
+`;
 const THEME_VARIABLES = [
   "--bg",
   "--glass",
@@ -154,7 +173,12 @@ const THEME_VARIABLES = [
   "--pdf-page-filter",
   "--pdf-dark-bg",
   "--pdf-dark-paper",
-  "--pdf-dark-filter"
+  "--pdf-dark-filter",
+  "--terminal-bg",
+  "--terminal-header-bg",
+  "--terminal-text",
+  "--terminal-muted",
+  "--terminal-selection"
 ];
 const HIGH_CONTRAST_PRESETS = new Set(["github-light", "abyss", "tomorrow-night-blue"]);
 const THEME_PRESETS = {
@@ -344,6 +368,68 @@ const THEME_PRESETS = {
       "--cm-comment": "#93a1a1",
       "--cm-string": "#b58900",
       "--cm-number": "#d33682"
+    }
+  },
+  "catppuccin-latte": {
+    theme: "light",
+    accent: "#1e66f5",
+    background: "linear-gradient(135deg, #eff1f5, #e6e9ef 70%, #dce0e8)",
+    colors: {
+      "--bg": "#eff1f5",
+      "--glass": "rgba(239, 241, 245, 0.76)",
+      "--glass-strong": "rgba(230, 233, 239, 0.92)",
+      "--panel": "rgba(239, 241, 245, 0.94)",
+      "--page": "#ffffff",
+      "--text": "#4c4f69",
+      "--muted": "#6c6f85",
+      "--border": "rgba(108, 111, 133, 0.22)",
+      "--border-strong": "rgba(76, 79, 105, 0.36)",
+      "--red": "#d20f39",
+      "--green": "#40a02b",
+      "--blue": "#1e66f5",
+      "--blue-dark": "#1a56cf",
+      "--cm-bg": "#eff1f5",
+      "--cm-gutter": "#e6e9ef",
+      "--cm-text": "#4c4f69",
+      "--cm-keyword": "#8839ef",
+      "--cm-variable": "#1e66f5",
+      "--cm-atom": "#179299",
+      "--cm-comment": "#8c8fa1",
+      "--cm-string": "#40a02b",
+      "--cm-number": "#fe640b",
+      "--pdf-bg": "#ccd0da",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "min-light": {
+    theme: "light",
+    accent: "#007acc",
+    background: "linear-gradient(135deg, #ffffff, #f8fafc 72%, #edf2f7)",
+    colors: {
+      "--bg": "#f8fafc",
+      "--glass": "rgba(255, 255, 255, 0.78)",
+      "--glass-strong": "rgba(255, 255, 255, 0.94)",
+      "--panel": "rgba(255, 255, 255, 0.94)",
+      "--page": "#ffffff",
+      "--text": "#1a202c",
+      "--muted": "#718096",
+      "--border": "rgba(113, 128, 150, 0.2)",
+      "--border-strong": "rgba(74, 85, 104, 0.32)",
+      "--red": "#e53e3e",
+      "--green": "#38a169",
+      "--blue": "#007acc",
+      "--blue-dark": "#005a9e",
+      "--cm-bg": "#ffffff",
+      "--cm-gutter": "#f7fafc",
+      "--cm-text": "#1a202c",
+      "--cm-keyword": "#805ad5",
+      "--cm-variable": "#3182ce",
+      "--cm-atom": "#319795",
+      "--cm-comment": "#a0aec0",
+      "--cm-string": "#2f855a",
+      "--cm-number": "#dd6b20",
+      "--pdf-bg": "#d8dee8",
+      "--pdf-paper": "#ffffff"
     }
   },
   "github-light": {
@@ -582,6 +668,134 @@ const THEME_PRESETS = {
       "--cm-number": "#f06431"
     }
   },
+  "catppuccin-mocha": {
+    theme: "dark",
+    accent: "#89b4fa",
+    background: "linear-gradient(135deg, #1e1e2e, #181825 70%, #11111b)",
+    colors: {
+      "--bg": "#1e1e2e",
+      "--glass": "rgba(30, 30, 46, 0.78)",
+      "--glass-strong": "rgba(24, 24, 37, 0.92)",
+      "--panel": "rgba(30, 30, 46, 0.94)",
+      "--page": "#f5f5ff",
+      "--text": "#cdd6f4",
+      "--muted": "#a6adc8",
+      "--border": "rgba(205, 214, 244, 0.16)",
+      "--border-strong": "rgba(205, 214, 244, 0.3)",
+      "--red": "#f38ba8",
+      "--green": "#a6e3a1",
+      "--blue": "#89b4fa",
+      "--blue-dark": "#74a7fa",
+      "--cm-bg": "#1e1e2e",
+      "--cm-gutter": "#181825",
+      "--cm-text": "#cdd6f4",
+      "--cm-keyword": "#cba6f7",
+      "--cm-variable": "#89b4fa",
+      "--cm-atom": "#94e2d5",
+      "--cm-comment": "#6c7086",
+      "--cm-string": "#a6e3a1",
+      "--cm-number": "#fab387",
+      "--pdf-bg": "#11111b",
+      "--pdf-paper": "#f5f5ff",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.12)"
+    }
+  },
+  "tokyo-night": {
+    theme: "dark",
+    accent: "#7aa2f7",
+    background: "linear-gradient(135deg, #1a1b26, #16161e 72%, #0f1018)",
+    colors: {
+      "--bg": "#1a1b26",
+      "--glass": "rgba(26, 27, 38, 0.78)",
+      "--glass-strong": "rgba(22, 22, 30, 0.92)",
+      "--panel": "rgba(26, 27, 38, 0.94)",
+      "--page": "#f4f6ff",
+      "--text": "#c0caf5",
+      "--muted": "#9aa5ce",
+      "--border": "rgba(192, 202, 245, 0.16)",
+      "--border-strong": "rgba(192, 202, 245, 0.3)",
+      "--red": "#f7768e",
+      "--green": "#9ece6a",
+      "--blue": "#7aa2f7",
+      "--blue-dark": "#5f82d6",
+      "--cm-bg": "#1a1b26",
+      "--cm-gutter": "#16161e",
+      "--cm-text": "#c0caf5",
+      "--cm-keyword": "#bb9af7",
+      "--cm-variable": "#7dcfff",
+      "--cm-atom": "#2ac3de",
+      "--cm-comment": "#565f89",
+      "--cm-string": "#9ece6a",
+      "--cm-number": "#ff9e64",
+      "--pdf-bg": "#0f1018",
+      "--pdf-paper": "#f4f6ff",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.1)"
+    }
+  },
+  "ayu-dark": {
+    theme: "dark",
+    accent: "#ffcc66",
+    background: "linear-gradient(135deg, #0f1419, #111822 72%, #0a0e13)",
+    colors: {
+      "--bg": "#0f1419",
+      "--glass": "rgba(15, 20, 25, 0.78)",
+      "--glass-strong": "rgba(17, 24, 34, 0.92)",
+      "--panel": "rgba(15, 20, 25, 0.94)",
+      "--page": "#fff9ec",
+      "--text": "#e6e1cf",
+      "--muted": "#b3b1ad",
+      "--border": "rgba(230, 225, 207, 0.16)",
+      "--border-strong": "rgba(230, 225, 207, 0.3)",
+      "--red": "#f07178",
+      "--green": "#aad94c",
+      "--blue": "#59c2ff",
+      "--blue-dark": "#39a7e8",
+      "--cm-bg": "#0f1419",
+      "--cm-gutter": "#111822",
+      "--cm-text": "#e6e1cf",
+      "--cm-keyword": "#ff8f40",
+      "--cm-variable": "#59c2ff",
+      "--cm-atom": "#95e6cb",
+      "--cm-comment": "#5c6773",
+      "--cm-string": "#aad94c",
+      "--cm-number": "#d2a6ff",
+      "--pdf-bg": "#0a0e13",
+      "--pdf-paper": "#fff9ec",
+      "--pdf-page-filter": "invert(0.85) hue-rotate(180deg) contrast(0.88) brightness(1.1)"
+    }
+  },
+  palenight: {
+    theme: "dark",
+    accent: "#82aaff",
+    background: "linear-gradient(135deg, #292d3e, #222638 72%, #1b1e2d)",
+    colors: {
+      "--bg": "#292d3e",
+      "--glass": "rgba(41, 45, 62, 0.78)",
+      "--glass-strong": "rgba(34, 38, 56, 0.92)",
+      "--panel": "rgba(41, 45, 62, 0.94)",
+      "--page": "#f7f8ff",
+      "--text": "#a6accd",
+      "--muted": "#8796b0",
+      "--border": "rgba(166, 172, 205, 0.16)",
+      "--border-strong": "rgba(166, 172, 205, 0.3)",
+      "--red": "#f07178",
+      "--green": "#c3e88d",
+      "--blue": "#82aaff",
+      "--blue-dark": "#6d8fe8",
+      "--cm-bg": "#292d3e",
+      "--cm-gutter": "#222638",
+      "--cm-text": "#a6accd",
+      "--cm-keyword": "#c792ea",
+      "--cm-variable": "#82aaff",
+      "--cm-atom": "#89ddff",
+      "--cm-comment": "#676e95",
+      "--cm-string": "#c3e88d",
+      "--cm-number": "#f78c6c",
+      "--pdf-bg": "#1b1e2d",
+      "--pdf-paper": "#f7f8ff",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.1)"
+    }
+  },
   "tomorrow-night-blue": {
     theme: "dark",
     accent: "#bbdaff",
@@ -634,6 +848,7 @@ const COMPILE_LOG_COLLAPSE_THRESHOLD = 72;
 
 let editor;
 let projects = [];
+let templateLibrary = { builtIn: [], custom: [] };
 let projectFiles = [];
 let activeProject = null;
 let activeFile = null;
@@ -661,6 +876,7 @@ let pdfDarkMode = false;
 let pdfRenderMode = "adaptive";
 let projectViewMode = "grid";
 let vimModeEnabled = false;
+let relativeLineNumbersEnabled = false;
 let terminalSessions = [];
 let activeTerminalId = null;
 let splitTerminalIds = [];
@@ -669,6 +885,8 @@ let suggestionState = null;
 let agentsLoadToken = 0;
 let fileContextMenu = null;
 let projectContextMenu = null;
+let commandPaletteItems = [];
+let commandPaletteActiveIndex = 0;
 let copiedProjectItem = null;
 let draggedTextTabPath = "";
 let sourceMinimapFrame = 0;
@@ -678,6 +896,7 @@ let aiProfile = {};
 init();
 
 async function init() {
+  relativeLineNumbersEnabled = localStorage.getItem("latexStudioRelativeLineNumbers") === "true";
   setupSettings();
   setupSourceEditor();
   setupTerminalPanel();
@@ -689,6 +908,7 @@ function setupSourceEditor() {
   editor = CodeMirror.fromTextArea(latexSource, {
     keyMap: vimModeEnabled ? "vim" : "default",
     mode: "stex",
+    gutters: ["relative-line-gutter", "CodeMirror-linenumbers"],
     lineNumbers: true,
     lineWrapping: true,
     indentUnit: 2,
@@ -705,8 +925,11 @@ function setupSourceEditor() {
       return;
     }
     handleSourceChanged({ renderVisual: !visualEditor.hidden });
+    updateRelativeLineNumbers();
   });
   editor.on("scroll", updateSourceMinimapViewport);
+  editor.on("cursorActivity", updateRelativeLineNumbers);
+  editor.on("viewportChange", updateRelativeLineNumbers);
   setupSourceMinimap();
   scheduleSourceMinimapUpdate();
 }
@@ -731,6 +954,7 @@ function setupSettings() {
   );
   projectViewMode = localStorage.getItem("latexStudioProjectView") === "rows" ? "rows" : "grid";
   vimModeEnabled = localStorage.getItem("latexStudioVimMode") === "true";
+  relativeLineNumbersEnabled = localStorage.getItem("latexStudioRelativeLineNumbers") === "true";
   aiProfile = readAiProfile();
 
   applyTheme(savedTheme, savedAccent, { presetId: savedPreset });
@@ -740,6 +964,7 @@ function setupSettings() {
   applyCompileLogLayout({ height: compileLogHeight, collapsed: compileLogCollapsed });
   autoSaveToggle.checked = autoSaveEnabled;
   settingsVimModeToggle.checked = vimModeEnabled;
+  settingsRelativeLineNumbersToggle.checked = relativeLineNumbersEnabled;
   updatePdfRenderModeButtons();
   populateProfileForm();
   updateSaveButtonVisibility();
@@ -787,6 +1012,12 @@ function setupSettings() {
     vimModeEnabled = settingsVimModeToggle.checked;
     localStorage.setItem("latexStudioVimMode", String(vimModeEnabled));
     applyEditorKeyMap();
+  });
+
+  settingsRelativeLineNumbersToggle.addEventListener("change", () => {
+    relativeLineNumbersEnabled = settingsRelativeLineNumbersToggle.checked;
+    localStorage.setItem("latexStudioRelativeLineNumbers", String(relativeLineNumbersEnabled));
+    updateRelativeLineNumbers();
   });
 
   autoSaveToggle.addEventListener("change", () => {
@@ -885,6 +1116,7 @@ function syncSurfaceThemesToAppTheme(theme, { persist = true } = {}) {
 function applyThemeVariables(preset) {
   const presetColors = (preset && preset.colors) || {};
   const presetDark = Boolean(preset && preset.theme === "dark");
+  const presetAccentRgb = hexToRgb((preset && preset.accent) || DEFAULT_ACCENT);
   const derivedColors = preset
     ? {
         "--cm-bg": presetDark ? presetColors["--bg"] : "#ffffff",
@@ -901,7 +1133,16 @@ function applyThemeVariables(preset) {
         "--pdf-page-filter": presetDark ? "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.12)" : "none",
         "--pdf-dark-bg": presetColors["--bg"] || "#1f2937",
         "--pdf-dark-paper": presetColors["--cm-bg"] || presetColors["--panel"] || presetColors["--bg"] || "#111827",
-        "--pdf-dark-filter": "invert(0.86) hue-rotate(180deg) contrast(0.88) brightness(1.16)"
+        "--pdf-dark-filter": "invert(0.86) hue-rotate(180deg) contrast(0.88) brightness(1.16)",
+        "--terminal-bg": presetDark
+          ? (presetColors["--cm-bg"] || presetColors["--bg"] || "#111827")
+          : (presetColors["--cm-bg"] || presetColors["--page"] || "#ffffff"),
+        "--terminal-header-bg": presetDark
+          ? (presetColors["--panel"] || presetColors["--bg"] || "#111827")
+          : (presetColors["--panel"] || presetColors["--page"] || "#ffffff"),
+        "--terminal-text": presetColors["--cm-text"] || presetColors["--text"],
+        "--terminal-muted": presetColors["--muted"],
+        "--terminal-selection": `rgba(${presetAccentRgb.r}, ${presetAccentRgb.g}, ${presetAccentRgb.b}, 0.2)`
       }
     : {};
 
@@ -1078,6 +1319,39 @@ function updatePdfRenderModeButtons() {
 function applyEditorKeyMap() {
   if (!editor) return;
   editor.setOption("keyMap", vimModeEnabled ? "vim" : "default");
+  updateVimModeBadge();
+}
+
+function updateVimModeBadge() {
+  if (!vimModeBadge) return;
+  vimModeBadge.hidden = !vimModeEnabled;
+}
+
+function updateRelativeLineNumbers() {
+  if (!editor) return;
+  if (!relativeLineNumbersEnabled) {
+    editor.operation(() => {
+      for (let line = 0; line < editor.lineCount(); line += 1) {
+        editor.setGutterMarker(line, "relative-line-gutter", null);
+      }
+    });
+    return;
+  }
+
+  const info = editor.getScrollInfo();
+  const from = editor.lineAtHeight(info.top, "local");
+  const to = editor.lineAtHeight(info.top + info.clientHeight, "local");
+  const cursorLine = editor.getCursor().line;
+
+  editor.operation(() => {
+    for (let line = from; line <= to; line += 1) {
+      const marker = document.createElement("span");
+      marker.className = "relative-line-number";
+      const distance = Math.abs(line - cursorLine);
+      marker.textContent = distance === 0 ? "" : String(distance);
+      editor.setGutterMarker(line, "relative-line-gutter", marker);
+    }
+  });
 }
 
 function resolvedTerminalTheme() {
@@ -1369,6 +1643,11 @@ function wireEvents() {
   closeSettingsButton.addEventListener("click", closeSettings);
   settingsBackdrop.addEventListener("click", closeOverlayModals);
   closeNewProjectButton.addEventListener("click", closeNewProjectPanel);
+  templatesButton.addEventListener("click", openTemplatesPanel);
+  closeTemplatesButton.addEventListener("click", closeTemplatesPanel);
+  importTemplateButton.addEventListener("click", importCustomTemplate);
+  commandPaletteInput.addEventListener("input", renderCommandPalette);
+  commandPaletteInput.addEventListener("keydown", handleCommandPaletteKeydown);
   fileRailButton.addEventListener("click", () => setFileSidebarVisible(true));
   addProjectButton.addEventListener("click", () => toggleNewProjectPanel());
   projectImportButtons.forEach((button) => {
@@ -1380,8 +1659,8 @@ function wireEvents() {
   projectGridButton.addEventListener("click", () => setProjectView("grid"));
   projectRowsButton.addEventListener("click", () => setProjectView("rows"));
   backToProjectsButton.addEventListener("click", showProjects);
-  refreshFilesButton.addEventListener("click", loadProjectFiles);
-  railRefreshFilesButton.addEventListener("click", loadProjectFiles);
+  topRefreshFilesButton.addEventListener("click", refreshActiveProject);
+  railRefreshFilesButton.addEventListener("click", refreshActiveProject);
   wireFileDrop(filePane);
   saveButton.addEventListener("click", saveManuscript);
   compileButton.addEventListener("click", () => compileManuscript({ manual: true }));
@@ -1463,6 +1742,7 @@ function wireEvents() {
   if (window.localOverleaf) {
     window.localOverleaf.onCommand((command) => {
       if (command === "add-project") toggleNewProjectPanel(true);
+      if (command === "command-palette") openCommandPalette();
       if (command === "projects") showProjects();
       if (command === "save") saveManuscript();
       if (command === "compile") compileManuscript({ manual: true });
@@ -1479,6 +1759,18 @@ function handleGlobalShortcut(event) {
   if (event.defaultPrevented) return;
 
   if (event.key === "Escape") {
+    if (!commandPalette.hidden) {
+      event.preventDefault();
+      closeCommandPalette();
+      return;
+    }
+
+    if (!templatesPanel.hidden) {
+      event.preventDefault();
+      closeTemplatesPanel();
+      return;
+    }
+
     if (!newProjectPanel.hidden) {
       event.preventDefault();
       closeNewProjectPanel();
@@ -1514,6 +1806,12 @@ function handleGlobalShortcut(event) {
   if (!shortcut) return;
 
   const key = event.key.toLowerCase();
+  if (key === "p" && !event.shiftKey) {
+    event.preventDefault();
+    openCommandPalette();
+    return;
+  }
+
   if (key === "f" && !event.shiftKey) {
     event.preventDefault();
     openFind();
@@ -1573,7 +1871,9 @@ function handleGlobalShortcut(event) {
 }
 
 function openSettings() {
+  closeCommandPalette();
   closeNewProjectPanel({ keepBackdrop: true });
+  closeTemplatesPanel({ keepBackdrop: true });
   settingsBackdrop.hidden = false;
   settingsDrawer.hidden = false;
   const activeSection = settingsDrawer.dataset.activeSection || "appearance";
@@ -1587,13 +1887,258 @@ function closeSettings({ keepBackdrop = false } = {}) {
 }
 
 function closeOverlayModals() {
+  closeCommandPalette();
   closeSettings({ keepBackdrop: true });
   closeNewProjectPanel({ keepBackdrop: true });
+  closeTemplatesPanel({ keepBackdrop: true });
   updateOverlayBackdrop();
 }
 
 function updateOverlayBackdrop() {
-  settingsBackdrop.hidden = settingsDrawer.hidden && newProjectPanel.hidden;
+  settingsBackdrop.hidden = settingsDrawer.hidden && newProjectPanel.hidden && templatesPanel.hidden && commandPalette.hidden;
+}
+
+async function openTemplatesPanel() {
+  closeCommandPalette();
+  closeSettings({ keepBackdrop: true });
+  closeNewProjectPanel({ keepBackdrop: true });
+  settingsBackdrop.hidden = false;
+  templatesPanel.hidden = false;
+  templatesButton.classList.add("active");
+  await loadTemplates();
+}
+
+function closeTemplatesPanel({ keepBackdrop = false } = {}) {
+  templatesPanel.hidden = true;
+  templatesButton.classList.remove("active");
+  if (!keepBackdrop) updateOverlayBackdrop();
+}
+
+async function loadTemplates() {
+  onlineTemplateGrid.innerHTML = '<div class="template-loading">Loading templates...</div>';
+  customTemplateGrid.innerHTML = "";
+  customTemplateEmpty.hidden = true;
+
+  try {
+    templateLibrary = await window.localOverleaf.listTemplates();
+    renderTemplates();
+  } catch (error) {
+    onlineTemplateGrid.innerHTML = `<div class="template-loading project-error">${escapeHtml(formatError(error))}</div>`;
+  }
+}
+
+function renderTemplates() {
+  renderTemplateGrid(onlineTemplateGrid, templateLibrary.builtIn || [], { custom: false });
+  renderTemplateGrid(customTemplateGrid, templateLibrary.custom || [], { custom: true });
+  customTemplateEmpty.hidden = Boolean((templateLibrary.custom || []).length);
+}
+
+function renderTemplateGrid(container, templates, { custom }) {
+  container.innerHTML = "";
+  templates.forEach((template) => {
+    const card = document.createElement("article");
+    card.className = "template-card";
+    card.innerHTML = `
+      <div>
+        <h4>${escapeHtml(template.name)}</h4>
+        <p>${escapeHtml(template.description || "")}</p>
+        <small>${escapeHtml(template.sourceName || (custom ? "Custom template" : "Online template"))}</small>
+      </div>
+      <div class="template-card-actions">
+        <button class="template-use-button" type="button">Use</button>
+        ${template.sourceUrl ? `<button class="template-source-button" type="button" title="Open template source">${EXTERNAL_LINK_ICON_SVG}<span>Source</span></button>` : ""}
+        ${custom ? '<button class="template-remove-button" type="button">Remove</button>' : ""}
+      </div>
+    `;
+
+    card.querySelector(".template-use-button").addEventListener("click", () => createProjectFromTemplate(template.id));
+    const sourceButton = card.querySelector(".template-source-button");
+    if (sourceButton) {
+      sourceButton.addEventListener("click", () => window.localOverleaf.openExternalLink(template.sourceUrl));
+    }
+    const removeButton = card.querySelector(".template-remove-button");
+    if (removeButton) {
+      removeButton.addEventListener("click", () => removeCustomTemplate(template));
+    }
+    container.appendChild(card);
+  });
+}
+
+async function importCustomTemplate() {
+  setProjectBusy(true);
+  try {
+    templateLibrary = await window.localOverleaf.importTemplate();
+    renderTemplates();
+  } catch (error) {
+    customTemplateGrid.innerHTML = `<div class="template-loading project-error">${escapeHtml(formatError(error))}</div>`;
+    customTemplateEmpty.hidden = true;
+  } finally {
+    setProjectBusy(false);
+  }
+}
+
+async function removeCustomTemplate(template) {
+  const confirmed = window.confirm(`Remove "${template.name}" from your templates?\n\nThis will not delete any projects created from it.`);
+  if (!confirmed) return;
+
+  setProjectBusy(true);
+  try {
+    templateLibrary = await window.localOverleaf.removeTemplate(template.id);
+    renderTemplates();
+  } catch (error) {
+    customTemplateGrid.innerHTML = `<div class="template-loading project-error">${escapeHtml(formatError(error))}</div>`;
+    customTemplateEmpty.hidden = true;
+  } finally {
+    setProjectBusy(false);
+  }
+}
+
+async function createProjectFromTemplate(templateId) {
+  setProjectBusy(true);
+  try {
+    const result = await window.localOverleaf.createProjectFromTemplate(templateId);
+    projects = result.projects || projects;
+    renderProjectGrid();
+    closeTemplatesPanel();
+    if (result.project) await openProject(result.project.id);
+  } catch (error) {
+    onlineTemplateGrid.innerHTML = `<div class="template-loading project-error">${escapeHtml(formatError(error))}</div>`;
+  } finally {
+    setProjectBusy(false);
+  }
+}
+
+function openCommandPalette(initialValue = "") {
+  closeSettings({ keepBackdrop: true });
+  closeNewProjectPanel({ keepBackdrop: true });
+  closeTemplatesPanel({ keepBackdrop: true });
+  settingsBackdrop.hidden = false;
+  commandPalette.hidden = false;
+  commandPaletteInput.value = initialValue;
+  commandPaletteActiveIndex = 0;
+  renderCommandPalette();
+  requestAnimationFrame(() => {
+    commandPaletteInput.focus();
+    commandPaletteInput.select();
+  });
+}
+
+function closeCommandPalette({ keepBackdrop = false } = {}) {
+  commandPalette.hidden = true;
+  commandPaletteItems = [];
+  if (!keepBackdrop) updateOverlayBackdrop();
+}
+
+function renderCommandPalette() {
+  const query = commandPaletteInput.value.trim();
+  commandPaletteItems = buildCommandPaletteItems(query).slice(0, 10);
+  commandPaletteActiveIndex = clampNumber(commandPaletteActiveIndex, 0, Math.max(commandPaletteItems.length - 1, 0), 0);
+  commandPaletteList.innerHTML = "";
+
+  commandPaletteItems.forEach((item, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "command-palette-item";
+    button.setAttribute("role", "option");
+    button.setAttribute("aria-selected", index === commandPaletteActiveIndex ? "true" : "false");
+    button.innerHTML = `
+      <span class="command-item-main">${escapeHtml(item.label)}</span>
+      <span class="command-item-sub">${escapeHtml(item.detail || "")}</span>
+      <kbd>${escapeHtml(item.hint || "")}</kbd>
+    `;
+    button.addEventListener("mouseenter", () => {
+      commandPaletteActiveIndex = index;
+      updateCommandPaletteSelection();
+    });
+    button.addEventListener("click", () => runCommandPaletteItem(item));
+    commandPaletteList.appendChild(button);
+  });
+
+  if (!commandPaletteItems.length) {
+    commandPaletteList.innerHTML = '<p class="command-empty">No commands found.</p>';
+  }
+}
+
+function buildCommandPaletteItems(rawQuery) {
+  const query = rawQuery.toLowerCase();
+  const isOpenMode = query.startsWith("/open");
+  const search = isOpenMode ? query.replace(/^\/open\s*/, "") : query.replace(/^\//, "");
+  const commands = [
+    { id: "open", label: "/open", detail: "Open a project", hint: "projects", action: () => openCommandPalette("/open ") },
+    { id: "new", label: "/new", detail: "Create a new project", hint: "project", action: () => { closeCommandPalette(); toggleNewProjectPanel(true); } },
+    { id: "templates", label: "/templates", detail: "Browse and add LaTeX templates", hint: "library", action: () => { closeCommandPalette({ keepBackdrop: true }); openTemplatesPanel(); } },
+    { id: "settings", label: "/settings", detail: "Open settings", hint: "Cmd+,", action: () => { closeCommandPalette({ keepBackdrop: true }); openSettings(); } },
+    { id: "compile", label: "/compile", detail: "Compile the active PDF", hint: "Cmd+Enter", action: () => { closeCommandPalette(); compileManuscript({ manual: true }); } },
+    { id: "save", label: "/save", detail: "Save the active TeX file", hint: "Cmd+S", action: () => { closeCommandPalette(); saveManuscript(); } },
+    { id: "visual", label: "/visual", detail: "Switch to visual mode", hint: "view", action: () => { closeCommandPalette(); setMode("visual"); } },
+    { id: "code", label: "/code", detail: "Switch to code mode", hint: "view", action: () => { closeCommandPalette(); setMode("source"); } },
+    { id: "terminal", label: "/terminal", detail: "Toggle terminal", hint: "panel", action: () => { closeCommandPalette(); setTerminalCollapsed(!sourcePane.classList.contains("terminal-collapsed")); } },
+    { id: "files", label: "/files", detail: "Toggle file sidebar", hint: "sidebar", action: () => { closeCommandPalette(); setFileSidebarVisible(workspace.classList.contains("files-hidden")); } }
+  ];
+
+  if (isOpenMode || rawQuery === "" || !rawQuery.startsWith("/")) {
+    const projectItems = projects
+      .filter((project) => {
+        const haystack = `${project.name} ${project.texName} ${project.folderName}`.toLowerCase();
+        return !search || haystack.includes(search);
+      })
+      .map((project) => ({
+        id: `project:${project.id}`,
+        label: project.name,
+        detail: `${project.texName} · ${project.folderName}`,
+        hint: "open",
+        action: () => {
+          closeCommandPalette();
+          openProject(project.id);
+        }
+      }));
+
+    if (isOpenMode) return projectItems;
+    return [
+      ...commands.filter((item) => !query || `${item.label} ${item.detail}`.toLowerCase().includes(query)),
+      ...projectItems
+    ];
+  }
+
+  return commands.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query));
+}
+
+function updateCommandPaletteSelection() {
+  Array.from(commandPaletteList.querySelectorAll(".command-palette-item")).forEach((item, index) => {
+    item.setAttribute("aria-selected", index === commandPaletteActiveIndex ? "true" : "false");
+  });
+}
+
+function handleCommandPaletteKeydown(event) {
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    commandPaletteActiveIndex = commandPaletteItems.length ? (commandPaletteActiveIndex + 1) % commandPaletteItems.length : 0;
+    updateCommandPaletteSelection();
+    return;
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    commandPaletteActiveIndex = commandPaletteItems.length ? (commandPaletteActiveIndex - 1 + commandPaletteItems.length) % commandPaletteItems.length : 0;
+    updateCommandPaletteSelection();
+    return;
+  }
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    const item = commandPaletteItems[commandPaletteActiveIndex];
+    if (item) runCommandPaletteItem(item);
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeCommandPalette();
+  }
+}
+
+function runCommandPaletteItem(item) {
+  if (item && typeof item.action === "function") item.action();
 }
 
 function setSettingsPanel(section) {
@@ -1722,11 +2267,12 @@ function schedulePdfZoomRender(delay = 220) {
 }
 
 function handlePdfWheelZoom(event) {
-  if (!event.ctrlKey) return;
+  if (!event.ctrlKey && !event.shiftKey) return;
 
   event.preventDefault();
   event.stopPropagation();
-  const factor = Math.exp(-event.deltaY * 0.003);
+  const wheelDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+  const factor = Math.exp(-wheelDelta * 0.003);
   setPdfZoom(pdfZoom * factor, { render: false, live: true });
   schedulePdfZoomRender();
 }
@@ -2044,11 +2590,11 @@ function terminalTheme() {
   const dark = resolvedTerminalTheme() === "dark";
   const accentRgb = themeColor("--accent-rgb", "249, 115, 22");
   return {
-    background: dark ? themeColor("--bg", "#111827") : themeColor("--page", "#f8fafc"),
-    foreground: themeColor("--text", dark ? "#e5edf7" : "#1f2937"),
+    background: themeColor("--terminal-bg", dark ? "#111827" : "#ffffff"),
+    foreground: themeColor("--terminal-text", dark ? "#e5edf7" : "#1f2937"),
     cursor: themeColor("--accent", DEFAULT_ACCENT),
-    selectionBackground: `rgba(${accentRgb}, 0.32)`,
-    black: dark ? "#111827" : "#1f2937",
+    selectionBackground: themeColor("--terminal-selection", `rgba(${accentRgb}, 0.2)`),
+    black: dark ? themeColor("--bg", "#111827") : themeColor("--cm-text", "#1f2937"),
     red: themeColor("--red", "#ef4444"),
     green: themeColor("--green", "#22c55e"),
     yellow: dark ? "#fbbf24" : "#b45309",
@@ -2468,9 +3014,9 @@ async function renderProjectPreview(card, project) {
     if (!card.isConnected) return;
 
     const baseViewport = page.getViewport({ scale: 1 });
-    const fitWidth = Math.max(120, preview.clientWidth - 24) / baseViewport.width;
-    const fitHeight = Math.max(120, preview.clientHeight - 18) / baseViewport.height;
-    const scale = Math.min(fitWidth, fitHeight);
+    const targetWidth = Math.max(120, preview.clientWidth);
+    const targetHeight = Math.max(120, preview.clientHeight);
+    const scale = Math.max(targetWidth / baseViewport.width, targetHeight / baseViewport.height) * 1.08;
     const viewport = page.getViewport({ scale });
     const outputScale = Math.min(window.devicePixelRatio || 1, 2);
     const canvas = document.createElement("canvas");
@@ -2498,7 +3044,9 @@ function toggleNewProjectPanel(force) {
 }
 
 function openNewProjectPanel() {
+  closeCommandPalette();
   closeSettings({ keepBackdrop: true });
+  closeTemplatesPanel({ keepBackdrop: true });
   settingsBackdrop.hidden = false;
   newProjectPanel.hidden = false;
   addProjectButton.classList.add("active");
@@ -2979,13 +3527,33 @@ async function fileToImportPayload(file) {
 }
 
 async function reloadFromDisk() {
-  if (!activeProject) return;
+  if (!activeProject) return false;
   if (getSourceText() !== savedText) {
     const confirmed = window.confirm("Reload from disk and discard unsaved editor changes?");
-    if (!confirmed) return;
+    if (!confirmed) return false;
   }
 
   await loadProjectFile(activeFile ? activeFile.relativePath : "", { confirmUnsaved: false });
+  return true;
+}
+
+async function refreshActiveProject() {
+  if (!activeProject) return;
+  setCompileState("Refreshing project...");
+
+  try {
+    const reloaded = await reloadFromDisk();
+    if (!reloaded) {
+      setCompileState("Refresh cancelled");
+      return;
+    }
+    await loadProjectFiles();
+    await renderPdf({ showLoading: true });
+    setCompileState("Project refreshed", "ok");
+  } catch (error) {
+    setCompileState("Refresh failed", "error");
+    compileLog.textContent = formatError(error);
+  }
 }
 
 async function saveManuscript({ auto = false } = {}) {
@@ -4542,8 +5110,8 @@ function updateStats() {
   const text = getSourceText();
   const lines = text ? text.split("\n").length : 0;
   const words = (text.match(/\b[\w'-]+\b/g) || []).length;
-  const placeholders = (text.match(/XX/g) || []).length;
-  sourceStats.textContent = `${lines.toLocaleString()} lines · ${words.toLocaleString()} words · ${placeholders.toLocaleString()} XX`;
+  sourceStats.textContent = `${lines.toLocaleString()} lines · ${words.toLocaleString()} words`;
+  updateRelativeLineNumbers();
 }
 
 function setSaveState(message, type) {
@@ -4589,6 +5157,8 @@ function setBusy(value) {
 
 function setProjectBusy(value) {
   addProjectButton.disabled = value;
+  templatesButton.disabled = value;
+  importTemplateButton.disabled = value;
   refreshProjectsButton.disabled = value;
 }
 

@@ -19,6 +19,7 @@
           </div>
           <div class="hero-actions">
             <button id="addProjectButton" class="hero-action" type="button">New Project</button>
+            <button id="templatesButton" class="hero-action" type="button">Templates</button>
             <button class="settingsButton" type="button">Settings</button>
           </div>
         </header>
@@ -58,6 +59,14 @@
         </button>
         <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
         <div class="topbar-actions">
+          <button id="topRefreshFilesButton" class="topbar-action-button" type="button" title="Refresh project">
+            <span aria-hidden="true">&#8635;</span>
+            <span>Refresh Project</span>
+          </button>
+          <button class="settingsButton topbar-action-button" type="button" title="Settings">
+            <span aria-hidden="true">&#9881;</span>
+            <span>Settings</span>
+          </button>
           <div id="topSaveStatusButton" class="save-status" aria-live="polite" data-save-status="neutral">
             <span id="topSaveStatusLabel">Not loaded</span>
             <span class="save-status-icon" aria-hidden="true"></span>
@@ -87,16 +96,6 @@
           <div id="fileTree" class="file-tree" aria-label="Project files"></div>
           <div id="filePreview" class="file-preview" hidden></div>
           <footer class="file-pane-footer">
-            <div class="file-footer-actions">
-              <button id="refreshFilesButton" class="file-footer-icon" type="button" aria-label="Refresh files" title="Refresh files">
-                <span aria-hidden="true">&#8635;</span>
-                <span class="file-footer-label">Refresh Project</span>
-              </button>
-              <button class="settingsButton file-footer-icon" type="button" aria-label="Open settings" title="Settings">
-                <span aria-hidden="true">&#9881;</span>
-                <span class="file-footer-label">Settings</span>
-              </button>
-            </div>
             <div class="file-status">
               <p id="saveState">Not loaded</p>
               <p id="compileState">Waiting for compile</p>
@@ -109,8 +108,11 @@
         <section class="source-pane">
           <div class="pane-header">
             <div class="source-heading">
-              <h2 id="editorTitle">main.tex</h2>
-              <p id="sourceStats">0 lines · 0 words · 0 XX</p>
+              <div class="source-title-row">
+                <h2 id="editorTitle">main.tex</h2>
+                <span id="vimModeBadge" class="vim-mode-badge" hidden>Vim</span>
+              </div>
+              <p id="sourceStats">0 lines · 0 words</p>
             </div>
             <div class="source-mode-actions" aria-label="Editor mode">
               <button class="mode-button active" id="sourceModeButton" type="button">Code</button>
@@ -211,7 +213,51 @@
       </main>
     </section>
 
+    <section id="commandPalette" class="command-palette" role="dialog" aria-modal="true" aria-labelledby="commandPaletteTitle" hidden>
+      <div class="command-input-wrap">
+        <span aria-hidden="true">&#8984;</span>
+        <input id="commandPaletteInput" type="text" spellcheck="false" autocomplete="off" placeholder="/open, /templates, /compile..." aria-label="Command palette">
+      </div>
+      <div class="command-palette-meta">
+        <strong id="commandPaletteTitle">Command palette</strong>
+        <span>Use slash commands or type a project name</span>
+      </div>
+      <div id="commandPaletteList" class="command-palette-list" role="listbox"></div>
+    </section>
+
     <div class="settings-backdrop" id="settingsBackdrop" hidden></div>
+    <section id="templatesPanel" class="new-project-panel templates-panel" role="dialog" aria-modal="true" aria-labelledby="templatesTitle" hidden>
+      <header class="new-project-header">
+        <div>
+          <p>AgentDesk</p>
+          <h2 id="templatesTitle">Templates</h2>
+        </div>
+        <button id="closeTemplatesButton" class="settings-close-button" type="button" aria-label="Close templates" title="Close">
+          <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+      </header>
+      <div class="templates-body">
+        <div class="templates-toolbar">
+          <div>
+            <h3>LaTeX templates</h3>
+            <p>Start from online templates or save your own class formats.</p>
+          </div>
+          <button id="importTemplateButton" class="settings-action-button primary" type="button">Add Template</button>
+        </div>
+        <section class="template-section">
+          <h3>Online templates</h3>
+          <div id="onlineTemplateGrid" class="template-grid" aria-live="polite"></div>
+        </section>
+        <section class="template-section">
+          <h3>Your templates</h3>
+          <div id="customTemplateGrid" class="template-grid" aria-live="polite"></div>
+          <p id="customTemplateEmpty" class="template-empty" hidden>No saved templates yet.</p>
+        </section>
+      </div>
+    </section>
+
     <section id="newProjectPanel" class="new-project-panel" role="dialog" aria-modal="true" aria-labelledby="newProjectTitle" hidden>
       <header class="new-project-header">
         <div>
@@ -281,6 +327,8 @@
                   <option value="light-plus">Light+</option>
                   <option value="quiet-light">Quiet Light</option>
                   <option value="solarized-light">Solarized Light</option>
+                  <option value="catppuccin-latte">Catppuccin Latte</option>
+                  <option value="min-light">Min Light</option>
                 </optgroup>
                 <optgroup label="Light High Contrast">
                   <option value="github-light">GitHub Light</option>
@@ -295,6 +343,10 @@
                   <option value="one-dark-pro">One Dark Pro</option>
                   <option value="kimbie-dark">Kimbie Dark</option>
                   <option value="github-dark">GitHub Dark</option>
+                  <option value="catppuccin-mocha">Catppuccin Mocha</option>
+                  <option value="tokyo-night">Tokyo Night</option>
+                  <option value="ayu-dark">Ayu Dark</option>
+                  <option value="palenight">Palenight</option>
                 </optgroup>
                 <optgroup label="Dark High Contrast">
                   <option value="abyss">Abyss</option>
@@ -383,6 +435,10 @@
             <label class="setting-row">
               <span>Vim shortcuts</span>
               <input id="settingsVimModeToggle" type="checkbox">
+            </label>
+            <label class="setting-row">
+              <span>Relative line numbers</span>
+              <input id="settingsRelativeLineNumbersToggle" type="checkbox">
             </label>
             <div class="shortcut-list">
               <div><span>Save</span><kbd>Cmd/Ctrl</kbd><kbd>S</kbd></div>
