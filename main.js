@@ -2608,14 +2608,19 @@ async function createProjectArchive(root, destination, format) {
   await execFileAsync("tar", args);
 }
 
-async function pushProjectToGithub(_event, projectId) {
+async function pushProjectToGithub(_event, payload) {
+  const options = payload && typeof payload === "object"
+    ? payload
+    : { projectId: payload };
+  const projectId = options.projectId;
   const project = await getProject(projectId);
   const latexFiles = await listProjectLatexFiles(project);
   if (!latexFiles.length) throw new Error("No LaTeX source files found to push.");
   if (project.githubRemote) return pushProjectToConfiguredGithub(project, latexFiles);
 
+  const fallbackRemote = normalizeGithubRemote(options.defaultRemote || latexDocumentsRemoteUrl) || latexDocumentsRemoteUrl;
   const sourceRoot = projectRootFor(project);
-  const repoPath = await ensureLatexDocumentsRepo();
+  const repoPath = await ensureLatexDocumentsRepo(fallbackRemote);
   const folderName = sanitizeArchiveBaseName(project.displayName || project.name || path.basename(sourceRoot));
   const targetRoot = path.join(repoPath, folderName);
   await fsp.rm(targetRoot, { recursive: true, force: true });
@@ -2646,7 +2651,7 @@ async function pushProjectToGithub(_event, projectId) {
     commit,
     folder: folderName,
     files: latexFiles,
-    remote: latexDocumentsRemoteUrl,
+    remote: fallbackRemote,
     output: [push.stdout, push.stderr].filter(Boolean).join("\n").trim()
   };
 }
@@ -2797,16 +2802,17 @@ function latexDocumentsRepoPath() {
   return path.join(app.getPath("userData"), "latex-documents-repo");
 }
 
-async function ensureLatexDocumentsRepo() {
+async function ensureLatexDocumentsRepo(remoteUrl = latexDocumentsRemoteUrl) {
+  const normalizedRemote = normalizeGithubRemote(remoteUrl || latexDocumentsRemoteUrl) || latexDocumentsRemoteUrl;
   const repoPath = latexDocumentsRepoPath();
   const gitPath = path.join(repoPath, ".git");
 
   if (!fs.existsSync(gitPath)) {
     await fsp.rm(repoPath, { recursive: true, force: true });
     await fsp.mkdir(path.dirname(repoPath), { recursive: true });
-    await execFileAsync("git", ["clone", latexDocumentsRemoteUrl, repoPath]);
+    await execFileAsync("git", ["clone", normalizedRemote, repoPath]);
   } else {
-    await execFileAsync("git", ["remote", "set-url", "origin", latexDocumentsRemoteUrl], { cwd: repoPath });
+    await execFileAsync("git", ["remote", "set-url", "origin", normalizedRemote], { cwd: repoPath });
   }
 
   await ensureGitIdentity(repoPath);

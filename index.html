@@ -134,8 +134,8 @@
             <button id="railHelpButton" class="file-footer-icon" type="button" aria-label="Open help" title="Help">
               <svg class="help-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9.1 9a3 3 0 1 1 5.8 1c-.5 1.2-1.9 1.7-2.5 2.7-.2.3-.3.8-.3 1.3"></path>
-                <path d="M12 17h.01"></path>
-                <circle cx="12" cy="12" r="9"></circle>
+                <circle class="help-dot" cx="12" cy="17" r="0.8"></circle>
+                <circle class="help-ring" cx="12" cy="12" r="9"></circle>
               </svg>
             </button>
           </div>
@@ -286,6 +286,7 @@
               <div class="terminal-body" id="terminalBody">
                 <div class="terminal-empty" id="terminalEmpty">Start Shell, Codex, or Claude. Use + for another shell.</div>
               </div>
+              <div id="terminalTabsResizeHandle" class="terminal-tabs-resize-handle" role="separator" aria-label="Resize terminal tabs" tabindex="0"></div>
               <div class="terminal-tabs" id="terminalTabs" aria-label="Terminal sessions"></div>
             </div>
           </section>
@@ -471,6 +472,39 @@
         </div>
       </div>
     </section>
+    <section id="sshProjectPanel" class="new-project-panel ssh-project-panel" role="dialog" aria-modal="true" aria-labelledby="sshProjectTitle" hidden>
+      <header class="new-project-header">
+        <div>
+          <h2 id="sshProjectTitle">New SSH project</h2>
+        </div>
+        <button id="closeSshProjectButton" class="settings-close-button" type="button" aria-label="Close SSH project" title="Close">
+          <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+      </header>
+      <div class="new-project-body ssh-project-body">
+        <label class="setting-column">
+          <span>Known hosts</span>
+          <select id="sshKnownHostSelect" class="settings-text-input">
+            <option value="">New host</option>
+          </select>
+        </label>
+        <label class="setting-column">
+          <span>SSH host</span>
+          <input id="sshProjectHostInput" class="settings-text-input" type="text" placeholder="user@server.edu">
+        </label>
+        <label class="setting-column">
+          <span>Server path</span>
+          <input id="sshProjectPathInput" class="settings-text-input" type="text" placeholder="~/project">
+        </label>
+        <div class="settings-action-row">
+          <button id="connectSshProjectButton" class="settings-action-button primary" type="button">Connect</button>
+          <button id="cancelSshProjectButton" class="settings-action-button" type="button">Cancel</button>
+        </div>
+        <p id="sshProjectStatus" class="settings-status"></p>
+      </div>
+    </section>
     <aside class="settings-drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
       <nav class="settings-sidebar" aria-label="Settings sections">
         <button id="closeSettingsButton" class="settings-close-button" type="button" aria-label="Close settings" title="Close">
@@ -478,7 +512,8 @@
             <path d="M18 6 6 18M6 6l12 12"></path>
           </svg>
         </button>
-        <button class="settings-nav-button active" type="button" data-settings-section="appearance">Appearance</button>
+        <button class="settings-nav-button active" type="button" data-settings-section="general">General</button>
+        <button class="settings-nav-button" type="button" data-settings-section="appearance">Appearance</button>
         <button class="settings-nav-button" type="button" data-settings-section="workspace">Workspace</button>
         <button class="settings-nav-button" type="button" data-settings-section="project">Project</button>
         <button class="settings-nav-button" type="button" data-settings-section="agents">AGENTS.md</button>
@@ -492,13 +527,24 @@
 
       <div class="settings-main">
         <header class="settings-header">
-          <h2 id="settingsTitle">Appearance</h2>
+          <h2 id="settingsTitle">General</h2>
           <input id="settingsSearchInput" class="settings-search-input" type="search" placeholder="Search settings" aria-label="Search settings">
         </header>
 
         <div class="settings-content">
           <p id="settingsSearchEmpty" class="settings-search-empty" hidden>No settings found.</p>
-          <section class="settings-section active" data-settings-panel="appearance">
+          <section class="settings-section active" data-settings-panel="general">
+            <label class="setting-column">
+              <span>Default GitHub</span>
+              <input id="defaultGithubRemoteInput" class="settings-text-input" type="text" placeholder="https://github.com/user/latex-documents.git">
+            </label>
+            <div class="settings-action-row">
+              <button id="saveDefaultGithubButton" class="settings-action-button primary" type="button">Save Default GitHub</button>
+            </div>
+            <p id="defaultGithubStatus" class="settings-status"></p>
+          </section>
+
+          <section class="settings-section" data-settings-panel="appearance">
             <label class="setting-row">
               <span>Theme preset</span>
               <select id="settingsThemePreset">

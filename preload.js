@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld("localOverleaf", {
   importProjectFiles: (projectId, files) => ipcRenderer.invoke("import-project-files", { projectId, files }),
   downloadProjectPackage: (projectId) => ipcRenderer.invoke("download-project-package", projectId),
   saveProjectSettings: (projectId, settings) => ipcRenderer.invoke("save-project-settings", { projectId, settings }),
-  pushProjectToGithub: (projectId) => ipcRenderer.invoke("push-project-to-github", projectId),
+  pushProjectToGithub: (projectId, options = {}) => ipcRenderer.invoke("push-project-to-github", { projectId, ...options }),
   pullProjectFromGithub: (projectId) => ipcRenderer.invoke("pull-project-from-github", projectId),
   listSshHosts: () => ipcRenderer.invoke("list-ssh-hosts"),
   toggleFullscreen: () => ipcRenderer.invoke("toggle-fullscreen"),

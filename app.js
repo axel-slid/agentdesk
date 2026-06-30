@@ -93,6 +93,14 @@ const importTemplateButton = document.getElementById("importTemplateButton");
 const onlineTemplateGrid = document.getElementById("onlineTemplateGrid");
 const customTemplateGrid = document.getElementById("customTemplateGrid");
 const customTemplateEmpty = document.getElementById("customTemplateEmpty");
+const sshProjectPanel = document.getElementById("sshProjectPanel");
+const closeSshProjectButton = document.getElementById("closeSshProjectButton");
+const cancelSshProjectButton = document.getElementById("cancelSshProjectButton");
+const connectSshProjectButton = document.getElementById("connectSshProjectButton");
+const sshKnownHostSelect = document.getElementById("sshKnownHostSelect");
+const sshProjectHostInput = document.getElementById("sshProjectHostInput");
+const sshProjectPathInput = document.getElementById("sshProjectPathInput");
+const sshProjectStatus = document.getElementById("sshProjectStatus");
 const settingsDrawer = document.getElementById("settingsDrawer");
 const closeSettingsButton = document.getElementById("closeSettingsButton");
 const settingsTitle = document.getElementById("settingsTitle");
@@ -118,6 +126,9 @@ const remotePathInput = document.getElementById("remotePathInput");
 const saveRemoteButton = document.getElementById("saveRemoteButton");
 const openRemoteTerminalButton = document.getElementById("openRemoteTerminalButton");
 const remoteStatus = document.getElementById("remoteStatus");
+const defaultGithubRemoteInput = document.getElementById("defaultGithubRemoteInput");
+const saveDefaultGithubButton = document.getElementById("saveDefaultGithubButton");
+const defaultGithubStatus = document.getElementById("defaultGithubStatus");
 const projectGithubRemoteInput = document.getElementById("projectGithubRemoteInput");
 const saveProjectSettingsButton = document.getElementById("saveProjectSettingsButton");
 const pullProjectGithubButton = document.getElementById("pullProjectGithubButton");
@@ -129,6 +140,7 @@ const pdfZoomLabel = document.getElementById("pdfZoomLabel");
 const terminalPanel = document.getElementById("terminalPanel");
 const terminalTabs = document.getElementById("terminalTabs");
 const terminalBody = document.getElementById("terminalBody");
+const terminalTabsResizeHandle = document.getElementById("terminalTabsResizeHandle");
 const terminalEmpty = document.getElementById("terminalEmpty");
 const terminalResizeHandle = document.getElementById("terminalResizeHandle");
 const terminalCollapsedButton = document.getElementById("terminalCollapsedButton");
@@ -156,8 +168,10 @@ const profileBioInput = document.getElementById("profileBioInput");
 const profileAiContextInput = document.getElementById("profileAiContextInput");
 
 const DEFAULT_ACCENT = "#f97316";
+const DEFAULT_GITHUB_REMOTE = "https://github.com/axel-slid/agentdesk-latex-documents.git";
 const PROFILE_STORAGE_KEY = "latexStudioAiProfile";
 const REMOTE_STORAGE_KEY = "latexStudioRemoteWorkspace";
+const DEFAULT_GITHUB_STORAGE_KEY = "latexStudioDefaultGithubRemote";
 const CLOSE_ICON_SVG = `
   <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M18 6 6 18M6 6l12 12"></path>
@@ -1561,6 +1575,9 @@ const DEFAULT_TERMINAL_HEIGHT = 254;
 const MIN_TERMINAL_HEIGHT = 140;
 const MAX_TERMINAL_HEIGHT = 520;
 const TERMINAL_COLLAPSE_THRESHOLD = 92;
+const DEFAULT_TERMINAL_TABS_WIDTH = 184;
+const MIN_TERMINAL_TABS_WIDTH = 132;
+const MAX_TERMINAL_TABS_WIDTH = 320;
 const DEFAULT_COMPILE_LOG_HEIGHT = 170;
 const MIN_COMPILE_LOG_HEIGHT = 118;
 const MAX_COMPILE_LOG_HEIGHT = 430;
@@ -1642,6 +1659,7 @@ let textWrappingEnabled = true;
 let spellCheckEnabled = false;
 let selectionAgentChoice = "codex";
 let remoteWorkspace = { host: "", path: "" };
+let defaultGithubRemote = DEFAULT_GITHUB_REMOTE;
 let projectViewMode = "grid";
 let vimModeEnabled = false;
 let vimModeState = "off";
@@ -1674,6 +1692,7 @@ let historyCaptureTimer = null;
 let lastHistoryText = "";
 let historySelectedIndex = 0;
 let activeFileRenameInput = null;
+let sshProjectResolve = null;
 
 init();
 
@@ -1742,6 +1761,7 @@ function setupSettings() {
   const fileOutlineCollapsed = localStorage.getItem("latexStudioFileOutlineCollapsed") === "true";
   const autoSaveEnabled = localStorage.getItem("latexStudioAutoSave") !== "false";
   const terminalHeight = clampNumber(Number(localStorage.getItem("latexStudioTerminalHeight")), MIN_TERMINAL_HEIGHT, MAX_TERMINAL_HEIGHT, DEFAULT_TERMINAL_HEIGHT);
+  const terminalTabsWidth = clampNumber(Number(localStorage.getItem("latexStudioTerminalTabsWidth")), MIN_TERMINAL_TABS_WIDTH, MAX_TERMINAL_TABS_WIDTH, DEFAULT_TERMINAL_TABS_WIDTH);
   const terminalCollapsed = localStorage.getItem("latexStudioTerminalCollapsed") !== "false";
   const compileLogHeight = clampNumber(Number(localStorage.getItem("latexStudioCompileLogHeight")), MIN_COMPILE_LOG_HEIGHT, MAX_COMPILE_LOG_HEIGHT, DEFAULT_COMPILE_LOG_HEIGHT);
   const compileLogCollapsed = localStorage.getItem("latexStudioCompileLogCollapsed") !== "false";
@@ -1760,6 +1780,7 @@ function setupSettings() {
   spellCheckEnabled = localStorage.getItem("latexStudioSpellCheck") === "true";
   selectionAgentChoice = normalizeAgentChoice(localStorage.getItem("latexStudioSelectionAgent"));
   remoteWorkspace = readRemoteWorkspace();
+  defaultGithubRemote = readDefaultGithubRemote();
   aiProfile = readAiProfile();
 
   applyTheme(savedTheme, savedAccent, { presetId: savedPreset });
@@ -1770,6 +1791,7 @@ function setupSettings() {
   applySourceLayout({ collapsed: sourceCollapsed });
   applyPdfPaneLayout({ collapsed: pdfCollapsed });
   applyTerminalLayout({ height: terminalHeight, collapsed: terminalCollapsed });
+  setTerminalTabsWidth(terminalTabsWidth, { persist: false });
   applyCompileLogLayout({ height: compileLogHeight, collapsed: compileLogCollapsed });
   autoSaveToggle.checked = autoSaveEnabled;
   settingsVimModeToggle.checked = vimModeEnabled;
@@ -1781,6 +1803,7 @@ function setupSettings() {
   updatePdfRenderModeButtons();
   populateProfileForm();
   populateRemoteForm();
+  populateDefaultGithubForm();
   populateProjectSettingsForm();
   applyMinimapVisibility();
   applySpellCheckSetting();
@@ -1870,6 +1893,7 @@ function setupSettings() {
 
   settingsNavButtons.forEach((button) => {
     button.addEventListener("click", () => {
+      if (!button.dataset.settingsSection) return;
       clearSettingsSearch();
       setSettingsPanel(button.dataset.settingsSection);
     });
@@ -1881,8 +1905,17 @@ function setupSettings() {
     saveRemoteWorkspace();
     createTerminalSession("ssh");
   });
+  if (saveDefaultGithubButton) saveDefaultGithubButton.addEventListener("click", saveDefaultGithubRemote);
   if (saveProjectSettingsButton) saveProjectSettingsButton.addEventListener("click", saveProjectSettings);
   if (pullProjectGithubButton) pullProjectGithubButton.addEventListener("click", pullActiveProjectFromGithub);
+  if (closeSshProjectButton) closeSshProjectButton.addEventListener("click", () => closeSshProjectPanel());
+  if (cancelSshProjectButton) cancelSshProjectButton.addEventListener("click", () => closeSshProjectPanel());
+  if (connectSshProjectButton) connectSshProjectButton.addEventListener("click", connectSshProject);
+  if (sshKnownHostSelect) {
+    sshKnownHostSelect.addEventListener("change", () => {
+      if (sshKnownHostSelect.value) sshProjectHostInput.value = sshKnownHostSelect.value;
+    });
+  }
   agentsEditor.addEventListener("input", () => {
     if (!activeProject) return;
     agentsStatus.textContent = "Unsaved AGENTS.md changes.";
@@ -2030,6 +2063,25 @@ function normalizeRemoteWorkspace(value) {
   };
 }
 
+function readDefaultGithubRemote() {
+  return String(localStorage.getItem(DEFAULT_GITHUB_STORAGE_KEY) || DEFAULT_GITHUB_REMOTE).trim() || DEFAULT_GITHUB_REMOTE;
+}
+
+function populateDefaultGithubForm() {
+  if (!defaultGithubRemoteInput || !defaultGithubStatus) return;
+  defaultGithubRemoteInput.value = defaultGithubRemote || DEFAULT_GITHUB_REMOTE;
+  defaultGithubStatus.textContent = "Used when a project does not have its own GitHub remote.";
+  setStatusClass(defaultGithubStatus);
+}
+
+function saveDefaultGithubRemote() {
+  if (!defaultGithubRemoteInput || !defaultGithubStatus) return;
+  defaultGithubRemote = defaultGithubRemoteInput.value.trim() || DEFAULT_GITHUB_REMOTE;
+  localStorage.setItem(DEFAULT_GITHUB_STORAGE_KEY, defaultGithubRemote);
+  defaultGithubStatus.textContent = `Default GitHub saved: ${defaultGithubRemote}`;
+  setStatusClass(defaultGithubStatus, "ok");
+}
+
 function normalizeAgentChoice(value) {
   return ["codex", "claude", "shell"].includes(value) ? value : "codex";
 }
@@ -2063,7 +2115,7 @@ function populateProjectSettingsForm() {
   projectGithubRemoteInput.value = remote;
   projectSettingsStatus.textContent = activeProject
     ? (remote ? `Project GitHub is set to ${remote}.` : "")
-    : "Open a project to configure project GitHub.";
+    : "";
   setStatusClass(projectSettingsStatus, remote ? "ok" : undefined);
 }
 
@@ -2095,13 +2147,8 @@ function saveRemoteWorkspace() {
   setStatusClass(remoteStatus, remoteWorkspace.host ? "ok" : undefined);
 }
 
-async function openSshProjectFlow({ startTerminal = true } = {}) {
-  closeCommandPalette();
-  closeSettings({ keepBackdrop: true });
-  closeNewProjectPanel({ keepBackdrop: true });
-  closeTemplatesPanel({ keepBackdrop: true });
-  updateOverlayBackdrop();
-
+async function populateSshKnownHosts() {
+  if (!sshKnownHostSelect) return [];
   let hosts = [];
   try {
     if (window.localOverleaf && window.localOverleaf.listSshHosts) {
@@ -2112,31 +2159,72 @@ async function openSshProjectFlow({ startTerminal = true } = {}) {
     hosts = [];
   }
 
-  const uniqueHosts = Array.from(new Set([
-    remoteWorkspace.host,
-    ...hosts
-  ].filter(Boolean))).slice(0, 24);
-  const hostPrompt = uniqueHosts.length
-    ? `Choose an SSH host by number, or type a new host:\n\n${uniqueHosts.map((host, index) => `${index + 1}. ${host}`).join("\n")}`
-    : "Enter an SSH host, for example user@server.edu:";
-  const hostAnswer = window.prompt(hostPrompt, remoteWorkspace.host || uniqueHosts[0] || "");
-  if (!hostAnswer) return null;
+  const uniqueHosts = Array.from(new Set([remoteWorkspace.host, ...hosts].filter(Boolean))).slice(0, 24);
+  sshKnownHostSelect.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = uniqueHosts.length ? "Choose a known host..." : "No known hosts found";
+  sshKnownHostSelect.appendChild(placeholder);
+  uniqueHosts.forEach((host) => {
+    const option = document.createElement("option");
+    option.value = host;
+    option.textContent = host;
+    sshKnownHostSelect.appendChild(option);
+  });
+  sshKnownHostSelect.disabled = !uniqueHosts.length;
+  return uniqueHosts;
+}
 
-  const trimmedHostAnswer = hostAnswer.trim();
-  const selectedIndex = Number.parseInt(trimmedHostAnswer, 10);
-  const host = Number.isInteger(selectedIndex) && String(selectedIndex) === trimmedHostAnswer && uniqueHosts[selectedIndex - 1]
-    ? uniqueHosts[selectedIndex - 1]
-    : trimmedHostAnswer;
-  if (!host) return null;
+async function openSshProjectFlow({ startTerminal = true } = {}) {
+  if (!sshProjectPanel) return null;
+  closeCommandPalette({ keepBackdrop: true });
+  closeSettings({ keepBackdrop: true });
+  closeNewProjectPanel({ keepBackdrop: true });
+  closeTemplatesPanel({ keepBackdrop: true });
+  settingsBackdrop.hidden = false;
+  sshProjectPanel.hidden = false;
+  sshProjectPanel.dataset.startTerminal = String(Boolean(startTerminal));
+  if (sshProjectStatus) sshProjectStatus.textContent = "";
+  if (sshProjectHostInput) sshProjectHostInput.value = remoteWorkspace.host || "";
+  if (sshProjectPathInput) sshProjectPathInput.value = remoteWorkspace.path || "~";
+  await populateSshKnownHosts();
+  requestAnimationFrame(() => {
+    if (sshProjectHostInput) sshProjectHostInput.focus();
+  });
 
-  const remotePath = window.prompt(`Server path for ${host}:`, remoteWorkspace.path || "~");
-  if (remotePath === null) return null;
+  return new Promise((resolve) => {
+    sshProjectResolve = resolve;
+  });
+}
+
+function closeSshProjectPanel({ keepBackdrop = false, value = null } = {}) {
+  if (sshProjectPanel) sshProjectPanel.hidden = true;
+  if (sshProjectResolve) {
+    const resolve = sshProjectResolve;
+    sshProjectResolve = null;
+    resolve(value);
+  }
+  if (!keepBackdrop) updateOverlayBackdrop();
+}
+
+async function connectSshProject() {
+  const host = String(sshProjectHostInput && sshProjectHostInput.value ? sshProjectHostInput.value : "").trim();
+  const remotePath = String(sshProjectPathInput && sshProjectPathInput.value ? sshProjectPathInput.value : "").trim() || "~";
+  if (!host) {
+    if (sshProjectStatus) {
+      sshProjectStatus.textContent = "Enter an SSH host first.";
+      setStatusClass(sshProjectStatus, "error");
+    }
+    return;
+  }
 
   remoteWorkspace = normalizeRemoteWorkspace({ host, path: remotePath });
   localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
   populateRemoteForm();
 
-  if (!startTerminal) return remoteWorkspace;
+  const shouldStartTerminal = sshProjectPanel && sshProjectPanel.dataset.startTerminal !== "false";
+  closeSshProjectPanel({ value: remoteWorkspace });
+  if (!shouldStartTerminal) return;
 
   if (editorScreen.hidden) {
     showEditorShell();
@@ -2149,8 +2237,8 @@ async function openSshProjectFlow({ startTerminal = true } = {}) {
   setFileSidebarVisible(false, { persist: false });
   setTerminalCollapsed(false, { persist: false });
   setCompileLogCollapsed(true, { persist: false });
+  await new Promise((resolve) => setTimeout(resolve, 120));
   await createTerminalSession("ssh");
-  return remoteWorkspace;
 }
 
 function saveProfileFromForm() {
@@ -2351,6 +2439,18 @@ function setTerminalHeight(height, { persist = true } = {}) {
   const clamped = clampNumber(height, MIN_TERMINAL_HEIGHT, MAX_TERMINAL_HEIGHT, DEFAULT_TERMINAL_HEIGHT);
   sourcePane.style.setProperty("--terminal-height", `${clamped}px`);
   if (persist) localStorage.setItem("latexStudioTerminalHeight", String(Math.round(clamped)));
+  scheduleTerminalFit();
+}
+
+function getTerminalTabsWidth() {
+  const current = Number.parseFloat(getComputedStyle(sourcePane).getPropertyValue("--terminal-tabs-width"));
+  return clampNumber(current, MIN_TERMINAL_TABS_WIDTH, MAX_TERMINAL_TABS_WIDTH, DEFAULT_TERMINAL_TABS_WIDTH);
+}
+
+function setTerminalTabsWidth(width, { persist = true } = {}) {
+  const clamped = clampNumber(width, MIN_TERMINAL_TABS_WIDTH, MAX_TERMINAL_TABS_WIDTH, DEFAULT_TERMINAL_TABS_WIDTH);
+  sourcePane.style.setProperty("--terminal-tabs-width", `${clamped}px`);
+  if (persist) localStorage.setItem("latexStudioTerminalTabsWidth", String(Math.round(clamped)));
   scheduleTerminalFit();
 }
 
@@ -3136,6 +3236,7 @@ function wireEvents() {
   setupFileSplitter();
   setupSplitter();
   setupTerminalResize();
+  setupTerminalTabsResize();
   setupCompileLogResize();
   setupFileOutlineResize();
   updateLogState();
@@ -3231,6 +3332,12 @@ function handleGlobalShortcut(event) {
       return;
     }
 
+    if (sshProjectPanel && !sshProjectPanel.hidden) {
+      event.preventDefault();
+      closeSshProjectPanel();
+      return;
+    }
+
     if (projectContextMenu) {
       event.preventDefault();
       closeProjectContextMenu();
@@ -3315,10 +3422,12 @@ function openSettings() {
   closeCommandPalette();
   closeNewProjectPanel({ keepBackdrop: true });
   closeTemplatesPanel({ keepBackdrop: true });
+  closeSshProjectPanel({ keepBackdrop: true });
   populateProjectSettingsForm();
+  populateDefaultGithubForm();
   settingsBackdrop.hidden = false;
   settingsDrawer.hidden = false;
-  const activeSection = settingsDrawer.dataset.activeSection || "appearance";
+  const activeSection = nextAllowedSettingsSection(settingsDrawer.dataset.activeSection || "general");
   setSettingsPanel(activeSection);
   updateSettingsSearch();
 }
@@ -3333,17 +3442,19 @@ function closeOverlayModals() {
   closeSettings({ keepBackdrop: true });
   closeNewProjectPanel({ keepBackdrop: true });
   closeTemplatesPanel({ keepBackdrop: true });
+  closeSshProjectPanel({ keepBackdrop: true });
   updateOverlayBackdrop();
 }
 
 function updateOverlayBackdrop() {
-  settingsBackdrop.hidden = settingsDrawer.hidden && newProjectPanel.hidden && templatesPanel.hidden && commandPalette.hidden;
+  settingsBackdrop.hidden = settingsDrawer.hidden && newProjectPanel.hidden && templatesPanel.hidden && commandPalette.hidden && sshProjectPanel.hidden;
 }
 
 async function openTemplatesPanel() {
   closeCommandPalette();
   closeSettings({ keepBackdrop: true });
   closeNewProjectPanel({ keepBackdrop: true });
+  closeSshProjectPanel({ keepBackdrop: true });
   settingsBackdrop.hidden = false;
   templatesPanel.hidden = false;
   templatesButton.classList.add("active");
@@ -3604,6 +3715,7 @@ function openCommandPalette(initialValue = "") {
   closeSettings({ keepBackdrop: true });
   closeNewProjectPanel({ keepBackdrop: true });
   closeTemplatesPanel({ keepBackdrop: true });
+  closeSshProjectPanel({ keepBackdrop: true });
   settingsBackdrop.hidden = false;
   commandPalette.hidden = false;
   commandPaletteInput.value = initialValue;
@@ -3756,12 +3868,30 @@ function runCommandPaletteItem(item) {
   if (item && typeof item.action === "function") item.action();
 }
 
+function hasOpenProjectContext() {
+  return Boolean(activeProject && editorScreen && !editorScreen.hidden);
+}
+
+function settingsSectionAllowed(section) {
+  if (!section || section === "remote") return false;
+  if (section === "project" || section === "agents") return hasOpenProjectContext();
+  return true;
+}
+
+function nextAllowedSettingsSection(section) {
+  const exists = settingsPanels.some((panel) => panel.dataset.settingsPanel === section);
+  if (exists && settingsSectionAllowed(section)) return section;
+  return "general";
+}
+
 function setSettingsPanel(section) {
-  const nextSection = settingsPanels.some((panel) => panel.dataset.settingsPanel === section) ? section : "appearance";
+  const nextSection = nextAllowedSettingsSection(section);
   const title = {
+    general: "General",
     appearance: "Appearance",
     profile: "Profile",
     workspace: "Workspace",
+    project: "Project",
     remote: "Remote",
     latex: "LaTeX Handbook",
     agents: "AGENTS.md",
@@ -3772,10 +3902,16 @@ function setSettingsPanel(section) {
   settingsDrawer.dataset.activeSection = nextSection;
   settingsTitle.textContent = title;
   settingsNavButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.settingsSection === nextSection);
+    const sectionName = button.dataset.settingsSection;
+    if (!sectionName) return;
+    button.hidden = !settingsSectionAllowed(sectionName);
+    button.classList.toggle("active", sectionName === nextSection);
   });
   settingsPanels.forEach((panel) => {
-    panel.classList.toggle("active", panel.dataset.settingsPanel === nextSection);
+    const sectionName = panel.dataset.settingsPanel;
+    const allowed = settingsSectionAllowed(sectionName);
+    panel.hidden = !allowed;
+    panel.classList.toggle("active", allowed && sectionName === nextSection);
   });
 
   if (nextSection === "agents") loadAgentsFile();
@@ -3792,11 +3928,19 @@ function updateSettingsSearch() {
   if (!settingsSearchInput || !settingsSearchEmpty) return;
 
   const query = settingsSearchInput.value.trim().toLowerCase();
-  const activeSection = settingsDrawer.dataset.activeSection || "appearance";
+  const activeSection = nextAllowedSettingsSection(settingsDrawer.dataset.activeSection || "general");
   settingsDrawer.classList.toggle("settings-searching", Boolean(query));
   let visibleCount = 0;
 
   settingsPanels.forEach((panel) => {
+    const sectionName = panel.dataset.settingsPanel;
+    const allowed = settingsSectionAllowed(sectionName);
+    if (!allowed) {
+      panel.hidden = true;
+      panel.classList.remove("active");
+      return;
+    }
+
     let panelMatches = 0;
     const rows = Array.from(panel.querySelectorAll(".setting-row, .setting-column, .settings-action-row, .settings-action-button, .settings-status, .shortcut-list > div"));
     rows.forEach((row) => {
@@ -3814,7 +3958,7 @@ function updateSettingsSearch() {
       if (showPanel) visibleCount += panelMatches;
     } else {
       panel.hidden = false;
-      panel.classList.toggle("active", panel.dataset.settingsPanel === activeSection);
+      panel.classList.toggle("active", sectionName === activeSection);
       rows.forEach((row) => {
         row.hidden = false;
         row.classList.remove("settings-search-match");
@@ -3823,13 +3967,16 @@ function updateSettingsSearch() {
   });
 
   settingsNavButtons.forEach((button) => {
+    const sectionName = button.dataset.settingsSection;
+    if (!sectionName) return;
+    const allowed = settingsSectionAllowed(sectionName);
     if (!query) {
-      button.hidden = false;
-      button.classList.toggle("active", button.dataset.settingsSection === activeSection);
+      button.hidden = !allowed;
+      button.classList.toggle("active", allowed && sectionName === activeSection);
       return;
     }
-    const panel = settingsPanels.find((item) => item.dataset.settingsPanel === button.dataset.settingsSection);
-    button.hidden = !panel || panel.hidden;
+    const panel = settingsPanels.find((item) => item.dataset.settingsPanel === sectionName);
+    button.hidden = !allowed || !panel || panel.hidden;
   });
 
   settingsSearchEmpty.hidden = !query || visibleCount > 0;
@@ -5034,6 +5181,7 @@ function openNewProjectPanel() {
   closeCommandPalette();
   closeSettings({ keepBackdrop: true });
   closeTemplatesPanel({ keepBackdrop: true });
+  closeSshProjectPanel({ keepBackdrop: true });
   settingsBackdrop.hidden = false;
   newProjectPanel.hidden = false;
   addProjectButton.classList.add("active");
@@ -5960,7 +6108,9 @@ async function pushActiveProjectToGithub() {
     if (!activeMediaFile && getSourceText() !== savedText) {
       await saveManuscript();
     }
-    const result = await window.localOverleaf.pushProjectToGithub(activeProject.id);
+    const result = await window.localOverleaf.pushProjectToGithub(activeProject.id, {
+      defaultRemote: defaultGithubRemote || DEFAULT_GITHUB_REMOTE
+    });
     const commitText = result && result.commit ? ` (${result.commit.slice(0, 7)})` : "";
     setSaveState("Saved", "ok");
     setCompileState(`Pushed LaTeX sources${commitText}`, "ok");
@@ -6060,7 +6210,7 @@ async function loadAgentsFile() {
     if (token !== agentsLoadToken) return;
     agentsPathLabel.textContent = "AGENTS.md";
     agentsEditor.value = result.text || "";
-    agentsStatus.textContent = result.exists ? "AGENTS.md loaded." : "No AGENTS.md in this project.";
+    agentsStatus.textContent = result.exists ? "AGENTS.md loaded." : "";
   } catch (error) {
     if (token !== agentsLoadToken) return;
     agentsStatus.textContent = formatError(error);
@@ -7598,6 +7748,42 @@ function setupTerminalResize() {
       sourcePane.classList.toggle("terminal-maximized", nextHeight >= maxHeight - 10);
       setTerminalHeight(clampNumber(nextHeight, MIN_TERMINAL_HEIGHT, maxHeight, DEFAULT_TERMINAL_HEIGHT));
     }
+  });
+}
+
+function setupTerminalTabsResize() {
+  if (!terminalTabsResizeHandle) return;
+  let dragStartX = 0;
+  let dragStartWidth = 0;
+
+  const stopDragging = (event) => {
+    if (terminalTabsResizeHandle.hasPointerCapture(event.pointerId)) terminalTabsResizeHandle.releasePointerCapture(event.pointerId);
+    document.body.classList.remove("is-resizing-terminal-tabs");
+    window.removeEventListener("pointermove", resize);
+    window.removeEventListener("pointerup", stopDragging);
+    localStorage.setItem("latexStudioTerminalTabsWidth", String(Math.round(getTerminalTabsWidth())));
+    scheduleTerminalFit();
+  };
+
+  const resize = (event) => {
+    const nextWidth = dragStartWidth + dragStartX - event.clientX;
+    setTerminalTabsWidth(nextWidth, { persist: false });
+  };
+
+  terminalTabsResizeHandle.addEventListener("pointerdown", (event) => {
+    dragStartX = event.clientX;
+    dragStartWidth = getTerminalTabsWidth();
+    terminalTabsResizeHandle.setPointerCapture(event.pointerId);
+    document.body.classList.add("is-resizing-terminal-tabs");
+    window.addEventListener("pointermove", resize);
+    window.addEventListener("pointerup", stopDragging);
+  });
+
+  terminalTabsResizeHandle.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const delta = event.key === "ArrowLeft" ? 18 : -18;
+    setTerminalTabsWidth(getTerminalTabsWidth() + delta);
   });
 }
 
