@@ -35,9 +35,9 @@ const fileOutlineBody = document.getElementById("fileOutlineBody");
 const fileOutlineToggle = document.getElementById("fileOutlineToggle");
 const fileOutlineResizeHandle = document.getElementById("fileOutlineResizeHandle");
 const filePreview = document.getElementById("filePreview");
+const fileHeaderRefreshButton = document.getElementById("fileHeaderRefreshButton");
 const newFileButton = document.getElementById("newFileButton");
 const newFolderButton = document.getElementById("newFolderButton");
-const uploadFilesButton = document.getElementById("uploadFilesButton");
 const downloadPackageButton = document.getElementById("downloadPackageButton");
 const latexSource = document.getElementById("latexSource");
 const visualEditor = document.getElementById("visualEditor");
@@ -68,6 +68,7 @@ const openPdfButton = document.getElementById("openPdfButton");
 const downloadPdfButton = document.getElementById("downloadPdfButton");
 const historyButton = document.getElementById("historyButton");
 const pushGithubButton = document.getElementById("pushGithubButton");
+const pullGithubButton = document.getElementById("pullGithubButton");
 const pdfReaderButton = document.getElementById("pdfReaderButton");
 const historyPanel = document.getElementById("historyPanel");
 const closeHistoryButton = document.getElementById("closeHistoryButton");
@@ -117,6 +118,10 @@ const remotePathInput = document.getElementById("remotePathInput");
 const saveRemoteButton = document.getElementById("saveRemoteButton");
 const openRemoteTerminalButton = document.getElementById("openRemoteTerminalButton");
 const remoteStatus = document.getElementById("remoteStatus");
+const projectGithubRemoteInput = document.getElementById("projectGithubRemoteInput");
+const saveProjectSettingsButton = document.getElementById("saveProjectSettingsButton");
+const pullProjectGithubButton = document.getElementById("pullProjectGithubButton");
+const projectSettingsStatus = document.getElementById("projectSettingsStatus");
 const latexSnippetButtons = Array.from(document.querySelectorAll("[data-latex-snippet]"));
 const pdfZoomOutButton = document.getElementById("pdfZoomOutButton");
 const pdfZoomInButton = document.getElementById("pdfZoomInButton");
@@ -255,13 +260,18 @@ const LATEX_SNIPPETS = {
 const PROJECT_GREETINGS = [
   "Hello, {name}!",
   "Hey there, {name}",
+  "Happy Wednesday, {name}",
   "Hi {name}, how are you?",
   "How was your day, {name}?",
   "How's it going, {name}?",
+  "Welcome to the weekend, {name}",
   "Welcome, {name}",
   "What's new, {name}?",
   "{name} returns!",
   "Back at it, {name}",
+  "Sunday session, {name}?",
+  "That Friday feeling, {name}",
+  "Coffee and code, {name}?",
   "Evening, {name}",
   "Good afternoon, {name}",
   "Good evening, {name}",
@@ -275,12 +285,18 @@ const PROJECT_GREETINGS = [
 const PROJECT_GREETINGS_NO_NAME = [
   "Hello!",
   "Hey there",
+  "Happy Wednesday",
   "Hi, how are you?",
   "How was your day?",
   "How's it going?",
+  "Let's chat incognito",
+  "Sunday session?",
+  "That Friday feeling",
+  "Welcome to the weekend",
   "Welcome",
   "What's new?",
   "Back at it!",
+  "Coffee and code?",
   "Evening",
   "Good afternoon",
   "Good evening",
@@ -369,7 +385,11 @@ const HIGH_CONTRAST_PRESETS = new Set([
   "mint-contrast-hc",
   "rose-contrast-hc",
   "pastel-cobalt-hc",
-  "dusk-contrast-hc"
+  "dusk-contrast-hc",
+  "pastel-noir-hc",
+  "pastel-ink-hc",
+  "pastel-aurora-hc",
+  "pastel-plum-hc"
 ]);
 const TRANSPARENT_PRESETS = new Set([
   "glass-light",
@@ -1398,6 +1418,130 @@ const THEME_PRESETS = {
       "--pdf-bg": "#08030c",
       "--pdf-paper": "#ffffff"
     }
+  },
+  "pastel-noir-hc": {
+    theme: "dark",
+    accent: "#b8e0ff",
+    background: "linear-gradient(135deg, #080a10, #141826 70%, #03050a)",
+    colors: {
+      "--bg": "#03050a",
+      "--glass": "rgba(8, 10, 16, 0.95)",
+      "--glass-strong": "rgba(20, 24, 38, 0.99)",
+      "--panel": "rgba(8, 10, 16, 0.98)",
+      "--page": "#fbfdff",
+      "--text": "#fbfdff",
+      "--muted": "#d9e6ff",
+      "--border": "rgba(184, 224, 255, 0.68)",
+      "--border-strong": "rgba(235, 247, 255, 0.96)",
+      "--red": "#ffb8c8",
+      "--green": "#baf7d2",
+      "--blue": "#b8e0ff",
+      "--blue-dark": "#85c8ff",
+      "--cm-bg": "#080a10",
+      "--cm-gutter": "#141826",
+      "--cm-text": "#fbfdff",
+      "--cm-keyword": "#f3b8ff",
+      "--cm-variable": "#b8e0ff",
+      "--cm-atom": "#baf7d2",
+      "--cm-comment": "#aab7d4",
+      "--cm-string": "#fff0ad",
+      "--cm-number": "#ffc4ad",
+      "--pdf-bg": "#03050a",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "pastel-ink-hc": {
+    theme: "dark",
+    accent: "#c8d0ff",
+    background: "linear-gradient(135deg, #10111c, #1e2133 70%, #080914)",
+    colors: {
+      "--bg": "#080914",
+      "--glass": "rgba(16, 17, 28, 0.95)",
+      "--glass-strong": "rgba(30, 33, 51, 0.99)",
+      "--panel": "rgba(16, 17, 28, 0.98)",
+      "--page": "#fbfbff",
+      "--text": "#fbfbff",
+      "--muted": "#dfe3ff",
+      "--border": "rgba(200, 208, 255, 0.68)",
+      "--border-strong": "rgba(241, 243, 255, 0.96)",
+      "--red": "#ffb6d0",
+      "--green": "#c7f8c8",
+      "--blue": "#c8d0ff",
+      "--blue-dark": "#9da9ff",
+      "--cm-bg": "#10111c",
+      "--cm-gutter": "#1e2133",
+      "--cm-text": "#fbfbff",
+      "--cm-keyword": "#ffb8e7",
+      "--cm-variable": "#c8d0ff",
+      "--cm-atom": "#b7f7ea",
+      "--cm-comment": "#aeb6d8",
+      "--cm-string": "#fff2b0",
+      "--cm-number": "#ffc8b2",
+      "--pdf-bg": "#080914",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "pastel-aurora-hc": {
+    theme: "dark",
+    accent: "#a8f5e4",
+    background: "linear-gradient(135deg, #071118, #13283a 56%, #130b24)",
+    colors: {
+      "--bg": "#04080f",
+      "--glass": "rgba(7, 17, 24, 0.95)",
+      "--glass-strong": "rgba(19, 40, 58, 0.99)",
+      "--panel": "rgba(7, 17, 24, 0.98)",
+      "--page": "#f9fffd",
+      "--text": "#f9fffd",
+      "--muted": "#d8fff5",
+      "--border": "rgba(168, 245, 228, 0.68)",
+      "--border-strong": "rgba(232, 255, 249, 0.96)",
+      "--red": "#ffb2c6",
+      "--green": "#a8f5e4",
+      "--blue": "#b5d9ff",
+      "--blue-dark": "#83bdff",
+      "--cm-bg": "#071118",
+      "--cm-gutter": "#13283a",
+      "--cm-text": "#f9fffd",
+      "--cm-keyword": "#ddb8ff",
+      "--cm-variable": "#b5d9ff",
+      "--cm-atom": "#a8f5e4",
+      "--cm-comment": "#9bbdc0",
+      "--cm-string": "#fff0a8",
+      "--cm-number": "#ffc5ae",
+      "--pdf-bg": "#04080f",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "pastel-plum-hc": {
+    theme: "dark",
+    accent: "#ffc1ea",
+    background: "linear-gradient(135deg, #160b18, #29172d 68%, #0b050d)",
+    colors: {
+      "--bg": "#0b050d",
+      "--glass": "rgba(22, 11, 24, 0.95)",
+      "--glass-strong": "rgba(41, 23, 45, 0.99)",
+      "--panel": "rgba(22, 11, 24, 0.98)",
+      "--page": "#fff9fd",
+      "--text": "#fff9fd",
+      "--muted": "#f7dff0",
+      "--border": "rgba(255, 193, 234, 0.68)",
+      "--border-strong": "rgba(255, 235, 249, 0.96)",
+      "--red": "#ffabc0",
+      "--green": "#c8f5c8",
+      "--blue": "#c9dcff",
+      "--blue-dark": "#9fbfff",
+      "--cm-bg": "#160b18",
+      "--cm-gutter": "#29172d",
+      "--cm-text": "#fff9fd",
+      "--cm-keyword": "#ffc1ea",
+      "--cm-variable": "#c9dcff",
+      "--cm-atom": "#baf7dc",
+      "--cm-comment": "#d5aecf",
+      "--cm-string": "#ffefab",
+      "--cm-number": "#ffc3ae",
+      "--pdf-bg": "#0b050d",
+      "--pdf-paper": "#ffffff"
+    }
   }
 };
 const DEFAULT_FILE_WIDTH = 240;
@@ -1476,6 +1620,7 @@ let autoCompileTimer = null;
 let autoSaveTimer = null;
 let visualItems = [];
 let visualBlocks = [];
+let markdownVisualTimer = null;
 let suppressSourceChange = false;
 let pdfJsPromise = null;
 let pdfRenderToken = 0;
@@ -1586,16 +1731,16 @@ function setupSettings() {
   const preset = THEME_PRESETS[savedPreset];
   const savedTheme = (preset && preset.theme) || localStorage.getItem("latexStudioTheme") || "light";
   const savedAccent = (preset && preset.accent) || normalizeHexColor(localStorage.getItem("latexStudioAccent")) || DEFAULT_ACCENT;
-  const showSidebar = localStorage.getItem("latexStudioShowSidebar") !== "false";
+  const showSidebar = localStorage.getItem("latexStudioShowSidebar") === "true";
   const pdfMinWidth = clampNumber(Number(localStorage.getItem("latexStudioPdfMinWidth")), 480, 760, DEFAULT_PDF_MIN_WIDTH);
   const fileWidth = clampNumber(Number(localStorage.getItem("latexStudioFileWidth")), MIN_FILE_WIDTH, MAX_FILE_WIDTH, DEFAULT_FILE_WIDTH);
   const fileOutlineHeight = clampNumber(Number(localStorage.getItem("latexStudioFileOutlineHeight")), MIN_FILE_OUTLINE_HEIGHT, MAX_FILE_OUTLINE_HEIGHT, DEFAULT_FILE_OUTLINE_HEIGHT);
   const fileOutlineCollapsed = localStorage.getItem("latexStudioFileOutlineCollapsed") === "true";
   const autoSaveEnabled = localStorage.getItem("latexStudioAutoSave") !== "false";
   const terminalHeight = clampNumber(Number(localStorage.getItem("latexStudioTerminalHeight")), MIN_TERMINAL_HEIGHT, MAX_TERMINAL_HEIGHT, DEFAULT_TERMINAL_HEIGHT);
-  const terminalCollapsed = localStorage.getItem("latexStudioTerminalCollapsed") === "true";
+  const terminalCollapsed = localStorage.getItem("latexStudioTerminalCollapsed") !== "false";
   const compileLogHeight = clampNumber(Number(localStorage.getItem("latexStudioCompileLogHeight")), MIN_COMPILE_LOG_HEIGHT, MAX_COMPILE_LOG_HEIGHT, DEFAULT_COMPILE_LOG_HEIGHT);
-  const compileLogCollapsed = localStorage.getItem("latexStudioCompileLogCollapsed") === "true";
+  const compileLogCollapsed = localStorage.getItem("latexStudioCompileLogCollapsed") !== "false";
   const sourceCollapsed = localStorage.getItem("latexStudioSourceCollapsed") === "true";
   const pdfCollapsed = localStorage.getItem("latexStudioPdfCollapsed") === "true";
   pdfZoom = clampNumber(Number(localStorage.getItem("latexStudioPdfZoom")), MIN_PDF_ZOOM, MAX_PDF_ZOOM, DEFAULT_PDF_ZOOM);
@@ -1632,6 +1777,7 @@ function setupSettings() {
   updatePdfRenderModeButtons();
   populateProfileForm();
   populateRemoteForm();
+  populateProjectSettingsForm();
   applyMinimapVisibility();
   applySpellCheckSetting();
   updateSaveButtonVisibility();
@@ -1731,6 +1877,8 @@ function setupSettings() {
     saveRemoteWorkspace();
     createTerminalSession("ssh");
   });
+  if (saveProjectSettingsButton) saveProjectSettingsButton.addEventListener("click", saveProjectSettings);
+  if (pullProjectGithubButton) pullProjectGithubButton.addEventListener("click", pullActiveProjectFromGithub);
   agentsEditor.addEventListener("input", () => {
     if (!activeProject) return;
     agentsStatus.textContent = "Unsaved AGENTS.md changes.";
@@ -1905,6 +2053,32 @@ function populateRemoteForm() {
   remotePathInput.value = remoteWorkspace.path || "";
 }
 
+function populateProjectSettingsForm() {
+  if (!projectGithubRemoteInput || !projectSettingsStatus) return;
+  const remote = activeProject && activeProject.githubRemote ? activeProject.githubRemote : "";
+  projectGithubRemoteInput.value = remote;
+  projectSettingsStatus.textContent = activeProject
+    ? (remote ? `Project GitHub is set to ${remote}.` : "")
+    : "Open a project to configure project GitHub.";
+  setStatusClass(projectSettingsStatus, remote ? "ok" : undefined);
+}
+
+async function saveProjectSettings() {
+  if (!activeProject || !window.localOverleaf || !window.localOverleaf.saveProjectSettings) return;
+  const githubRemote = projectGithubRemoteInput.value.trim();
+  projectSettingsStatus.textContent = "Saving project settings...";
+  setStatusClass(projectSettingsStatus);
+
+  try {
+    const result = await window.localOverleaf.saveProjectSettings(activeProject.id, { githubRemote });
+    activeProject = result.project || activeProject;
+    populateProjectSettingsForm();
+  } catch (error) {
+    projectSettingsStatus.textContent = formatError(error);
+    setStatusClass(projectSettingsStatus, "error");
+  }
+}
+
 function saveRemoteWorkspace() {
   remoteWorkspace = normalizeRemoteWorkspace({
     host: remoteHostInput.value,
@@ -1917,6 +2091,64 @@ function saveRemoteWorkspace() {
   setStatusClass(remoteStatus, remoteWorkspace.host ? "ok" : undefined);
 }
 
+async function openSshProjectFlow({ startTerminal = true } = {}) {
+  closeCommandPalette();
+  closeSettings({ keepBackdrop: true });
+  closeNewProjectPanel({ keepBackdrop: true });
+  closeTemplatesPanel({ keepBackdrop: true });
+  updateOverlayBackdrop();
+
+  let hosts = [];
+  try {
+    if (window.localOverleaf && window.localOverleaf.listSshHosts) {
+      const result = await window.localOverleaf.listSshHosts();
+      hosts = Array.isArray(result.hosts) ? result.hosts : [];
+    }
+  } catch (error) {
+    hosts = [];
+  }
+
+  const uniqueHosts = Array.from(new Set([
+    remoteWorkspace.host,
+    ...hosts
+  ].filter(Boolean))).slice(0, 24);
+  const hostPrompt = uniqueHosts.length
+    ? `Choose an SSH host by number, or type a new host:\n\n${uniqueHosts.map((host, index) => `${index + 1}. ${host}`).join("\n")}`
+    : "Enter an SSH host, for example user@server.edu:";
+  const hostAnswer = window.prompt(hostPrompt, remoteWorkspace.host || uniqueHosts[0] || "");
+  if (!hostAnswer) return null;
+
+  const trimmedHostAnswer = hostAnswer.trim();
+  const selectedIndex = Number.parseInt(trimmedHostAnswer, 10);
+  const host = Number.isInteger(selectedIndex) && String(selectedIndex) === trimmedHostAnswer && uniqueHosts[selectedIndex - 1]
+    ? uniqueHosts[selectedIndex - 1]
+    : trimmedHostAnswer;
+  if (!host) return null;
+
+  const remotePath = window.prompt(`Server path for ${host}:`, remoteWorkspace.path || "~");
+  if (remotePath === null) return null;
+
+  remoteWorkspace = normalizeRemoteWorkspace({ host, path: remotePath });
+  localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
+  populateRemoteForm();
+
+  if (!startTerminal) return remoteWorkspace;
+
+  if (editorScreen.hidden) {
+    showEditorShell();
+    activeDocumentTitle.textContent = `SSH: ${remoteWorkspace.host}${remoteWorkspace.path ? `:${remoteWorkspace.path}` : ""}`;
+    pdfTitle.textContent = "SSH workspace";
+    pdfMeta.textContent = remoteWorkspace.path || remoteWorkspace.host;
+    pdfViewer.innerHTML = '<div class="pdf-loading">SSH workspace opened in Terminal.</div>';
+  }
+
+  setFileSidebarVisible(false, { persist: false });
+  setTerminalCollapsed(false, { persist: false });
+  setCompileLogCollapsed(true, { persist: false });
+  await createTerminalSession("ssh");
+  return remoteWorkspace;
+}
+
 function saveProfileFromForm() {
   aiProfile = normalizeAiProfile({
     name: profileNameInput.value,
@@ -1927,6 +2159,15 @@ function saveProfileFromForm() {
   });
   localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(aiProfile));
   updateProjectHeroGreeting();
+}
+
+function greetingAllowedForHour(greeting, hour) {
+  const normalized = String(greeting || "").toLowerCase();
+  if (normalized.includes("night owl")) return hour < 5 || hour >= 22;
+  if (normalized.startsWith("good morning")) return hour >= 5 && hour < 12;
+  if (normalized.startsWith("good afternoon")) return hour >= 12 && hour < 17;
+  if (normalized.startsWith("good evening") || normalized.startsWith("evening")) return hour >= 17 && hour < 22;
+  return true;
 }
 
 function updateProjectHeroGreeting({ rotate = false } = {}) {
@@ -1942,9 +2183,10 @@ function updateProjectHeroGreeting({ rotate = false } = {}) {
       : hour < 17
         ? { named: ["Good afternoon, {name}"], anonymous: ["Good afternoon"] }
         : { named: ["Good evening, {name}", "Evening, {name}"], anonymous: ["Good evening", "Evening"] };
-  const greetings = firstName
+  const rawGreetings = firstName
     ? [...(dayGreet.named || []), ...(timeGreetings.named || []), ...PROJECT_GREETINGS]
     : [...(dayGreet.anonymous || []), ...(timeGreetings.anonymous || []), ...PROJECT_GREETINGS_NO_NAME];
+  const greetings = rawGreetings.filter((greeting) => greetingAllowedForHour(greeting, hour));
   const storageKey = firstName ? `latexStudioGreetingIndex:${firstName.toLowerCase()}` : "latexStudioGreetingIndex";
   let index = clampNumber(Number(localStorage.getItem(storageKey)), 0, greetings.length - 1, 0);
   if (rotate) {
@@ -2021,9 +2263,9 @@ function applySpellCheckSetting() {
   else clearSpellGrammarMarks();
 }
 
-function setFileSidebarVisible(show) {
+function setFileSidebarVisible(show, { persist = true } = {}) {
   applyLayoutSettings({ showSidebar: show, pdfMinWidth: getPdfMinimumWidth(), fileWidth: getFileSidebarWidth() });
-  localStorage.setItem("latexStudioShowSidebar", String(show));
+  if (persist) localStorage.setItem("latexStudioShowSidebar", String(show));
   renderPdf({ showLoading: false });
 }
 
@@ -2114,10 +2356,10 @@ function applyTerminalLayout({ height = getTerminalHeight(), collapsed = sourceP
   if (!collapsed) scheduleTerminalFit();
 }
 
-function setTerminalCollapsed(collapsed) {
+function setTerminalCollapsed(collapsed, { persist = true } = {}) {
   sourcePane.classList.toggle("terminal-collapsed", collapsed);
   if (collapsed) sourcePane.classList.remove("terminal-maximized");
-  localStorage.setItem("latexStudioTerminalCollapsed", String(collapsed));
+  if (persist) localStorage.setItem("latexStudioTerminalCollapsed", String(collapsed));
   if (!collapsed) scheduleTerminalFit();
 }
 
@@ -2731,19 +2973,16 @@ function wireEvents() {
   previewRailButton.addEventListener("click", () => setPdfCollapsed(false));
   undoButton.addEventListener("click", () => editor.undo());
   redoButton.addEventListener("click", () => editor.redo());
+  if (fileHeaderRefreshButton) fileHeaderRefreshButton.addEventListener("click", refreshActiveProject);
   newFileButton.addEventListener("click", () => createProjectFile("file"));
   newFolderButton.addEventListener("click", () => createProjectFile("folder"));
-  uploadFilesButton.addEventListener("click", chooseProjectFiles);
   if (downloadPackageButton) downloadPackageButton.addEventListener("click", downloadProjectPackage);
   activeDocumentTitle.addEventListener("dblclick", startActiveTitleEdit);
   activeDocumentTitle.addEventListener("contextmenu", (event) => {
     event.preventDefault();
     startActiveTitleEdit();
   });
-  remoteWorkspaceButton.addEventListener("click", () => {
-    openSettings();
-    setSettingsPanel("remote");
-  });
+  remoteWorkspaceButton.addEventListener("click", () => openSshProjectFlow());
   helpButton.addEventListener("click", openDocumentationSettings);
   if (railHelpButton) railHelpButton.addEventListener("click", openDocumentationSettings);
   fileOutlineToggle.addEventListener("click", () => {
@@ -2780,6 +3019,7 @@ function wireEvents() {
   downloadPdfButton.addEventListener("click", downloadPdf);
   historyButton.addEventListener("click", openHistoryWindow);
   if (pushGithubButton) pushGithubButton.addEventListener("click", pushActiveProjectToGithub);
+  if (pullGithubButton) pullGithubButton.addEventListener("click", pullActiveProjectFromGithub);
   if (pdfReaderButton) pdfReaderButton.addEventListener("click", togglePdfReaderMode);
   closeHistoryButton.addEventListener("click", () => setHistoryPanelOpen(false));
   pdfZoomOutButton.addEventListener("click", () => changePdfZoom(-0.1));
@@ -2989,6 +3229,7 @@ function openSettings() {
   closeCommandPalette();
   closeNewProjectPanel({ keepBackdrop: true });
   closeTemplatesPanel({ keepBackdrop: true });
+  populateProjectSettingsForm();
   settingsBackdrop.hidden = false;
   settingsDrawer.hidden = false;
   const activeSection = settingsDrawer.dataset.activeSection || "appearance";
@@ -3385,7 +3626,7 @@ function commandPaletteCommands() {
     { id: "visual", label: "/visual", detail: "Switch to visual mode", hint: "view", action: () => { closeCommandPalette(); setMode("visual"); } },
     { id: "code", label: "/code", detail: "Switch to code mode", hint: "view", action: () => { closeCommandPalette(); setMode("source"); } },
     { id: "history", label: "/history", detail: "Open project history", hint: "window", action: () => { closeCommandPalette(); openHistoryWindow(); } },
-    { id: "remote", label: "/remote", detail: "Open SSH remote settings", hint: "ssh", action: () => { closeCommandPalette({ keepBackdrop: true }); openSettings(); setSettingsPanel("remote"); } },
+    { id: "remote", label: "/ssh", detail: "Open a new SSH project", hint: "remote", action: () => { closeCommandPalette(); openSshProjectFlow(); } },
     { id: "terminal", label: "/terminal", detail: "Toggle terminal", hint: "panel", action: () => { closeCommandPalette(); setTerminalCollapsed(!sourcePane.classList.contains("terminal-collapsed")); } },
     { id: "files", label: "/files", detail: "Toggle file sidebar", hint: "sidebar", action: () => { closeCommandPalette(); setFileSidebarVisible(workspace.classList.contains("files-hidden")); } }
   ];
@@ -3875,11 +4116,8 @@ async function createTerminalSession(kind = "shell") {
 
   const requestedKind = ["shell", "codex", "claude", "ssh"].includes(kind) ? kind : "shell";
   if (requestedKind === "ssh" && !remoteWorkspace.host) {
-    openSettings();
-    setSettingsPanel("remote");
-    remoteStatus.textContent = "Add an SSH host first.";
-    setStatusClass(remoteStatus, "error");
-    return null;
+    await openSshProjectFlow({ startTerminal: false });
+    if (!remoteWorkspace.host) return null;
   }
   terminalEmpty.hidden = true;
   setTerminalControlsDisabled(true);
@@ -3954,7 +4192,7 @@ function renderTerminalTabs() {
     button.draggable = true;
     button.dataset.terminalId = session.id;
     button.innerHTML = `
-      <span class="terminal-tab-kind" aria-hidden="true">${terminalKindIcon(session.kind)}</span>
+      <span class="terminal-tab-kind terminal-tab-kind-${escapeHtml(session.kind)}" aria-hidden="true">${terminalKindIcon(session.kind)}</span>
       <span class="terminal-tab-title">${escapeHtml(session.title)}</span>
       <span class="terminal-tab-close" role="button" aria-label="Close terminal">${CLOSE_ICON_SVG}</span>
     `;
@@ -3983,8 +4221,18 @@ function renderTerminalTabs() {
 }
 
 function terminalKindIcon(kind) {
-  if (kind === "codex") return "C";
-  if (kind === "claude") return "Cl";
+  if (kind === "codex") {
+    return `
+      <svg class="terminal-brand-icon openai-mark" viewBox="0 0 16 16">
+        <path d="M14.949 6.547a3.94 3.94 0 0 0-.348-3.273 4.11 4.11 0 0 0-4.4-1.934A4.1 4.1 0 0 0 8.423.2 4.15 4.15 0 0 0 6.305.086a4.1 4.1 0 0 0-1.891.948 4.04 4.04 0 0 0-1.158 1.753 4.1 4.1 0 0 0-1.563.679A4 4 0 0 0 .554 4.72a3.99 3.99 0 0 0 .502 4.731 3.94 3.94 0 0 0 .346 3.274 4.11 4.11 0 0 0 4.402 1.933c.382.425.852.764 1.377.995.526.231 1.095.35 1.67.346 1.78.002 3.358-1.132 3.901-2.804a4.1 4.1 0 0 0 1.563-.68 4 4 0 0 0 1.14-1.253 3.99 3.99 0 0 0-.506-4.716m-6.097 8.406a3.05 3.05 0 0 1-1.945-.694l.096-.054 3.23-1.838a.53.53 0 0 0 .265-.455v-4.49l1.366.778q.02.011.025.035v3.722c-.003 1.653-1.361 2.992-3.037 2.996m-6.53-2.75a2.95 2.95 0 0 1-.36-2.01l.095.057L5.29 12.09a.53.53 0 0 0 .527 0l3.949-2.246v1.555a.05.05 0 0 1-.022.041L6.473 13.3c-1.454.826-3.311.335-4.15-1.098m-.85-6.94A3.02 3.02 0 0 1 3.07 3.949v3.785a.51.51 0 0 0 .262.451l3.93 2.237-1.366.779a.05.05 0 0 1-.048 0L2.585 9.342a2.98 2.98 0 0 1-1.113-4.094zm11.216 2.571L8.747 5.576l1.362-.776a.05.05 0 0 1 .048 0l3.265 1.86a3 3 0 0 1 1.173 1.207 2.96 2.96 0 0 1-.27 3.2 3.05 3.05 0 0 1-1.36.997V8.279a.52.52 0 0 0-.276-.445m1.36-2.015-.097-.057-3.226-1.855a.53.53 0 0 0-.53 0L6.249 6.153V4.598a.04.04 0 0 1 .019-.04L9.533 2.7a3.07 3.07 0 0 1 3.257.139c.474.325.843.778 1.066 1.303.223.526.289 1.103.191 1.664zM5.503 8.575 4.139 7.8a.05.05 0 0 1-.026-.037V4.049c0-.57.166-1.127.476-1.607s.752-.864 1.275-1.105a3.08 3.08 0 0 1 3.234.41l-.096.054-3.23 1.838a.53.53 0 0 0-.265.455zm.742-1.577 1.758-1 1.762 1v2l-1.755 1-1.762-1z"></path>
+      </svg>`;
+  }
+  if (kind === "claude") {
+    return `
+      <svg class="terminal-brand-icon anthropic-mark" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M9.218 2h2.402L16 12.987h-2.402zM4.379 2h2.512l4.38 10.987H8.82l-.895-2.308h-4.58l-.896 2.307H0L4.38 2.001zm2.755 6.64L5.635 4.777 4.137 8.64z"></path>
+      </svg>`;
+  }
   if (kind === "ssh") return "SSH";
   return ">";
 }
@@ -4055,6 +4303,7 @@ function toggleTerminalMaximized() {
 function updateTerminalVisibility() {
   const visibleIds = new Set(splitTerminalIds.length ? splitTerminalIds : [activeTerminalId].filter(Boolean));
   terminalBody.classList.toggle("terminal-split", visibleIds.size > 1);
+  terminalBody.style.setProperty("--terminal-split-count", String(Math.max(1, visibleIds.size)));
   terminalSessions.forEach((session) => {
     session.node.hidden = !visibleIds.has(session.id);
     session.node.classList.toggle("split-active", visibleIds.has(session.id));
@@ -4129,8 +4378,9 @@ function refreshTerminalThemes() {
 function terminalTheme() {
   const dark = resolvedTerminalTheme() === "dark";
   const accentRgb = themeColor("--accent-rgb", "249, 115, 22");
+  const transparent = document.body.classList.contains("transparent-theme");
   return {
-    background: themeColor("--terminal-bg", dark ? "#111827" : "#ffffff"),
+    background: transparent ? "rgba(0, 0, 0, 0)" : themeColor("--terminal-bg", dark ? "#111827" : "#ffffff"),
     foreground: themeColor("--terminal-text", dark ? "#e5edf7" : "#1f2937"),
     cursor: dark ? "#ffffff" : themeColor("--accent", DEFAULT_ACCENT),
     selectionBackground: themeColor("--terminal-selection", `rgba(${accentRgb}, 0.2)`),
@@ -4791,6 +5041,9 @@ async function openProject(projectId) {
   const project = projects.find((item) => item.id === projectId);
   activeProject = project || { id: projectId, name: "Project", texName: "main.tex" };
   showEditorShell();
+  setFileSidebarVisible(false, { persist: false });
+  setTerminalCollapsed(true, { persist: false });
+  setCompileLogCollapsed(true, { persist: false });
   await loadManuscript(projectId);
   await loadProjectFiles();
 }
@@ -4835,6 +5088,7 @@ async function loadManuscript(projectId = activeProject && activeProject.id) {
     pdfTitle.textContent = activeProject.pdfName || "main.pdf";
     pdfMeta.textContent = "Loading pages...";
     updateActiveDocumentTitle();
+    populateProjectSettingsForm();
     updateStats();
     scheduleSourceMinimapUpdate();
     renderVisualEditor();
@@ -4878,6 +5132,7 @@ async function loadProjectFile(relativePath, { confirmUnsaved = true, preview = 
     setMode(visualEditor.hidden ? "source" : "visual");
     updateEditorFileTitle();
     updateActiveDocumentTitle();
+    populateProjectSettingsForm();
     updateStats();
     scheduleSourceMinimapUpdate();
     renderVisualEditor();
@@ -4903,6 +5158,7 @@ async function loadProjectFiles() {
     activeProject = data.project || activeProject;
     projectFiles = data.files || [];
     updateActiveDocumentTitle();
+    populateProjectSettingsForm();
     renderFileTree();
   } catch (error) {
     fileTree.innerHTML = `<div class="file-message file-error">${escapeHtml(formatError(error))}</div>`;
@@ -5633,6 +5889,51 @@ async function pushActiveProjectToGithub() {
   }
 }
 
+async function pullActiveProjectFromGithub() {
+  if (!activeProject || !window.localOverleaf || !window.localOverleaf.pullProjectFromGithub) return;
+  const remote = (projectGithubRemoteInput && projectGithubRemoteInput.value.trim()) || activeProject.githubRemote || "";
+  if (!remote) {
+    openSettings();
+    setSettingsPanel("project");
+    projectSettingsStatus.textContent = "Set a project GitHub remote before pulling.";
+    setStatusClass(projectSettingsStatus, "error");
+    return;
+  }
+
+  const confirmed = window.confirm("Pull will overwrite local LaTeX source files from the project GitHub repo. Continue?");
+  if (!confirmed) return;
+
+  setBusy(true);
+  setSaveState("Pulling...");
+  setCompileState("Pulling from GitHub...");
+
+  try {
+    if (!activeMediaFile && getSourceText() !== savedText) {
+      await saveManuscript();
+    }
+    const result = await window.localOverleaf.pullProjectFromGithub(activeProject.id);
+    activeProject = result.project || activeProject;
+    setCompileState(`Pulled ${result.files ? result.files.length : 0} LaTeX files`, "ok");
+    compileLog.textContent = [
+      `Pulled LaTeX sources from ${result.remote || remote}.`,
+      result.files && result.files.length ? result.files.join("\n") : ""
+    ].filter(Boolean).join("\n\n");
+    await loadManuscript(activeProject.id);
+    await loadProjectFiles();
+    populateProjectSettingsForm();
+  } catch (error) {
+    setSaveState(activeMediaFile || getSourceText() === savedText ? "Saved" : "Unsaved changes");
+    setCompileState("GitHub pull failed", "error");
+    compileLog.textContent = formatError(error);
+    if (projectSettingsStatus) {
+      projectSettingsStatus.textContent = formatError(error);
+      setStatusClass(projectSettingsStatus, "error");
+    }
+  } finally {
+    setBusy(false);
+  }
+}
+
 function togglePdfReaderMode(force) {
   const next = typeof force === "boolean" ? force : !document.body.classList.contains("pdf-reader-mode");
   document.body.classList.toggle("pdf-reader-mode", next);
@@ -5951,11 +6252,78 @@ function renderVisualEditor() {
 }
 
 function renderMarkdownPreview(markdown) {
+  clearTimeout(markdownVisualTimer);
   visualEditor.innerHTML = "";
   const article = document.createElement("article");
-  article.className = "markdown-preview";
+  article.className = "markdown-preview markdown-visual-editor";
+  article.contentEditable = "true";
+  article.spellcheck = spellCheckEnabled;
   article.innerHTML = markdownToHtml(markdown);
+  article.addEventListener("input", () => {
+    clearTimeout(markdownVisualTimer);
+    markdownVisualTimer = setTimeout(() => {
+      const nextMarkdown = markdownDomToMarkdown(article);
+      if (nextMarkdown === getSourceText()) return;
+      suppressSourceChange = true;
+      editor.setValue(nextMarkdown);
+      suppressSourceChange = false;
+      handleSourceChanged({ renderVisual: false });
+    }, 180);
+  });
   visualEditor.appendChild(article);
+}
+
+function markdownDomToMarkdown(root) {
+  const blocks = [];
+
+  const inlineText = (node) => String(node.innerText || node.textContent || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .trimEnd();
+
+  Array.from(root.childNodes).forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = String(node.textContent || "").trim();
+      if (text) blocks.push(text);
+      return;
+    }
+
+    if (!(node instanceof HTMLElement)) return;
+    const tag = node.tagName.toLowerCase();
+    if (/^h[1-6]$/.test(tag)) {
+      const level = Number(tag.slice(1));
+      blocks.push(`${"#".repeat(level)} ${inlineText(node).trim()}`);
+      return;
+    }
+
+    if (tag === "ul" || tag === "ol") {
+      const items = Array.from(node.querySelectorAll(":scope > li"))
+        .map((item) => `- ${inlineText(item).trim()}`)
+        .filter((line) => line !== "- ");
+      if (items.length) blocks.push(items.join("\n"));
+      return;
+    }
+
+    if (tag === "pre") {
+      blocks.push(`\`\`\`\n${inlineText(node)}\n\`\`\``);
+      return;
+    }
+
+    if (tag === "blockquote") {
+      const quote = inlineText(node)
+        .split("\n")
+        .map((line) => `> ${line}`)
+        .join("\n")
+        .trim();
+      if (quote) blocks.push(quote);
+      return;
+    }
+
+    const text = inlineText(node).trim();
+    if (text) blocks.push(text);
+  });
+
+  return `${blocks.join("\n\n").trimEnd()}\n`;
 }
 
 function markdownToHtml(markdown) {
@@ -7294,6 +7662,9 @@ function setBusy(value) {
   downloadPdfButton.disabled = value;
   if (downloadPackageButton) downloadPackageButton.disabled = value;
   if (pushGithubButton) pushGithubButton.disabled = value;
+  if (pullGithubButton) pullGithubButton.disabled = value;
+  if (saveProjectSettingsButton) saveProjectSettingsButton.disabled = value;
+  if (pullProjectGithubButton) pullProjectGithubButton.disabled = value;
   if (pdfReaderButton) pdfReaderButton.disabled = value;
 }
 

@@ -6992,6 +6992,31 @@ body[data-theme="dark"] .vim-mode-indicator[data-vim-state="visual"] {
   padding: 0 3px;
 }
 
+.terminal-tab-kind-codex,
+.terminal-tab-kind-claude {
+  padding: 0;
+  width: 20px;
+}
+
+.terminal-brand-icon {
+  display: block;
+  height: 14px;
+  width: 14px;
+}
+
+.terminal-brand-icon.openai-mark {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.55;
+}
+
+.terminal-brand-icon.anthropic-mark {
+  fill: currentColor;
+  stroke: none;
+}
+
 .terminal-tab.active .terminal-tab-kind {
   border-color: color-mix(in srgb, var(--accent) 72%, var(--terminal-text));
   color: var(--accent);
@@ -7113,4 +7138,304 @@ body.pdf-reader-mode .pdf-viewer {
 .topbar-icon.settings-icon {
   height: 16px !important;
   width: 16px !important;
+}
+
+/* Current-turn fixes: terminal brand icons, split control, and glass editor transparency. */
+#terminalSplitButton {
+  display: inline-flex !important;
+}
+
+.terminal-tab-kind-codex,
+.terminal-tab-kind-claude {
+  background: transparent !important;
+  border: 0 !important;
+  color: currentColor !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  padding: 0 !important;
+  width: 18px !important;
+}
+
+.terminal-brand-icon {
+  display: block !important;
+  height: 16px !important;
+  width: 16px !important;
+}
+
+.terminal-brand-icon.openai-mark,
+.terminal-brand-icon.anthropic-mark {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+body.transparent-theme,
+body.transparent-theme .app,
+body.transparent-theme .editor-screen,
+body.transparent-theme .workspace {
+  background: transparent !important;
+}
+
+body.transparent-theme .topbar,
+body.transparent-theme .file-rail,
+body.transparent-theme .source-rail,
+body.transparent-theme .preview-rail,
+body.transparent-theme .file-pane,
+body.transparent-theme .source-pane,
+body.transparent-theme .preview-pane,
+body.transparent-theme .pane-header,
+body.transparent-theme .text-tabs,
+body.transparent-theme .terminal-panel,
+body.transparent-theme .terminal-header,
+body.transparent-theme .terminal-tabs,
+body.transparent-theme .log-panel,
+body.transparent-theme .log-header,
+body.transparent-theme .file-outline {
+  background: color-mix(in srgb, var(--panel) 26%, transparent) !important;
+  backdrop-filter: blur(20px) saturate(145%) !important;
+}
+
+body.transparent-theme .editor-stack,
+body.transparent-theme .CodeMirror,
+body.transparent-theme .CodeMirror-scroll,
+body.transparent-theme .CodeMirror-sizer,
+body.transparent-theme .CodeMirror-lines,
+body.transparent-theme .CodeMirror-code,
+body.transparent-theme .CodeMirror-gutters,
+body.transparent-theme .source-minimap,
+body.transparent-theme .source-minimap-lines,
+body.transparent-theme .terminal-body,
+body.transparent-theme .terminal-instance,
+body.transparent-theme .terminal-instance .xterm,
+body.transparent-theme .terminal-instance .xterm-screen,
+body.transparent-theme .terminal-instance .xterm-viewport,
+body.transparent-theme #compileLog {
+  background: transparent !important;
+}
+
+body.transparent-theme .CodeMirror-gutters,
+body.transparent-theme .source-minimap-lines,
+body.transparent-theme #compileLog {
+  background-color: color-mix(in srgb, var(--cm-bg) 18%, transparent) !important;
+}
+
+body.transparent-theme .xterm-rows,
+body.transparent-theme .xterm-screen canvas {
+  background: transparent !important;
+}
+
+body.transparent-theme .pdf-page,
+body.transparent-theme .pdf-page canvas {
+  opacity: 1 !important;
+}
+
+.terminal-action-brand-icon {
+  display: inline-block;
+  fill: currentColor;
+  height: 14px;
+  width: 14px;
+}
+
+.terminal-actions .danger-terminal {
+  gap: 5px;
+}
+
+body.transparent-theme .pdf-viewer {
+  background: transparent !important;
+}
+
+body.transparent-theme .pdf-page {
+  background: color-mix(in srgb, var(--pdf-paper) 94%, transparent) !important;
+}
+
+.file-pane-header > div:first-child {
+  display: none !important;
+}
+
+.file-pane-header {
+  justify-content: flex-end !important;
+  min-height: 42px !important;
+}
+
+.file-header-actions {
+  justify-content: flex-end !important;
+  width: 100% !important;
+}
+
+#refreshProjectsButton {
+  align-items: center !important;
+  display: inline-flex !important;
+  height: 36px !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  width: 40px !important;
+}
+
+#refreshProjectsButton .refresh-icon,
+#refreshProjectsButton .refresh-icon path {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  stroke-width: 2.1 !important;
+}
+
+.templates-panel {
+  width: min(1320px, calc(100vw - 72px)) !important;
+}
+
+.templates-main,
+.templates-body {
+  min-width: 0 !important;
+}
+
+.template-grid {
+  gap: 14px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.template-card {
+  gap: 10px !important;
+  min-height: 0 !important;
+  padding: 14px !important;
+}
+
+.template-preview {
+  height: 210px !important;
+  justify-self: stretch !important;
+  width: 100% !important;
+}
+
+.template-card h4 {
+  font-size: 15px !important;
+  line-height: 1.2 !important;
+}
+
+@media (max-width: 1280px) {
+  .template-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .template-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Follow-up polish: collapsed rails, SSH workflow cleanup, markdown visual editing, and split terminals. */
+.settings-section[data-settings-panel="remote"] {
+  display: none !important;
+}
+
+.file-rail-open,
+.source-rail-open,
+.preview-rail-open,
+.collapsed-panel-rail {
+  font-size: 0 !important;
+  letter-spacing: 0 !important;
+}
+
+.file-rail-open::before {
+  content: "" !important;
+}
+
+.terminal-collapsed-rail::before,
+.log-collapsed-rail::before {
+  background: color-mix(in srgb, var(--text) 46%, transparent);
+  border-radius: 999px;
+  content: "";
+  display: block;
+  height: 2px;
+  width: 72px;
+}
+
+.source-pane {
+  container-name: source-pane;
+  container-type: inline-size;
+}
+
+.source-header-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-width: 0;
+}
+
+@container source-pane (max-width: 560px) {
+  .source-header-actions {
+    display: none !important;
+  }
+
+  .source-mode-actions .mode-button {
+    min-width: 58px !important;
+    padding-inline: 10px !important;
+  }
+}
+
+.terminal-body.terminal-split {
+  grid-template-columns: repeat(var(--terminal-split-count, 2), minmax(180px, 1fr)) !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+.terminal-body.terminal-split .terminal-instance {
+  min-width: 180px !important;
+}
+
+.project-grid.rows-view .project-card {
+  height: 84px !important;
+  min-height: 84px !important;
+  padding: 10px 14px !important;
+}
+
+.project-grid.rows-view .project-card-copy {
+  gap: 2px !important;
+  justify-content: center !important;
+}
+
+.project-grid.rows-view .project-name {
+  font-size: 16px !important;
+  line-height: 1.18 !important;
+}
+
+.project-grid.rows-view .project-file,
+.project-grid.rows-view .project-meta {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+
+.markdown-visual-editor {
+  caret-color: var(--text);
+  outline: none;
+}
+
+.markdown-visual-editor:focus {
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.22);
+}
+
+body[data-contrast="high"] .file-header-actions .icon-button,
+body[data-contrast="high"] .file-rail-actions .file-footer-icon,
+body[data-contrast="high"] .topbar-action-button,
+body[data-contrast="high"] .source-mode-actions,
+body[data-contrast="high"] .source-mode-actions .mode-button,
+body[data-contrast="high"] .project-tools button {
+  color: var(--text) !important;
+}
+
+body[data-contrast="high"] .file-header-actions .icon-button:hover,
+body[data-contrast="high"] .file-rail-actions .file-footer-icon:hover,
+body[data-contrast="high"] .project-tools button:hover {
+  background: color-mix(in srgb, var(--accent) 20%, var(--panel)) !important;
+}
+
+body[data-contrast="high"] .source-mode-actions .mode-button.active,
+body[data-contrast="high"] .vim-mode-indicator {
+  background: color-mix(in srgb, var(--accent) 76%, var(--page)) !important;
+  color: var(--bg) !important;
+}
+
+body[data-contrast="high"] .terminal-collapsed-rail::before,
+body[data-contrast="high"] .log-collapsed-rail::before {
+  background: var(--border-strong);
 }

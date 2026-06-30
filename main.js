@@ -253,6 +253,24 @@ function normalizeExternalUrl(rawUrl) {
   return url.toString();
 }
 
+function normalizeGithubRemote(rawRemote) {
+  const remote = String(rawRemote || "").trim();
+  if (!remote) return "";
+  if (/^git@github\.com:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\.git)?$/.test(remote)) return remote;
+
+  let url;
+  try {
+    url = new URL(remote);
+  } catch (error) {
+    throw new Error("Project GitHub must be a GitHub HTTPS URL or git@github.com SSH URL.");
+  }
+
+  if (!["http:", "https:"].includes(url.protocol) || url.hostname !== "github.com") {
+    throw new Error("Project GitHub must point to github.com.");
+  }
+  return url.toString().replace(/\/$/, "");
+}
+
 function formatMainError(error) {
   if (!error) return "Unknown error.";
   if (typeof error === "string") return error;
@@ -1811,6 +1829,18 @@ async function renameProject(_event, payload = {}) {
   return listProjects();
 }
 
+async function saveProjectSettings(_event, payload = {}) {
+  const projects = await readProjects();
+  const project = projects.find((item) => item.id === payload.projectId);
+  if (!project) throw new Error("Project not found.");
+
+  const settings = payload.settings || {};
+  project.githubRemote = normalizeGithubRemote(settings.githubRemote);
+  project.updatedAt = new Date().toISOString();
+  await writeProjects(projects);
+  return { project: decorateProject(project), ...(await listProjects()) };
+}
+
 async function getProject(projectId) {
   const projects = await readProjects();
   const project = projects.find((item) => item.id === projectId);
@@ -1968,7 +1998,7 @@ function terminalPreset(kind, cwd, options = {}) {
 
   if (kind === "ssh") {
     const remote = normalizeRemoteOptions(options.remote);
-    if (!remote.host) throw new Error("Set an SSH host in Settings > Remote before opening an SSH terminal.");
+    if (!remote.host) throw new Error("Choose a New SSH Project before opening an SSH terminal.");
     const remoteCommand = remote.path
       ? `cd ${shellQuote(remote.path)} && exec ${remote.shell || "$SHELL"} -l`
       : "";
@@ -1994,6 +2024,42 @@ function normalizeRemoteOptions(remote = {}) {
     path: String(remote.path || "").trim(),
     shell: String(remote.shell || "").trim()
   };
+}
+
+async function listSshHosts() {
+  const hosts = new Set();
+  const sshDir = path.join(homeDir, ".ssh");
+
+  const addHost = (host) => {
+    const normalized = String(host || "").trim();
+    if (!normalized || normalized === "*" || normalized.includes("*") || normalized.startsWith("|")) return;
+    hosts.add(normalized);
+  };
+
+  try {
+    const config = await fsp.readFile(path.join(sshDir, "config"), "utf8");
+    config.split(/\r?\n/).forEach((line) => {
+      const match = line.match(/^\s*Host\s+(.+)$/i);
+      if (!match) return;
+      match[1].split(/\s+/).forEach(addHost);
+    });
+  } catch (error) {
+    // Missing SSH config is normal.
+  }
+
+  try {
+    const knownHosts = await fsp.readFile(path.join(sshDir, "known_hosts"), "utf8");
+    knownHosts.split(/\r?\n/).forEach((line) => {
+      const firstField = line.trim().split(/\s+/)[0] || "";
+      firstField.split(",").forEach((entry) => {
+        addHost(entry.replace(/^\[([^\]]+)\](?::\d+)?$/, "$1").replace(/:\d+$/, ""));
+      });
+    });
+  } catch (error) {
+    // Missing known_hosts is normal.
+  }
+
+  return { hosts: Array.from(hosts).sort((a, b) => a.localeCompare(b)) };
 }
 
 function shellQuote(value) {
@@ -2524,6 +2590,7 @@ async function pushProjectToGithub(_event, projectId) {
   const project = await getProject(projectId);
   const latexFiles = await listProjectLatexFiles(project);
   if (!latexFiles.length) throw new Error("No LaTeX source files found to push.");
+  if (project.githubRemote) return pushProjectToConfiguredGithub(project, latexFiles);
 
   const sourceRoot = projectRootFor(project);
   const repoPath = await ensureLatexDocumentsRepo();
@@ -2583,6 +2650,125 @@ async function listProjectLatexFiles(project) {
 
   await walk(root);
   return files.sort();
+}
+
+function projectGithubRepoPath(project) {
+  return path.join(app.getPath("userData"), "project-github-repos", safeCacheName(project.id));
+}
+
+async function currentGitBranch(cwd) {
+  const branch = await execFileAsync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd }).catch(() => ({ stdout: "" }));
+  const name = branch.stdout.trim();
+  if (name && name !== "HEAD") return name;
+  await execFileAsync("git", ["checkout", "-B", "main"], { cwd }).catch(() => {});
+  return "main";
+}
+
+async function ensureProjectGithubRepo(project) {
+  const remote = normalizeGithubRemote(project.githubRemote);
+  if (!remote) throw new Error("Set a project GitHub remote in Project settings first.");
+
+  const repoPath = projectGithubRepoPath(project);
+  const gitPath = path.join(repoPath, ".git");
+
+  if (!fs.existsSync(gitPath)) {
+    await fsp.rm(repoPath, { recursive: true, force: true });
+    await fsp.mkdir(path.dirname(repoPath), { recursive: true });
+    await execFileAsync("git", ["clone", remote, repoPath]);
+  } else {
+    await execFileAsync("git", ["remote", "set-url", "origin", remote], { cwd: repoPath });
+  }
+
+  await ensureGitIdentity(repoPath);
+  const branch = await currentGitBranch(repoPath);
+  await execFileAsync("git", ["pull", "--ff-only", "origin", branch], { cwd: repoPath }).catch(() => {});
+  return repoPath;
+}
+
+async function listLatexFilesInRoot(root) {
+  const files = [];
+
+  async function walk(dir) {
+    const entries = await fsp.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === ".git" || shouldSkipFile(entry.name)) continue;
+      const absolutePath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(absolutePath);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      if (!latexSourceExtensions.has(path.extname(entry.name).toLowerCase())) continue;
+      files.push(path.relative(root, absolutePath));
+    }
+  }
+
+  await walk(root);
+  return files.sort();
+}
+
+async function clearLatexFilesInRoot(root) {
+  const files = await listLatexFilesInRoot(root).catch(() => []);
+  for (const relativePath of files) {
+    await fsp.rm(path.join(root, relativePath), { force: true });
+  }
+}
+
+async function copyLatexFiles(sourceRoot, targetRoot, relativePaths) {
+  for (const relativePath of relativePaths) {
+    const sourcePath = path.join(sourceRoot, relativePath);
+    const targetPath = path.join(targetRoot, relativePath);
+    await fsp.mkdir(path.dirname(targetPath), { recursive: true });
+    await fsp.copyFile(sourcePath, targetPath);
+  }
+}
+
+async function pushProjectToConfiguredGithub(project, latexFiles) {
+  const sourceRoot = projectRootFor(project);
+  const repoPath = await ensureProjectGithubRepo(project);
+
+  await clearLatexFilesInRoot(repoPath);
+  await copyLatexFiles(sourceRoot, repoPath, latexFiles);
+  await execFileAsync("git", ["add", "-A", "--", "."], { cwd: repoPath });
+  const status = await execFileAsync("git", ["diff", "--cached", "--name-only"], { cwd: repoPath });
+  let committed = false;
+  let commit = "";
+
+  if (status.stdout.trim()) {
+    await execFileAsync("git", ["commit", "-m", `Update ${project.name || "project"} LaTeX sources from AgentDesk`], { cwd: repoPath });
+    committed = true;
+    const rev = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd: repoPath });
+    commit = rev.stdout.trim();
+  }
+
+  const push = await execFileAsync("git", ["push", "-u", "origin", "HEAD"], { cwd: repoPath });
+  return {
+    ok: true,
+    committed,
+    commit,
+    files: latexFiles,
+    remote: project.githubRemote,
+    output: [push.stdout, push.stderr].filter(Boolean).join("\n").trim()
+  };
+}
+
+async function pullProjectFromGithub(_event, projectId) {
+  const project = await getProject(projectId);
+  const repoPath = await ensureProjectGithubRepo(project);
+  const latexFiles = await listLatexFilesInRoot(repoPath);
+  if (!latexFiles.length) throw new Error("No LaTeX source files found in the project GitHub repo.");
+
+  await copyLatexFiles(repoPath, projectRootFor(project), latexFiles);
+  await touchProject(project.id);
+
+  const projects = await readProjects();
+  const updatedProject = projects.find((item) => item.id === project.id) || project;
+  return {
+    ok: true,
+    project: decorateProject(updatedProject),
+    files: latexFiles,
+    remote: project.githubRemote
+  };
 }
 
 function latexDocumentsRepoPath() {
@@ -2679,6 +2865,7 @@ ipcMain.handle("remove-template", removeTemplate);
 ipcMain.handle("create-project-from-template", createProjectFromTemplate);
 ipcMain.handle("rename-project", renameProject);
 ipcMain.handle("remove-project", removeProject);
+ipcMain.handle("save-project-settings", saveProjectSettings);
 ipcMain.handle("list-project-files", listProjectFiles);
 ipcMain.handle("project-file-action", projectFileAction);
 ipcMain.handle("choose-project-files", chooseProjectFiles);
@@ -2691,6 +2878,8 @@ ipcMain.handle("open-pdf", openPdf);
 ipcMain.handle("download-pdf", downloadPdf);
 ipcMain.handle("download-project-package", downloadProjectPackage);
 ipcMain.handle("push-project-to-github", pushProjectToGithub);
+ipcMain.handle("pull-project-from-github", pullProjectFromGithub);
+ipcMain.handle("list-ssh-hosts", listSshHosts);
 ipcMain.handle("toggle-fullscreen", toggleFullscreen);
 ipcMain.handle("open-external-link", openExternalLink);
 ipcMain.handle("open-history-window", openHistoryWindow);
