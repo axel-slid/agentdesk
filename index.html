@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local LaTeX Studio</title>
+  <link rel="stylesheet" href="node_modules/codemirror/lib/codemirror.css">
+  <link rel="stylesheet" href="node_modules/codemirror/addon/dialog/dialog.css">
+  <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <section class="project-screen" id="projectScreen">
+      <div class="project-shell">
+        <header class="project-hero">
+          <div>
+            <h1 id="projectHeroTitle">Projects</h1>
+          </div>
+          <div class="hero-actions">
+            <button id="addProjectButton" class="hero-action" type="button">New Project</button>
+            <button class="settingsButton" type="button">Settings</button>
+          </div>
+        </header>
+
+        <section id="newProjectPanel" class="new-project-panel" hidden>
+          <div class="project-import-options" aria-label="New project type">
+            <button type="button" data-project-kind="blank">
+              <span>Blank</span>
+              <small>Start with a new main.tex</small>
+            </button>
+            <button type="button" data-project-kind="tex">
+              <span>TeX File</span>
+              <small>Open an existing entry file</small>
+            </button>
+            <button type="button" data-project-kind="folder">
+              <span>Folder</span>
+              <small>Use a local project directory</small>
+            </button>
+            <button type="button" data-project-kind="archive">
+              <span>Archive</span>
+              <small>Import zip, tar, tar.gz, tgz</small>
+            </button>
+          </div>
+          <div id="projectDropZone" class="project-drop-zone" role="button" tabindex="0">
+            <span>Drop a project here</span>
+            <small>.tex file, folder, .zip, .tar, .tar.gz, or .tgz</small>
+          </div>
+        </section>
+
+        <div class="project-tools">
+          <input id="projectSearch" type="search" placeholder="Search projects" aria-label="Search projects">
+          <div class="project-view-toggle" aria-label="Project view">
+            <button id="projectGridButton" class="active" type="button" aria-label="Grid view" title="Grid view">
+              <svg class="view-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="4" width="6" height="6" rx="1.2"></rect>
+                <rect x="14" y="4" width="6" height="6" rx="1.2"></rect>
+                <rect x="4" y="14" width="6" height="6" rx="1.2"></rect>
+                <rect x="14" y="14" width="6" height="6" rx="1.2"></rect>
+              </svg>
+              <span class="visually-hidden">Grid view</span>
+            </button>
+            <button id="projectRowsButton" type="button" aria-label="Rows view" title="Rows view">
+              <svg class="view-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 6h14M5 12h14M5 18h14"></path>
+              </svg>
+              <span class="visually-hidden">Rows view</span>
+            </button>
+          </div>
+          <button id="refreshProjectsButton" type="button">Refresh</button>
+        </div>
+
+        <div id="projectGrid" class="project-grid" aria-live="polite"></div>
+        <p id="projectEmpty" class="project-empty" hidden>No projects yet. Add a LaTeX file to start.</p>
+      </div>
+    </section>
+
+    <section class="editor-screen" id="editorScreen" hidden>
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="backToProjectsButton" class="project-back-button" type="button" title="Back to projects">
+            <span aria-hidden="true">&larr;</span>
+            <span>Projects</span>
+          </button>
+          <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
+        </div>
+        <div class="topbar-actions">
+          <div id="topSaveStatusButton" class="save-status" aria-live="polite" data-save-status="neutral">
+            <span id="topSaveStatusLabel">Not loaded</span>
+            <span class="save-status-icon" aria-hidden="true"></span>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace" id="workspace">
+        <div id="fileRail" class="file-rail" hidden>
+          <button id="fileRailButton" class="file-rail-open" type="button">Files</button>
+          <div class="file-rail-actions">
+            <button id="railRefreshFilesButton" class="file-footer-icon" type="button" aria-label="Refresh files" title="Refresh files">
+              <span aria-hidden="true">&#8635;</span>
+            </button>
+            <button class="settingsButton file-footer-icon" type="button" aria-label="Open settings" title="Settings">
+              <span aria-hidden="true">&#9881;</span>
+            </button>
+          </div>
+        </div>
+
+        <aside class="file-pane" id="filePane">
+          <div class="file-pane-header">
+            <div>
+              <h2>Files</h2>
+            </div>
+          </div>
+          <button id="addFilesButton" class="file-drop-zone" type="button">
+            <span>Drop files here</span>
+            <small>or add files</small>
+          </button>
+          <div id="fileTree" class="file-tree" aria-label="Project files"></div>
+          <div id="filePreview" class="file-preview" hidden></div>
+          <footer class="file-pane-footer">
+            <div class="file-footer-actions">
+              <button id="refreshFilesButton" class="file-footer-icon" type="button" aria-label="Refresh files" title="Refresh files">
+                <span aria-hidden="true">&#8635;</span>
+              </button>
+              <button class="settingsButton file-footer-icon" type="button" aria-label="Open settings" title="Settings">
+                <span aria-hidden="true">&#9881;</span>
+              </button>
+            </div>
+            <div class="file-status">
+              <p id="saveState">Not loaded</p>
+              <p id="compileState">Waiting for compile</p>
+            </div>
+          </footer>
+        </aside>
+
+        <div id="fileSplitter" class="file-splitter" role="separator" aria-label="Resize files sidebar" tabindex="0"></div>
+
+        <section class="source-pane">
+          <div class="pane-header">
+            <div class="source-heading">
+              <h2 id="editorTitle">main.tex</h2>
+              <p id="sourceStats">0 lines · 0 words · 0 XX</p>
+            </div>
+            <div class="source-mode-actions" aria-label="Editor mode">
+              <button class="mode-button active" id="sourceModeButton" type="button">Text</button>
+              <button class="mode-button" id="visualModeButton" type="button">Visual</button>
+            </div>
+          </div>
+          <div id="textTabs" class="text-tabs" aria-label="Open text files"></div>
+          <div class="editor-stack">
+            <textarea id="latexSource" spellcheck="false" aria-label="LaTeX source"></textarea>
+            <div id="visualEditor" class="visual-editor" hidden></div>
+          </div>
+          <section class="terminal-panel" id="terminalPanel">
+            <div id="terminalResizeHandle" class="terminal-resize-handle" role="separator" aria-label="Resize terminal panel" tabindex="0"></div>
+            <header class="terminal-header">
+              <div class="terminal-tabs" id="terminalTabs" aria-label="Terminal sessions"></div>
+              <div class="terminal-actions">
+                <button id="terminalNewButton" type="button" aria-label="New shell terminal">+</button>
+                <button id="terminalShellButton" type="button">Shell</button>
+                <button id="terminalCodexButton" class="danger-terminal" type="button">Codex</button>
+                <button id="terminalClaudeButton" class="danger-terminal" type="button">Claude</button>
+              </div>
+            </header>
+            <div class="terminal-body" id="terminalBody">
+              <div class="terminal-empty" id="terminalEmpty">Start Shell, Codex, or Claude. Use + for another shell.</div>
+            </div>
+          </section>
+          <section class="suggestion-panel" id="suggestionPanel" hidden>
+            <header>
+              <div>
+                <h3>Suggestion mode</h3>
+                <p>Model edits run on a temporary copy. Apply only the hunks you want.</p>
+              </div>
+              <button id="closeSuggestionButton" type="button">Close</button>
+            </header>
+            <textarea id="suggestionPrompt" placeholder="Ask Codex or Claude for manuscript edits..." spellcheck="true"></textarea>
+            <div class="suggestion-controls">
+              <select id="suggestionModel">
+                <option value="codex">Codex</option>
+                <option value="claude">Claude</option>
+              </select>
+              <button id="runSuggestionButton" type="button">Run Suggestion</button>
+            </div>
+            <p id="suggestionStatus" class="suggestion-status">No suggestion loaded.</p>
+            <div id="suggestionDiff" class="suggestion-diff" hidden>
+              <div class="suggestion-diff-header">
+                <button id="previousSuggestionButton" type="button">Prev</button>
+                <span id="suggestionCounter">Hunk 0 / 0</span>
+                <button id="nextSuggestionButton" type="button">Next</button>
+              </div>
+              <pre id="suggestionDiffBody"></pre>
+              <div class="suggestion-apply-actions">
+                <button id="applySuggestionButton" type="button">Apply Hunk</button>
+                <button id="rejectSuggestionButton" type="button">Skip Hunk</button>
+                <button id="applyAllSuggestionsButton" type="button">Apply All</button>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <div id="splitter" class="splitter" role="separator" aria-label="Resize editor and preview panes" tabindex="0"></div>
+
+        <section class="preview-pane">
+          <div class="pane-header">
+            <div>
+              <h2 id="pdfTitle">main.pdf</h2>
+              <p id="pdfMeta">main.pdf</p>
+            </div>
+            <div class="pdf-header-actions">
+              <button id="saveButton" class="pdf-action-button" type="button">Save</button>
+              <button id="compileButton" class="pdf-action-button" type="button">Compile PDF</button>
+              <button id="openPdfButton" class="pdf-action-button" type="button">Open PDF</button>
+              <div class="pdf-controls">
+                <button id="pdfZoomOutButton" type="button" aria-label="Zoom PDF out">-</button>
+                <span id="pdfZoomLabel">100%</span>
+                <button id="pdfZoomInButton" type="button" aria-label="Zoom PDF in">+</button>
+              </div>
+            </div>
+          </div>
+          <div id="pdfViewer" class="pdf-viewer" aria-label="Compiled manuscript pages"></div>
+          <section class="log-panel" id="compileLogPanel">
+            <div id="compileLogResizeHandle" class="log-resize-handle" role="separator" aria-label="Resize compile log" tabindex="0"></div>
+            <header class="log-header">
+              <span>Compile log</span>
+              <button id="fixCompileLogButton" type="button">Fix with Codex</button>
+            </header>
+            <pre id="compileLog">No compile run yet.</pre>
+          </section>
+        </section>
+      </main>
+    </section>
+
+    <div class="settings-backdrop" id="settingsBackdrop" hidden></div>
+    <aside class="settings-drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+      <nav class="settings-sidebar" aria-label="Settings sections">
+        <button id="closeSettingsButton" class="settings-close-button" type="button" aria-label="Close settings" title="Close">
+          <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"></path>
+          </svg>
+        </button>
+        <button class="settings-nav-button active" type="button" data-settings-section="appearance">Appearance</button>
+        <button class="settings-nav-button" type="button" data-settings-section="profile">Profile</button>
+        <button class="settings-nav-button" type="button" data-settings-section="workspace">Workspace</button>
+        <button class="settings-nav-button" type="button" data-settings-section="agents">AGENTS.md</button>
+        <button class="settings-nav-button" type="button" data-settings-section="ai">AI assistance</button>
+        <button class="settings-nav-button" type="button" data-settings-section="shortcuts">Keyboard</button>
+      </nav>
+
+      <div class="settings-main">
+        <header class="settings-header">
+          <h2 id="settingsTitle">Appearance</h2>
+        </header>
+
+        <div class="settings-content">
+          <section class="settings-section active" data-settings-panel="appearance">
+            <label class="setting-row">
+              <span>Theme preset</span>
+              <select id="settingsThemePreset">
+                <option value="custom">Custom</option>
+                <optgroup label="Light">
+                  <option value="light-plus">Light+</option>
+                  <option value="quiet-light">Quiet Light</option>
+                  <option value="solarized-light">Solarized Light</option>
+                </optgroup>
+                <optgroup label="Light High Contrast">
+                  <option value="github-light">GitHub Light</option>
+                </optgroup>
+                <optgroup label="Dark">
+                  <option value="dark-plus">Dark+</option>
+                  <option value="monokai">Monokai</option>
+                  <option value="solarized-dark">Solarized Dark</option>
+                  <option value="dracula">Dracula</option>
+                  <option value="nord">Nord</option>
+                  <option value="gruvbox-dark">Gruvbox Dark</option>
+                  <option value="one-dark-pro">One Dark Pro</option>
+                  <option value="kimbie-dark">Kimbie Dark</option>
+                  <option value="github-dark">GitHub Dark</option>
+                </optgroup>
+                <optgroup label="Dark High Contrast">
+                  <option value="abyss">Abyss</option>
+                  <option value="tomorrow-night-blue">Tomorrow Night Blue</option>
+                </optgroup>
+              </select>
+            </label>
+            <label class="setting-row">
+              <span>Dark mode</span>
+              <input id="settingsThemeToggle" type="checkbox">
+            </label>
+            <label class="setting-row">
+              <span>Accent color</span>
+              <input id="settingsAccentPicker" type="color" value="#f97316">
+            </label>
+          </section>
+
+          <section class="settings-section" data-settings-panel="profile">
+            <label class="setting-column">
+              <span>Name</span>
+              <input id="profileNameInput" class="settings-text-input" type="text" autocomplete="name">
+            </label>
+            <label class="setting-column">
+              <span>Email</span>
+              <input id="profileEmailInput" class="settings-text-input" type="email" autocomplete="email">
+            </label>
+            <label class="setting-column">
+              <span>Type of work</span>
+              <input id="profileWorkInput" class="settings-text-input" type="text" placeholder="Research, manuscript writing, ML engineering...">
+            </label>
+            <label class="setting-column">
+              <span>Bio</span>
+              <textarea id="profileBioInput" class="settings-textarea" rows="4" spellcheck="true"></textarea>
+            </label>
+            <label class="setting-column">
+              <span>AI context</span>
+              <textarea id="profileAiContextInput" class="settings-textarea" rows="5" spellcheck="true" placeholder="Preferences, goals, writing style, project context..."></textarea>
+            </label>
+            <p id="profileStatus" class="settings-status">Profile is saved locally and included with AI requests.</p>
+          </section>
+
+          <section class="settings-section" data-settings-panel="workspace">
+            <label class="setting-row">
+              <span>Auto compile</span>
+              <input id="autoCompileToggle" type="checkbox" checked>
+            </label>
+            <label class="setting-row">
+              <span>Auto save</span>
+              <input id="autoSaveToggle" type="checkbox" checked>
+            </label>
+            <label class="setting-row">
+              <span>Show file sidebar</span>
+              <input id="settingsFileSidebarToggle" type="checkbox" checked>
+            </label>
+            <div class="setting-column">
+              <span>Dark PDF rendering</span>
+              <div id="settingsPdfRenderMode" class="settings-choice-group" role="group" aria-label="Dark PDF rendering">
+                <button type="button" data-pdf-render-mode="adaptive">Dark, keep figures</button>
+                <button type="button" data-pdf-render-mode="original">Original pages</button>
+                <button type="button" data-pdf-render-mode="invert">Invert everything</button>
+              </div>
+            </div>
+            <label class="setting-column">
+              <span>Minimum PDF width <strong id="settingsPdfGuardValue">540px</strong></span>
+              <input id="settingsPdfGuardRange" type="range" min="480" max="760" step="20" value="540">
+            </label>
+          </section>
+
+          <section class="settings-section" data-settings-panel="agents">
+            <div class="setting-column">
+              <span id="agentsPathLabel" class="setting-path">AGENTS.md</span>
+              <textarea id="agentsEditor" class="settings-code-editor" spellcheck="false" placeholder="No AGENTS.md loaded."></textarea>
+            </div>
+            <div class="settings-action-row">
+              <button id="reloadAgentsButton" class="settings-action-button" type="button">Reload</button>
+              <button id="saveAgentsButton" class="settings-action-button primary" type="button">Save AGENTS.md</button>
+            </div>
+            <p id="agentsStatus" class="settings-status">Open this section to load AGENTS.md.</p>
+          </section>
+
+          <section class="settings-section" data-settings-panel="ai">
+            <button id="suggestionModeButton" class="settings-action-button primary" type="button">Suggest Mode</button>
+          </section>
+
+          <section class="settings-section" data-settings-panel="shortcuts">
+            <label class="setting-row">
+              <span>Vim shortcuts</span>
+              <input id="settingsVimModeToggle" type="checkbox">
+            </label>
+            <div class="shortcut-list">
+              <div><span>Save</span><kbd>Cmd/Ctrl</kbd><kbd>S</kbd></div>
+              <div><span>Find</span><kbd>Cmd/Ctrl</kbd><kbd>F</kbd></div>
+              <div><span>Find next</span><kbd>Cmd/Ctrl</kbd><kbd>G</kbd></div>
+              <div><span>Compile PDF</span><kbd>Cmd/Ctrl</kbd><kbd>Enter</kbd></div>
+              <div><span>Toggle Text / Visual</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>M</kbd></div>
+              <div><span>Toggle files</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>F</kbd></div>
+              <div><span>Toggle terminal</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>T</kbd></div>
+              <div><span>Open settings</span><kbd>Cmd/Ctrl</kbd><kbd>,</kbd></div>
+              <div><span>Suggest Mode</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>S</kbd></div>
+              <div><span>Close panel</span><kbd>Esc</kbd></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="node_modules/codemirror/lib/codemirror.js"></script>
+  <script src="node_modules/codemirror/mode/stex/stex.js"></script>
+  <script src="node_modules/codemirror/addon/dialog/dialog.js"></script>
+  <script src="node_modules/codemirror/addon/search/searchcursor.js"></script>
+  <script src="node_modules/codemirror/addon/search/search.js"></script>
+  <script src="node_modules/codemirror/keymap/vim.js"></script>
+  <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
+  <script src="node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
+
+contextBridge.exposeInMainWorld("localOverleaf", {
+  listProjects: () => ipcRenderer.invoke("list-projects"),
+  addProject: (kind) => ipcRenderer.invoke("add-project", { kind }),
+  addProjectFromPath: (paths) => ipcRenderer.invoke("add-project-from-path", { paths }),
+  getPathForFile: (file) => webUtils.getPathForFile(file),
+  removeProject: (projectId) => ipcRenderer.invoke("remove-project", projectId),
+  listProjectFiles: (projectId) => ipcRenderer.invoke("list-project-files", projectId),
+  projectFileAction: (projectId, relativePath, action, options = {}) => ipcRenderer.invoke("project-file-action", { projectId, relativePath, action, options }),
+  chooseProjectFiles: (projectId) => ipcRenderer.invoke("choose-project-files", projectId),
+  importProjectFiles: (projectId, files) => ipcRenderer.invoke("import-project-files", { projectId, files }),
+  load: (projectId, relativePath) => ipcRenderer.invoke("load-manuscript", { projectId, relativePath }),
+  save: (projectId, relativePath, tex) => ipcRenderer.invoke("save-manuscript", { projectId, relativePath, tex }),
+  compile: (projectId, relativePath, tex) => ipcRenderer.invoke("compile-manuscript", { projectId, relativePath, tex }),
+  runSuggestion: (projectId, relativePath, tex, provider, prompt) => ipcRenderer.invoke("run-suggestion", { projectId, relativePath, tex, provider, prompt }),
+  readPdf: (projectId) => ipcRenderer.invoke("read-pdf", projectId),
+  openPdf: (projectId) => ipcRenderer.invoke("open-pdf", projectId),
+  readAgents: (projectId) => ipcRenderer.invoke("read-agents", projectId),
+  saveAgents: (projectId, text) => ipcRenderer.invoke("save-agents", { projectId, text }),
+  createTerminal: (projectId, kind) => ipcRenderer.invoke("terminal-create", { projectId, kind }),
+  writeTerminal: (id, data) => ipcRenderer.send("terminal-write", { id, data }),
+  resizeTerminal: (id, cols, rows) => ipcRenderer.send("terminal-resize", { id, cols, rows }),
+  killTerminal: (id) => ipcRenderer.invoke("terminal-kill", id),
+  onTerminalData: (callback) => {
+    ipcRenderer.on("terminal-data", (_event, payload) => callback(payload));
+  },
+  onTerminalExit: (callback) => {
+    ipcRenderer.on("terminal-exit", (_event, payload) => callback(payload));
+  },
+  onCommand: (callback) => {
+    ipcRenderer.on("editor-command", (_event, command) => callback(command));
+  }
+});
