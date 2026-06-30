@@ -22,6 +22,8 @@ const fileRail = document.getElementById("fileRail");
 const fileRailButton = document.getElementById("fileRailButton");
 const filePane = document.getElementById("filePane");
 const fileSplitter = document.getElementById("fileSplitter");
+const sourceRail = document.getElementById("sourceRail");
+const sourceRailButton = document.getElementById("sourceRailButton");
 const topRefreshFilesButton = document.getElementById("topRefreshFilesButton");
 const railRefreshFilesButton = document.getElementById("railRefreshFilesButton");
 const fileTree = document.getElementById("fileTree");
@@ -45,7 +47,6 @@ const previewPane = document.querySelector(".preview-pane");
 const compileLogPanel = document.getElementById("compileLogPanel");
 const compileLogResizeHandle = document.getElementById("compileLogResizeHandle");
 const compileLogCollapsedButton = document.getElementById("compileLogCollapsedButton");
-const fixCompileLogButton = document.getElementById("fixCompileLogButton");
 const compileLog = document.getElementById("compileLog");
 const saveButton = document.getElementById("saveButton");
 const compileButton = document.getElementById("compileButton");
@@ -55,7 +56,6 @@ const autoCompileToggle = document.getElementById("autoCompileToggle");
 const autoSaveToggle = document.getElementById("autoSaveToggle");
 const sourceModeButton = document.getElementById("sourceModeButton");
 const visualModeButton = document.getElementById("visualModeButton");
-const suggestionModeButton = document.getElementById("suggestionModeButton");
 const editorTitle = document.getElementById("editorTitle");
 const activeDocumentTitle = document.getElementById("activeDocumentTitle");
 const topSaveStatusButton = document.getElementById("topSaveStatusButton");
@@ -97,20 +97,9 @@ const terminalNewButton = document.getElementById("terminalNewButton");
 const terminalShellButton = document.getElementById("terminalShellButton");
 const terminalCodexButton = document.getElementById("terminalCodexButton");
 const terminalClaudeButton = document.getElementById("terminalClaudeButton");
-const suggestionPanel = document.getElementById("suggestionPanel");
-const closeSuggestionButton = document.getElementById("closeSuggestionButton");
-const suggestionPromptInput = document.getElementById("suggestionPrompt");
-const suggestionModelSelect = document.getElementById("suggestionModel");
-const runSuggestionButton = document.getElementById("runSuggestionButton");
-const suggestionStatus = document.getElementById("suggestionStatus");
-const suggestionDiff = document.getElementById("suggestionDiff");
-const suggestionDiffBody = document.getElementById("suggestionDiffBody");
-const suggestionCounter = document.getElementById("suggestionCounter");
-const previousSuggestionButton = document.getElementById("previousSuggestionButton");
-const nextSuggestionButton = document.getElementById("nextSuggestionButton");
-const applySuggestionButton = document.getElementById("applySuggestionButton");
-const rejectSuggestionButton = document.getElementById("rejectSuggestionButton");
-const applyAllSuggestionsButton = document.getElementById("applyAllSuggestionsButton");
+const selectionCodexPopover = document.getElementById("selectionCodexPopover");
+const selectionCodexPrompt = document.getElementById("selectionCodexPrompt");
+const selectionCodexSendButton = document.getElementById("selectionCodexSendButton");
 const agentsPathLabel = document.getElementById("agentsPathLabel");
 const agentsEditor = document.getElementById("agentsEditor");
 const reloadAgentsButton = document.getElementById("reloadAgentsButton");
@@ -235,7 +224,15 @@ const THEME_VARIABLES = [
   "--terminal-muted",
   "--terminal-selection"
 ];
-const HIGH_CONTRAST_PRESETS = new Set(["github-light", "abyss", "tomorrow-night-blue"]);
+const HIGH_CONTRAST_PRESETS = new Set([
+  "github-light",
+  "abyss",
+  "tomorrow-night-blue",
+  "pastel-graphite-hc",
+  "lavender-contrast-hc",
+  "mint-contrast-hc",
+  "rose-contrast-hc"
+]);
 const THEME_PRESETS = {
   custom: null,
   "light-plus": {
@@ -881,12 +878,139 @@ const THEME_PRESETS = {
       "--pdf-bg": "#000a18",
       "--pdf-paper": "#ffffff"
     }
+  },
+  "pastel-graphite-hc": {
+    theme: "dark",
+    accent: "#a7c7ff",
+    background: "linear-gradient(135deg, #111318, #1b1d26 68%, #090b10)",
+    colors: {
+      "--bg": "#090b10",
+      "--glass": "rgba(17, 19, 24, 0.94)",
+      "--glass-strong": "rgba(27, 29, 38, 0.98)",
+      "--panel": "rgba(17, 19, 24, 0.98)",
+      "--page": "#f7f8ff",
+      "--text": "#f7f8ff",
+      "--muted": "#d8ddf2",
+      "--border": "rgba(197, 207, 232, 0.58)",
+      "--border-strong": "rgba(226, 232, 255, 0.9)",
+      "--red": "#ffb4bd",
+      "--green": "#b8f2d0",
+      "--blue": "#a7c7ff",
+      "--blue-dark": "#7da7ef",
+      "--cm-bg": "#111318",
+      "--cm-gutter": "#1b1d26",
+      "--cm-text": "#f7f8ff",
+      "--cm-keyword": "#f0b6ff",
+      "--cm-variable": "#a7c7ff",
+      "--cm-atom": "#b8f2d0",
+      "--cm-comment": "#aeb7d0",
+      "--cm-string": "#ffe3a1",
+      "--cm-number": "#ffc3a6",
+      "--pdf-bg": "#090b10",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "lavender-contrast-hc": {
+    theme: "dark",
+    accent: "#d7b8ff",
+    background: "linear-gradient(135deg, #14101f, #211a30 70%, #0c0914)",
+    colors: {
+      "--bg": "#0c0914",
+      "--glass": "rgba(20, 16, 31, 0.94)",
+      "--glass-strong": "rgba(33, 26, 48, 0.98)",
+      "--panel": "rgba(20, 16, 31, 0.98)",
+      "--page": "#fff8ff",
+      "--text": "#fff8ff",
+      "--muted": "#eadfff",
+      "--border": "rgba(215, 184, 255, 0.62)",
+      "--border-strong": "rgba(244, 224, 255, 0.92)",
+      "--red": "#ffb3ca",
+      "--green": "#c5f4c9",
+      "--blue": "#b9d2ff",
+      "--blue-dark": "#93b7ff",
+      "--cm-bg": "#14101f",
+      "--cm-gutter": "#211a30",
+      "--cm-text": "#fff8ff",
+      "--cm-keyword": "#ffb3ea",
+      "--cm-variable": "#b9d2ff",
+      "--cm-atom": "#b7f7e7",
+      "--cm-comment": "#b8a9d6",
+      "--cm-string": "#fff0a8",
+      "--cm-number": "#ffc6a8",
+      "--pdf-bg": "#0c0914",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "mint-contrast-hc": {
+    theme: "dark",
+    accent: "#9ef0d1",
+    background: "linear-gradient(135deg, #071814, #0d2a24 70%, #030c0a)",
+    colors: {
+      "--bg": "#030c0a",
+      "--glass": "rgba(7, 24, 20, 0.94)",
+      "--glass-strong": "rgba(13, 42, 36, 0.98)",
+      "--panel": "rgba(7, 24, 20, 0.98)",
+      "--page": "#f6fffb",
+      "--text": "#f6fffb",
+      "--muted": "#d4f7eb",
+      "--border": "rgba(158, 240, 209, 0.6)",
+      "--border-strong": "rgba(219, 255, 242, 0.92)",
+      "--red": "#ffb1b8",
+      "--green": "#9ef0d1",
+      "--blue": "#a7d8ff",
+      "--blue-dark": "#7fb8ec",
+      "--cm-bg": "#071814",
+      "--cm-gutter": "#0d2a24",
+      "--cm-text": "#f6fffb",
+      "--cm-keyword": "#ffbaf4",
+      "--cm-variable": "#a7d8ff",
+      "--cm-atom": "#9ef0d1",
+      "--cm-comment": "#9ec9bd",
+      "--cm-string": "#fff1aa",
+      "--cm-number": "#ffc7a8",
+      "--pdf-bg": "#030c0a",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "rose-contrast-hc": {
+    theme: "dark",
+    accent: "#ffb4d0",
+    background: "linear-gradient(135deg, #1c0f16, #2b1722 70%, #10070c)",
+    colors: {
+      "--bg": "#10070c",
+      "--glass": "rgba(28, 15, 22, 0.94)",
+      "--glass-strong": "rgba(43, 23, 34, 0.98)",
+      "--panel": "rgba(28, 15, 22, 0.98)",
+      "--page": "#fff8fa",
+      "--text": "#fff8fa",
+      "--muted": "#f6dbe5",
+      "--border": "rgba(255, 180, 208, 0.6)",
+      "--border-strong": "rgba(255, 226, 237, 0.92)",
+      "--red": "#ff9fb3",
+      "--green": "#c8f0bd",
+      "--blue": "#bcd4ff",
+      "--blue-dark": "#91b1ef",
+      "--cm-bg": "#1c0f16",
+      "--cm-gutter": "#2b1722",
+      "--cm-text": "#fff8fa",
+      "--cm-keyword": "#ffb4d0",
+      "--cm-variable": "#bcd4ff",
+      "--cm-atom": "#b8efd7",
+      "--cm-comment": "#d1aab9",
+      "--cm-string": "#ffe6a7",
+      "--cm-number": "#ffc0a6",
+      "--pdf-bg": "#10070c",
+      "--pdf-paper": "#ffffff"
+    }
   }
 };
 const DEFAULT_FILE_WIDTH = 240;
 const MIN_FILE_WIDTH = 220;
 const MAX_FILE_WIDTH = 460;
 const FILE_COLLAPSE_THRESHOLD = 165;
+const DEFAULT_EDITOR_WIDTH = 520;
+const MIN_EDITOR_WIDTH = 320;
+const SOURCE_COLLAPSE_THRESHOLD = 235;
 const DEFAULT_PDF_MIN_WIDTH = 540;
 const DEFAULT_PDF_ZOOM = 1;
 const MIN_PDF_ZOOM = 0.7;
@@ -936,7 +1060,6 @@ let terminalSessions = [];
 let activeTerminalId = null;
 let splitTerminalIds = [];
 let terminalFitTimer = null;
-let suggestionState = null;
 let agentsLoadToken = 0;
 let fileContextMenu = null;
 let projectContextMenu = null;
@@ -947,6 +1070,8 @@ let draggedTextTabPath = "";
 let sourceMinimapFrame = 0;
 let sourceMinimapDragging = false;
 let aiProfile = {};
+let selectionCodexText = "";
+let selectionCodexTimer = null;
 
 init();
 
@@ -963,7 +1088,7 @@ function setupSourceEditor() {
   editor = CodeMirror.fromTextArea(latexSource, {
     keyMap: vimModeEnabled ? "vim" : "default",
     mode: "stex",
-    gutters: ["relative-line-gutter", "CodeMirror-linenumbers"],
+    gutters: editorGutters(),
     lineNumbers: true,
     lineWrapping: true,
     indentUnit: 2,
@@ -982,8 +1107,14 @@ function setupSourceEditor() {
     handleSourceChanged({ renderVisual: !visualEditor.hidden });
     updateRelativeLineNumbers();
   });
-  editor.on("scroll", updateSourceMinimapViewport);
-  editor.on("cursorActivity", updateRelativeLineNumbers);
+  editor.on("scroll", () => {
+    updateSourceMinimapViewport();
+    positionSelectionCodexPopover();
+  });
+  editor.on("cursorActivity", () => {
+    updateRelativeLineNumbers();
+    scheduleSelectionCodexPopover();
+  });
   editor.on("viewportChange", updateRelativeLineNumbers);
   setupSourceMinimap();
   scheduleSourceMinimapUpdate();
@@ -1002,6 +1133,7 @@ function setupSettings() {
   const terminalCollapsed = localStorage.getItem("latexStudioTerminalCollapsed") === "true";
   const compileLogHeight = clampNumber(Number(localStorage.getItem("latexStudioCompileLogHeight")), MIN_COMPILE_LOG_HEIGHT, MAX_COMPILE_LOG_HEIGHT, DEFAULT_COMPILE_LOG_HEIGHT);
   const compileLogCollapsed = localStorage.getItem("latexStudioCompileLogCollapsed") === "true";
+  const sourceCollapsed = localStorage.getItem("latexStudioSourceCollapsed") === "true";
   pdfZoom = clampNumber(Number(localStorage.getItem("latexStudioPdfZoom")), MIN_PDF_ZOOM, MAX_PDF_ZOOM, DEFAULT_PDF_ZOOM);
   pdfRenderMode = normalizePdfRenderMode(
     localStorage.getItem("latexStudioPdfRenderMode")
@@ -1015,6 +1147,7 @@ function setupSettings() {
   applyTheme(savedTheme, savedAccent, { presetId: savedPreset });
   syncSurfaceThemesToAppTheme(savedTheme, { persist: false });
   applyLayoutSettings({ showSidebar, pdfMinWidth, fileWidth });
+  applySourceLayout({ collapsed: sourceCollapsed });
   applyTerminalLayout({ height: terminalHeight, collapsed: terminalCollapsed });
   applyCompileLogLayout({ height: compileLogHeight, collapsed: compileLogCollapsed });
   autoSaveToggle.checked = autoSaveEnabled;
@@ -1064,15 +1197,13 @@ function setupSettings() {
   });
 
   settingsVimModeToggle.addEventListener("change", () => {
-    vimModeEnabled = settingsVimModeToggle.checked;
-    localStorage.setItem("latexStudioVimMode", String(vimModeEnabled));
-    applyEditorKeyMap();
+    setVimMode(settingsVimModeToggle.checked);
   });
 
   settingsRelativeLineNumbersToggle.addEventListener("change", () => {
     relativeLineNumbersEnabled = settingsRelativeLineNumbersToggle.checked;
     localStorage.setItem("latexStudioRelativeLineNumbers", String(relativeLineNumbersEnabled));
-    updateRelativeLineNumbers();
+    applyRelativeLineNumberSetting();
   });
 
   autoSaveToggle.addEventListener("change", () => {
@@ -1302,6 +1433,32 @@ function setFileSidebarVisible(show) {
   renderPdf({ showLoading: false });
 }
 
+function getEditorPaneWidth() {
+  const current = Number.parseFloat(getComputedStyle(workspace).getPropertyValue("--editor-width"));
+  return clampNumber(current, MIN_EDITOR_WIDTH, 960, DEFAULT_EDITOR_WIDTH);
+}
+
+function applySourceLayout({ collapsed = workspace.classList.contains("source-hidden") } = {}) {
+  workspace.classList.toggle("source-hidden", collapsed);
+  sourceRail.hidden = !collapsed;
+
+  if (!collapsed) {
+    const currentWidth = getEditorPaneWidth();
+    workspace.style.setProperty("--editor-width", `${Math.max(MIN_EDITOR_WIDTH, currentWidth)}px`);
+    requestAnimationFrame(() => {
+      if (editor) editor.refresh();
+      scheduleTerminalFit();
+      renderPdf({ showLoading: false });
+    });
+  }
+}
+
+function setSourceCollapsed(collapsed, { persist = true } = {}) {
+  applySourceLayout({ collapsed });
+  if (persist) localStorage.setItem("latexStudioSourceCollapsed", String(collapsed));
+  renderPdf({ showLoading: false });
+}
+
 function getFileSidebarWidth() {
   const current = Number.parseFloat(getComputedStyle(workspace).getPropertyValue("--file-width"));
   return clampNumber(current, MIN_FILE_WIDTH, MAX_FILE_WIDTH, DEFAULT_FILE_WIDTH);
@@ -1374,6 +1531,31 @@ function updatePdfRenderModeButtons() {
 function applyEditorKeyMap() {
   if (!editor) return;
   editor.setOption("keyMap", vimModeEnabled ? "vim" : "default");
+}
+
+function setVimMode(enabled) {
+  vimModeEnabled = Boolean(enabled);
+  localStorage.setItem("latexStudioVimMode", String(vimModeEnabled));
+  settingsVimModeToggle.checked = vimModeEnabled;
+  applyEditorKeyMap();
+  compileLog.textContent = `Vim shortcuts ${vimModeEnabled ? "enabled" : "disabled"}.`;
+}
+
+function toggleVimMode() {
+  setVimMode(!vimModeEnabled);
+}
+
+function editorGutters() {
+  return relativeLineNumbersEnabled
+    ? ["relative-line-gutter", "CodeMirror-linenumbers"]
+    : ["CodeMirror-linenumbers"];
+}
+
+function applyRelativeLineNumberSetting() {
+  if (!editor) return;
+  editor.setOption("gutters", editorGutters());
+  updateRelativeLineNumbers();
+  editor.refresh();
 }
 
 function updateRelativeLineNumbers() {
@@ -1699,6 +1881,19 @@ function wireEvents() {
   commandPaletteInput.addEventListener("input", renderCommandPalette);
   commandPaletteInput.addEventListener("keydown", handleCommandPaletteKeydown);
   fileRailButton.addEventListener("click", () => setFileSidebarVisible(true));
+  sourceRailButton.addEventListener("click", () => setSourceCollapsed(false));
+  selectionCodexSendButton.addEventListener("click", sendSelectionToCodex);
+  selectionCodexPrompt.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendSelectionToCodex();
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      hideSelectionCodexPopover();
+      editor.focus();
+    }
+  });
   addProjectButton.addEventListener("click", () => toggleNewProjectPanel());
   projectImportButtons.forEach((button) => {
     button.addEventListener("click", () => addProject(button.dataset.projectKind));
@@ -1728,20 +1923,8 @@ function wireEvents() {
   terminalClaudeButton.addEventListener("click", () => createTerminalSession("claude"));
   terminalCollapsedButton.addEventListener("click", () => setTerminalCollapsed(false));
   compileLogCollapsedButton.addEventListener("click", () => setCompileLogCollapsed(false));
-  suggestionModeButton.addEventListener("click", () => {
-    closeSettings();
-    setSuggestionPanelOpen(true);
-  });
-  closeSuggestionButton.addEventListener("click", () => setSuggestionPanelOpen(false));
-  runSuggestionButton.addEventListener("click", runSuggestionMode);
-  previousSuggestionButton.addEventListener("click", () => moveSuggestion(-1));
-  nextSuggestionButton.addEventListener("click", () => moveSuggestion(1));
-  applySuggestionButton.addEventListener("click", applyCurrentSuggestionHunk);
-  rejectSuggestionButton.addEventListener("click", rejectCurrentSuggestionHunk);
-  applyAllSuggestionsButton.addEventListener("click", applyAllSuggestionHunks);
   sourceModeButton.addEventListener("click", () => setMode("source"));
   visualModeButton.addEventListener("click", () => setMode("visual"));
-  fixCompileLogButton.addEventListener("click", fixCompileLogWithCodex);
   setupFileSplitter();
   setupSplitter();
   setupTerminalResize();
@@ -1782,6 +1965,7 @@ function wireEvents() {
   window.addEventListener("click", () => {
     closeFileContextMenu();
     closeProjectContextMenu();
+    if (!selectionCodexPopover.contains(document.activeElement)) hideSelectionCodexPopover();
   });
   window.addEventListener("scroll", () => {
     closeFileContextMenu();
@@ -1809,6 +1993,13 @@ function handleGlobalShortcut(event) {
   if (event.defaultPrevented) return;
 
   if (event.key === "Escape") {
+    if (!selectionCodexPopover.hidden) {
+      event.preventDefault();
+      hideSelectionCodexPopover();
+      editor.focus();
+      return;
+    }
+
     if (!commandPalette.hidden) {
       event.preventDefault();
       closeCommandPalette();
@@ -1844,11 +2035,6 @@ function handleGlobalShortcut(event) {
       closeSettings();
       return;
     }
-
-    if (!suggestionPanel.hidden) {
-      event.preventDefault();
-      setSuggestionPanelOpen(false);
-    }
     return;
   }
 
@@ -1880,13 +2066,6 @@ function handleGlobalShortcut(event) {
     return;
   }
 
-  if (key === "s" && event.shiftKey) {
-    event.preventDefault();
-    closeSettings();
-    setSuggestionPanelOpen(true);
-    return;
-  }
-
   if (key === "s") {
     event.preventDefault();
     saveManuscript();
@@ -1909,7 +2088,6 @@ function handleGlobalShortcut(event) {
 
   if (key === "t") {
     event.preventDefault();
-    if (!suggestionPanel.hidden) setSuggestionPanelOpen(false);
     setTerminalCollapsed(!sourcePane.classList.contains("terminal-collapsed"));
     return;
   }
@@ -2021,6 +2199,13 @@ function renderTemplateGrid(container, templates, { custom }) {
 async function renderRealTemplatePreview(card, template, previewKind) {
   const preview = card.querySelector(".template-preview");
   if (!preview) return;
+  if (template.previewImageUrl) {
+    preview.classList.remove("template-preview-source");
+    preview.classList.add("template-preview-pdf");
+    preview.replaceChildren(previewImageElement(template.previewImageUrl, `${template.name} preview`));
+    return;
+  }
+
   preview.innerHTML = templateSourcePreviewMarkup(template.previewText, previewKind);
   preview.classList.add("template-preview-source");
 
@@ -2057,9 +2242,21 @@ async function renderRealTemplatePreview(card, template, previewKind) {
     preview.classList.remove("template-preview-source");
     preview.classList.add("template-preview-pdf");
     preview.replaceChildren(canvas);
+    if (window.localOverleaf.cacheTemplatePreview) {
+      window.localOverleaf.cacheTemplatePreview(template.id, canvas.toDataURL("image/png")).catch(() => {});
+    }
   } catch (error) {
     preview.dataset.previewError = formatError(error);
   }
+}
+
+function previewImageElement(src, alt = "") {
+  const image = document.createElement("img");
+  image.src = src;
+  image.alt = alt;
+  image.loading = "lazy";
+  image.decoding = "async";
+  return image;
 }
 
 function templatePreviewKind(template, custom) {
@@ -2286,6 +2483,7 @@ function commandPaletteCommands() {
     { id: "settings", label: "/settings", detail: "Open settings", hint: "Cmd+,", action: () => { closeCommandPalette({ keepBackdrop: true }); openSettings(); } },
     { id: "compile", label: "/compile", detail: "Compile the active PDF", hint: "Cmd+Enter", action: () => { closeCommandPalette(); compileManuscript({ manual: true }); } },
     { id: "save", label: "/save", detail: "Save the active TeX file", hint: "Cmd+S", action: () => { closeCommandPalette(); saveManuscript(); } },
+    { id: "vim", label: "/vim", detail: `${vimModeEnabled ? "Disable" : "Enable"} Vim shortcuts`, hint: "toggle", action: () => { closeCommandPalette(); toggleVimMode(); } },
     { id: "visual", label: "/visual", detail: "Switch to visual mode", hint: "view", action: () => { closeCommandPalette(); setMode("visual"); } },
     { id: "code", label: "/code", detail: "Switch to code mode", hint: "view", action: () => { closeCommandPalette(); setMode("source"); } },
     { id: "terminal", label: "/terminal", detail: "Toggle terminal", hint: "panel", action: () => { closeCommandPalette(); setTerminalCollapsed(!sourcePane.classList.contains("terminal-collapsed")); } },
@@ -2338,7 +2536,6 @@ function setSettingsPanel(section) {
     profile: "Profile",
     workspace: "Workspace",
     agents: "AGENTS.md",
-    ai: "AI assistance",
     shortcuts: "Keyboard"
   }[nextSection] || "Settings";
 
@@ -2416,7 +2613,6 @@ function openFind() {
   }
 
   closeSettings();
-  setSuggestionPanelOpen(false);
   setMode("source");
   requestAnimationFrame(() => {
     editor.focus();
@@ -2615,9 +2811,11 @@ async function createTerminalSession(kind = "shell") {
     terminalSessions.push(session);
     renderTerminalTabs();
     activateTerminal(session.id);
+    return session;
   } catch (error) {
     terminalEmpty.hidden = false;
     terminalEmpty.textContent = formatError(error);
+    return null;
   } finally {
     setTerminalControlsDisabled(false);
   }
@@ -2816,185 +3014,92 @@ function setTerminalControlsDisabled(value) {
   terminalClaudeButton.disabled = value;
 }
 
-function setSuggestionPanelOpen(open) {
-  sourcePane.classList.toggle("suggestion-open", open);
-  suggestionPanel.hidden = !open;
-  terminalPanel.hidden = open;
-  suggestionModeButton.classList.toggle("active", open);
-
-  if (open) {
-    suggestionPromptInput.focus();
-  } else {
-    scheduleTerminalFit();
-  }
+function scheduleSelectionCodexPopover() {
+  clearTimeout(selectionCodexTimer);
+  selectionCodexTimer = setTimeout(updateSelectionCodexPopover, 80);
 }
 
-async function runSuggestionMode(options = {}) {
-  if (!activeProject) return false;
-
-  const prompt = suggestionPromptInput.value.trim();
-  if (!prompt) {
-    suggestionStatus.textContent = "Tell the agent what you want changed first.";
-    return false;
-  }
-  const promptWithProfile = withProfileContext(prompt);
-  const providerName = suggestionModelSelect.value === "claude" ? "Claude" : "Codex";
-  const autoApply = options.autoApply === true;
-
-  setSuggestionBusy(true);
-  suggestionState = null;
-  suggestionDiff.hidden = true;
-  suggestionStatus.textContent = `${providerName} is thinking through the edit...`;
-
-  try {
-    const result = await window.localOverleaf.runSuggestion(
-      activeProject.id,
-      activeFile && activeFile.relativePath,
-      getSourceText(),
-      suggestionModelSelect.value,
-      promptWithProfile
-    );
-
-    const hunks = (result.hunks || []).map((hunk) => ({ ...hunk, status: "pending" }));
-    suggestionState = {
-      provider: result.provider,
-      originalText: result.originalText,
-      suggestedText: result.suggestedText,
-      hunks,
-      activeIndex: 0,
-      lineOffset: 0
-    };
-
-    if (!hunks.length) {
-      suggestionStatus.textContent = `${providerName} did not find a change to make.`;
-      suggestionDiff.hidden = true;
-      return false;
-    }
-
-    suggestionStatus.textContent = `${providerName} suggested ${hunks.length} change${hunks.length === 1 ? "" : "s"}.`;
-    suggestionDiff.hidden = false;
-    renderSuggestionHunk();
-    if (autoApply) {
-      applyAllSuggestionHunks();
-      suggestionStatus.textContent = `${providerName} implemented ${hunks.length} change${hunks.length === 1 ? "" : "s"}.`;
-    }
-    return true;
-  } catch (error) {
-    suggestionStatus.textContent = formatError(error);
-    suggestionDiff.hidden = true;
-    return false;
-  } finally {
-    setSuggestionBusy(false);
-  }
-}
-
-function setSuggestionBusy(value) {
-  runSuggestionButton.disabled = value;
-  suggestionModelSelect.disabled = value;
-  suggestionPromptInput.disabled = value;
-  fixCompileLogButton.disabled = value;
-}
-
-function renderSuggestionHunk() {
-  if (!suggestionState || !suggestionState.hunks.length) {
-    suggestionCounter.textContent = "Hunk 0 / 0";
-    suggestionDiffBody.textContent = "";
+function updateSelectionCodexPopover() {
+  if (!editor || editorScreen.hidden || workspace.classList.contains("source-hidden") || !visualEditor.hidden) {
+    hideSelectionCodexPopover();
     return;
   }
 
-  const hunk = suggestionState.hunks[suggestionState.activeIndex];
-  suggestionCounter.textContent = `Hunk ${suggestionState.activeIndex + 1} / ${suggestionState.hunks.length}${hunk.status === "pending" ? "" : ` - ${hunk.status}`}`;
-  suggestionDiffBody.innerHTML = hunk.diff
-    .split("\n")
-    .map((line) => `<span class="${diffLineClass(line)}">${escapeHtml(line || " ")}</span>`)
-    .join("\n");
-
-  const pending = hunk.status === "pending";
-  applySuggestionButton.disabled = !pending;
-  rejectSuggestionButton.disabled = !pending;
-  previousSuggestionButton.disabled = suggestionState.activeIndex === 0;
-  nextSuggestionButton.disabled = suggestionState.activeIndex === suggestionState.hunks.length - 1;
-}
-
-function diffLineClass(line) {
-  if (line.startsWith("@@")) return "diff-hunk-header";
-  if (line.startsWith("+") && !line.startsWith("+++")) return "diff-added";
-  if (line.startsWith("-") && !line.startsWith("---")) return "diff-removed";
-  return "diff-context";
-}
-
-function moveSuggestion(delta) {
-  if (!suggestionState) return;
-  suggestionState.activeIndex = clampNumber(
-    suggestionState.activeIndex + delta,
-    0,
-    suggestionState.hunks.length - 1,
-    suggestionState.activeIndex
-  );
-  renderSuggestionHunk();
-}
-
-function applyCurrentSuggestionHunk() {
-  const hunk = currentSuggestionHunk();
-  if (!hunk || hunk.status !== "pending") return;
-
-  const source = getSourceText();
-  const next = applyHunkToText(source, hunk, suggestionState.lineOffset);
-  suggestionState.lineOffset += hunk.newLines - hunk.oldLines;
-  hunk.status = "applied";
-
-  suppressSourceChange = true;
-  setSourceText(next);
-  handleSourceChanged({ renderVisual: !visualEditor.hidden });
-  suggestionStatus.textContent = "Applied current hunk.";
-  advanceSuggestionAfterDecision();
-}
-
-function rejectCurrentSuggestionHunk() {
-  const hunk = currentSuggestionHunk();
-  if (!hunk || hunk.status !== "pending") return;
-
-  hunk.status = "skipped";
-  suggestionStatus.textContent = "Skipped current hunk.";
-  advanceSuggestionAfterDecision();
-}
-
-function applyAllSuggestionHunks() {
-  if (!suggestionState) return;
-
-  suppressSourceChange = true;
-  setSourceText(suggestionState.suggestedText);
-  suggestionState.hunks.forEach((hunk) => {
-    if (hunk.status === "pending") hunk.status = "applied";
-  });
-  handleSourceChanged({ renderVisual: !visualEditor.hidden });
-  suggestionStatus.textContent = "Applied all suggested hunks.";
-  renderSuggestionHunk();
-}
-
-function advanceSuggestionAfterDecision() {
-  if (!suggestionState) return;
-
-  const nextPending = suggestionState.hunks.findIndex((hunk, index) => index > suggestionState.activeIndex && hunk.status === "pending");
-  if (nextPending !== -1) suggestionState.activeIndex = nextPending;
-  renderSuggestionHunk();
-}
-
-function currentSuggestionHunk() {
-  if (!suggestionState || !suggestionState.hunks.length) return null;
-  return suggestionState.hunks[suggestionState.activeIndex];
-}
-
-function applyHunkToText(source, hunk, lineOffset) {
-  const exactIndex = source.indexOf(hunk.oldText);
-  if (exactIndex !== -1) {
-    return `${source.slice(0, exactIndex)}${hunk.newText}${source.slice(exactIndex + hunk.oldText.length)}`;
+  const selectedText = editor.somethingSelected() ? editor.getSelection("\n") : "";
+  if (!selectedText.trim()) {
+    hideSelectionCodexPopover();
+    return;
   }
 
-  const lines = source.split("\n");
-  const start = clampNumber(hunk.oldStart - 1 + lineOffset, 0, lines.length, 0);
-  lines.splice(start, hunk.oldLines, ...hunk.newText.split("\n"));
-  return lines.join("\n");
+  selectionCodexText = selectedText;
+  selectionCodexPopover.hidden = false;
+  positionSelectionCodexPopover();
+}
+
+function positionSelectionCodexPopover() {
+  if (!editor || selectionCodexPopover.hidden) return;
+
+  const cursor = editor.getCursor("to");
+  const coords = editor.cursorCoords(cursor, "window");
+  const width = selectionCodexPopover.offsetWidth || 320;
+  const height = selectionCodexPopover.offsetHeight || 44;
+  const left = clampNumber(coords.left, 12, window.innerWidth - width - 12, 12);
+  const top = clampNumber(coords.bottom + 8, 12, window.innerHeight - height - 12, 12);
+
+  selectionCodexPopover.style.left = `${left}px`;
+  selectionCodexPopover.style.top = `${top}px`;
+}
+
+function hideSelectionCodexPopover() {
+  clearTimeout(selectionCodexTimer);
+  selectionCodexPopover.hidden = true;
+  selectionCodexText = "";
+}
+
+async function sendSelectionToCodex() {
+  const selectedText = selectionCodexText || (editor && editor.somethingSelected() ? editor.getSelection("\n") : "");
+  if (!selectedText.trim()) {
+    hideSelectionCodexPopover();
+    return;
+  }
+
+  const userPrompt = selectionCodexPrompt.value.trim() || "Use this selected text as context.";
+  const sourceLabel = (activeFile && activeFile.relativePath) || (activeProject && activeProject.texName) || "current editor";
+  const message = withProfileContext([
+    `Selected text from ${sourceLabel}:`,
+    "",
+    selectedText,
+    "",
+    "User request:",
+    userPrompt
+  ].join("\n"));
+
+  hideSelectionCodexPopover();
+  selectionCodexPrompt.value = "";
+  const session = await ensureCodexTerminalSession();
+  if (!session) return;
+
+  await wait(250);
+  const pastedMessage = message.replace(/\r\n?/g, "\n");
+  window.localOverleaf.writeTerminal(session.id, `\x1b[200~${pastedMessage}\x1b[201~\r`);
+  compileLog.textContent = "Sent selected text to Codex.";
+}
+
+async function ensureCodexTerminalSession() {
+  let session = terminalSessions.find((item) => item.kind === "codex" && !item.exited);
+  setTerminalCollapsed(false);
+  if (session) {
+    activateTerminal(session.id);
+    return session;
+  }
+
+  session = await createTerminalSession("codex");
+  if (session) activateTerminal(session.id);
+  return session;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function loadProjects() {
@@ -3198,6 +3303,10 @@ async function removeProject(project) {
 async function renderProjectPreview(card, project) {
   const preview = card.querySelector(".project-preview");
   if (!preview || !project.pdfExists) return;
+  if (project.previewImageUrl) {
+    preview.replaceChildren(previewImageElement(project.previewImageUrl, `${project.name} preview`));
+    return;
+  }
 
   try {
     const [pdfjsLib, pdfBuffer] = await Promise.all([
@@ -3214,7 +3323,7 @@ async function renderProjectPreview(card, project) {
     const baseViewport = page.getViewport({ scale: 1 });
     const targetWidth = Math.max(120, preview.clientWidth);
     const targetHeight = Math.max(120, preview.clientHeight);
-    const scale = Math.max(targetWidth / baseViewport.width, targetHeight / baseViewport.height) * 1.08;
+    const scale = Math.min(targetWidth / baseViewport.width, targetHeight / baseViewport.height) * 0.94;
     const viewport = page.getViewport({ scale });
     const outputScale = Math.min(window.devicePixelRatio || 1, 2);
     const canvas = document.createElement("canvas");
@@ -3229,6 +3338,9 @@ async function renderProjectPreview(card, project) {
     if (!card.isConnected) return;
 
     preview.replaceChildren(canvas);
+    if (window.localOverleaf.cacheProjectPreview) {
+      window.localOverleaf.cacheProjectPreview(project.id, canvas.toDataURL("image/png")).catch(() => {});
+    }
   } catch (error) {
     if (!card.isConnected) return;
     preview.innerHTML = '<span class="project-preview-message">Preview unavailable</span>';
@@ -3933,41 +4045,6 @@ async function saveAgentsFile() {
     reloadAgentsButton.disabled = false;
     saveAgentsButton.disabled = false;
   }
-}
-
-async function fixCompileLogWithCodex() {
-  if (!activeProject) return;
-  const logText = compileLog.textContent.trim();
-  if (!logText || logText === "No compile run yet." || /^compiled successfully\.?$/i.test(logText)) {
-    compileLog.textContent = "No compile issue to send to Codex.";
-    return;
-  }
-
-  closeSettings();
-  setMode("source");
-  setSuggestionPanelOpen(true);
-  suggestionModelSelect.value = "codex";
-  suggestionPromptInput.value = compileLogFixPrompt(logText);
-  compileLog.textContent = "Codex is thinking about the compile errors...";
-  const implemented = await runSuggestionMode({ autoApply: true });
-  if (implemented) {
-    compileLog.textContent = "Codex implemented a compile fix. Compile again to verify it.";
-    setCompileState("Codex applied a fix", "ok");
-  } else {
-    compileLog.textContent = "Codex did not implement a compile fix. Check the AI suggestions panel for details.";
-    setCompileState("Codex fix unavailable", "error");
-  }
-}
-
-function compileLogFixPrompt(logText) {
-  return [
-    "Fix the LaTeX compile errors reported below.",
-    "Keep the change minimal and focused on making the document compile.",
-    "Do not rewrite unrelated prose.",
-    "",
-    "Compile log:",
-    logText.slice(-12000)
-  ].join("\n");
 }
 
 function handleSourceChanged({ renderVisual = false } = {}) {
@@ -5143,7 +5220,7 @@ function setupFileSplitter() {
   const resize = (event) => {
     const bounds = workspace.getBoundingClientRect();
     const minFile = MIN_FILE_WIDTH;
-    const maxFile = Math.min(MAX_FILE_WIDTH, Math.max(minFile, bounds.width - 320 - getPdfMinimumWidth() - splitter.offsetWidth - fileSplitter.offsetWidth));
+    const maxFile = Math.min(MAX_FILE_WIDTH, Math.max(minFile, bounds.width - MIN_EDITOR_WIDTH - getPdfMinimumWidth() - splitter.offsetWidth - fileSplitter.offsetWidth));
     const nextWidth = dragStartWidth + event.clientX - dragStartX;
     if (nextWidth < FILE_COLLAPSE_THRESHOLD) {
       collapsedDuringDrag = true;
@@ -5296,7 +5373,13 @@ function setupSplitter() {
       ? fileRail.getBoundingClientRect().width
       : filePane.getBoundingClientRect().width + fileSplitter.offsetWidth;
     const nextWidth = dragStartWidth + event.clientX - dragStartX;
-    const minLeft = 320;
+    if (nextWidth < SOURCE_COLLAPSE_THRESHOLD) {
+      setSourceCollapsed(true);
+      stopDragging(event);
+      return;
+    }
+
+    const minLeft = MIN_EDITOR_WIDTH;
     const minRight = Math.min(760, Math.max(getPdfMinimumWidth(), bounds.width * 0.4));
     const maxLeft = Math.max(minLeft, bounds.width - fileWidth - minRight - splitter.offsetWidth);
     const clamped = Math.min(maxLeft, Math.max(minLeft, nextWidth));
@@ -5304,8 +5387,9 @@ function setupSplitter() {
   };
 
   splitter.addEventListener("pointerdown", (event) => {
+    if (workspace.classList.contains("source-hidden")) return;
     dragStartX = event.clientX;
-    dragStartWidth = document.querySelector(".source-pane").getBoundingClientRect().width;
+    dragStartWidth = sourcePane.getBoundingClientRect().width;
     splitter.setPointerCapture(event.pointerId);
     document.body.classList.add("is-resizing");
     window.addEventListener("pointermove", resize);
@@ -5314,15 +5398,21 @@ function setupSplitter() {
 
   splitter.addEventListener("keydown", (event) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
     const bounds = workspace.getBoundingClientRect();
     const fileWidth = workspace.classList.contains("files-hidden")
       ? fileRail.getBoundingClientRect().width
       : filePane.getBoundingClientRect().width + fileSplitter.offsetWidth;
     const minRight = Math.min(760, Math.max(getPdfMinimumWidth(), bounds.width * 0.4));
-    const maxLeft = Math.max(320, bounds.width - fileWidth - minRight - splitter.offsetWidth);
-    const currentWidth = document.querySelector(".source-pane").getBoundingClientRect().width;
+    const maxLeft = Math.max(MIN_EDITOR_WIDTH, bounds.width - fileWidth - minRight - splitter.offsetWidth);
+    const currentWidth = sourcePane.getBoundingClientRect().width;
     const delta = event.key === "ArrowLeft" ? -32 : 32;
-    workspace.style.setProperty("--editor-width", `${Math.min(maxLeft, Math.max(320, currentWidth + delta))}px`);
+    const nextWidth = currentWidth + delta;
+    if (nextWidth < SOURCE_COLLAPSE_THRESHOLD) {
+      setSourceCollapsed(true);
+      return;
+    }
+    workspace.style.setProperty("--editor-width", `${Math.min(maxLeft, Math.max(MIN_EDITOR_WIDTH, nextWidth))}px`);
     renderPdf({ showLoading: false });
   });
 }

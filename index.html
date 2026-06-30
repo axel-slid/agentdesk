@@ -64,7 +64,10 @@
             <span>Refresh Project</span>
           </button>
           <button class="settingsButton topbar-action-button" type="button" title="Settings">
-            <span aria-hidden="true">&#9881;</span>
+            <svg class="topbar-icon settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.08a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.08A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7A2 2 0 1 1 7.03 4.2l.06.06A1.7 1.7 0 0 0 8.97 4.6 1.7 1.7 0 0 0 10 3.04V3a2 2 0 1 1 4 0v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.8 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.08A1.7 1.7 0 0 0 19.4 15Z"></path>
+            </svg>
             <span>Settings</span>
           </button>
           <div id="topSaveStatusButton" class="save-status" aria-live="polite" data-save-status="neutral">
@@ -82,7 +85,10 @@
               <span aria-hidden="true">&#8635;</span>
             </button>
             <button class="settingsButton file-footer-icon" type="button" aria-label="Open settings" title="Settings">
-              <span aria-hidden="true">&#9881;</span>
+              <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
+                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.08a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.08A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7A2 2 0 1 1 7.03 4.2l.06.06A1.7 1.7 0 0 0 8.97 4.6 1.7 1.7 0 0 0 10 3.04V3a2 2 0 1 1 4 0v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.8 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.08A1.7 1.7 0 0 0 19.4 15Z"></path>
+              </svg>
             </button>
           </div>
         </div>
@@ -104,6 +110,10 @@
         </aside>
 
         <div id="fileSplitter" class="file-splitter" role="separator" aria-label="Resize files sidebar" tabindex="0"></div>
+
+        <div id="sourceRail" class="source-rail" hidden>
+          <button id="sourceRailButton" class="source-rail-open" type="button">Code</button>
+        </div>
 
         <section class="source-pane">
           <div class="pane-header">
@@ -143,37 +153,6 @@
               <div class="terminal-empty" id="terminalEmpty">Start Shell, Codex, or Claude. Use + for another shell.</div>
             </div>
           </section>
-          <section class="suggestion-panel" id="suggestionPanel" hidden>
-            <header>
-              <div>
-                <h3>AI suggestions</h3>
-                <p>Describe the edit. Review the changes before they touch your file.</p>
-              </div>
-              <button id="closeSuggestionButton" type="button">Close</button>
-            </header>
-            <textarea id="suggestionPrompt" placeholder="Ask for a focused edit, cleanup, or compile fix..." spellcheck="true"></textarea>
-            <div class="suggestion-controls">
-              <select id="suggestionModel">
-                <option value="codex">Codex</option>
-                <option value="claude">Claude</option>
-              </select>
-              <button id="runSuggestionButton" type="button">Suggest changes</button>
-            </div>
-            <p id="suggestionStatus" class="suggestion-status">No suggestion yet.</p>
-            <div id="suggestionDiff" class="suggestion-diff" hidden>
-              <div class="suggestion-diff-header">
-                <button id="previousSuggestionButton" type="button">Prev</button>
-                <span id="suggestionCounter">Hunk 0 / 0</span>
-                <button id="nextSuggestionButton" type="button">Next</button>
-              </div>
-              <pre id="suggestionDiffBody"></pre>
-              <div class="suggestion-apply-actions">
-                <button id="applySuggestionButton" type="button">Apply Hunk</button>
-                <button id="rejectSuggestionButton" type="button">Skip Hunk</button>
-                <button id="applyAllSuggestionsButton" type="button">Apply All</button>
-              </div>
-            </div>
-          </section>
         </section>
 
         <div id="splitter" class="splitter" role="separator" aria-label="Resize editor and preview panes" tabindex="0"></div>
@@ -200,11 +179,10 @@
           </div>
           <div id="pdfViewer" class="pdf-viewer" aria-label="Compiled manuscript pages"></div>
           <section class="log-panel" id="compileLogPanel">
-            <div id="compileLogResizeHandle" class="log-resize-handle" role="separator" aria-label="Resize compile log" tabindex="0"></div>
-            <button id="compileLogCollapsedButton" class="collapsed-panel-rail log-collapsed-rail" type="button" aria-label="Expand compile log">Compile log</button>
+            <div id="compileLogResizeHandle" class="log-resize-handle" role="separator" aria-label="Resize log" tabindex="0"></div>
+            <button id="compileLogCollapsedButton" class="collapsed-panel-rail log-collapsed-rail" type="button" aria-label="Expand log">Log</button>
             <header class="log-header">
-              <span>Compile log</span>
-              <button id="fixCompileLogButton" type="button">Fix with Codex</button>
+              <span>Log</span>
             </header>
             <pre id="compileLog">No compile run yet.</pre>
           </section>
@@ -228,6 +206,11 @@
       </div>
       <div id="commandPaletteList" class="command-palette-list" role="listbox"></div>
     </section>
+
+    <div id="selectionCodexPopover" class="selection-codex-popover" hidden>
+      <input id="selectionCodexPrompt" type="text" spellcheck="true" placeholder="Ask Codex about this selection">
+      <button id="selectionCodexSendButton" type="button">Send to Codex</button>
+    </div>
 
     <div class="settings-backdrop" id="settingsBackdrop" hidden></div>
     <section id="templatesPanel" class="new-project-panel templates-panel" role="dialog" aria-modal="true" aria-labelledby="templatesTitle" hidden>
@@ -309,7 +292,6 @@
         <button class="settings-nav-button" type="button" data-settings-section="profile">Profile</button>
         <button class="settings-nav-button" type="button" data-settings-section="workspace">Workspace</button>
         <button class="settings-nav-button" type="button" data-settings-section="agents">AGENTS.md</button>
-        <button class="settings-nav-button" type="button" data-settings-section="ai">AI assistance</button>
         <button class="settings-nav-button" type="button" data-settings-section="shortcuts">Keyboard</button>
       </nav>
 
@@ -354,6 +336,10 @@
                 <optgroup label="Dark High Contrast">
                   <option value="abyss">Abyss</option>
                   <option value="tomorrow-night-blue">Tomorrow Night Blue</option>
+                  <option value="pastel-graphite-hc">Pastel Graphite</option>
+                  <option value="lavender-contrast-hc">Lavender Contrast</option>
+                  <option value="mint-contrast-hc">Mint Contrast</option>
+                  <option value="rose-contrast-hc">Rose Contrast</option>
                 </optgroup>
               </select>
             </label>
@@ -430,10 +416,6 @@
             <p id="agentsStatus" class="settings-status">Open this section to load AGENTS.md.</p>
           </section>
 
-          <section class="settings-section" data-settings-panel="ai">
-            <button id="suggestionModeButton" class="settings-action-button primary" type="button">Suggest Mode</button>
-          </section>
-
           <section class="settings-section" data-settings-panel="shortcuts">
             <label class="setting-row">
               <span>Vim shortcuts</span>
@@ -452,7 +434,6 @@
               <div><span>Toggle files</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>F</kbd></div>
               <div><span>Toggle terminal</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>T</kbd></div>
               <div><span>Open settings</span><kbd>Cmd/Ctrl</kbd><kbd>,</kbd></div>
-              <div><span>Suggest Mode</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>S</kbd></div>
               <div><span>Close panel</span><kbd>Esc</kbd></div>
             </div>
           </section>

@@ -3,7 +3,6 @@ const { execFile } = require("node:child_process");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
-const os = require("node:os");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const pty = require("node-pty");
@@ -200,6 +199,10 @@ function templatePreviewRootPath() {
   return path.join(app.getPath("userData"), "template-previews");
 }
 
+function projectPreviewRootPath() {
+  return path.join(app.getPath("userData"), "project-previews");
+}
+
 function makeProjectId(texPath) {
   return crypto.createHash("sha1").update(path.resolve(texPath)).digest("hex").slice(0, 14);
 }
@@ -288,6 +291,33 @@ function pdfPathFor(project) {
   return path.join(parsed.dir, `${parsed.name}.pdf`);
 }
 
+function safeCacheName(id) {
+  return String(id || "preview").replace(/[^a-z0-9_-]+/gi, "-").slice(0, 96) || "preview";
+}
+
+function templatePreviewPngPath(templateId) {
+  return path.join(templatePreviewRootPath(), `${safeCacheName(templateId)}.png`);
+}
+
+function projectPreviewPngPath(projectId) {
+  return path.join(projectPreviewRootPath(), `${safeCacheName(projectId)}.png`);
+}
+
+function freshPreviewUrl(previewPath, sourcePath = "") {
+  if (!fs.existsSync(previewPath)) return "";
+
+  try {
+    const previewStat = fs.statSync(previewPath);
+    if (sourcePath && fs.existsSync(sourcePath)) {
+      const sourceStat = fs.statSync(sourcePath);
+      if (previewStat.mtimeMs + 1 < sourceStat.mtimeMs) return "";
+    }
+    return `${pathToFileURL(previewPath).href}?v=${Math.round(previewStat.mtimeMs)}`;
+  } catch (error) {
+    return "";
+  }
+}
+
 function projectRootFor(project) {
   return path.dirname(project.texPath);
 }
@@ -301,6 +331,7 @@ function decorateProject(project) {
   const pdfPath = pdfPathFor(project);
   const rootPath = projectRootFor(project);
   const pdfExists = fs.existsSync(pdfPath);
+  const previewImageUrl = pdfExists ? freshPreviewUrl(projectPreviewPngPath(project.id), pdfPath) : "";
   let modifiedAt = project.updatedAt;
 
   if (texExists) {
@@ -321,6 +352,7 @@ function decorateProject(project) {
     pdfName: path.basename(pdfPath),
     texExists,
     pdfExists,
+    previewImageUrl,
     modifiedAt
   };
 }
@@ -1089,6 +1121,7 @@ function publicBuiltInTemplate(template) {
     sourceUrl: template.sourceUrl,
     kind: "online",
     entry,
+    previewImageUrl: freshPreviewUrl(templatePreviewPngPath(template.id)),
     previewText: String((template.files && template.files[entry]) || Object.values(template.files || {})[0] || "").slice(0, 12000),
     fileCount: Object.keys(template.files || {}).length
   };
@@ -1126,6 +1159,7 @@ function decorateCustomTemplate(template) {
     sourceUrl: "",
     kind: "custom",
     texName: template.texPath ? path.basename(template.texPath) : "main.tex",
+    previewImageUrl: freshPreviewUrl(templatePreviewPngPath(template.id), template.texPath),
     previewText,
     rootPath: template.rootPath,
     createdAt: template.createdAt,
@@ -1286,6 +1320,33 @@ async function templatePreviewPdf(_event, templateId) {
   const pdfPath = pdfPathFor(project);
   const pdf = await fsp.readFile(pdfPath);
   return pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
+}
+
+function pngBufferFromDataUrl(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:image\/png;base64,([a-z0-9+/=]+)$/i);
+  if (!match) throw new Error("Preview cache requires a PNG data URL.");
+  return Buffer.from(match[1], "base64");
+}
+
+async function cacheTemplatePreview(_event, payload = {}) {
+  const templateId = String(payload.templateId || "");
+  if (!templateId) throw new Error("Template preview cache is missing a template id.");
+
+  const previewPath = templatePreviewPngPath(templateId);
+  await fsp.mkdir(path.dirname(previewPath), { recursive: true });
+  await fsp.writeFile(previewPath, pngBufferFromDataUrl(payload.dataUrl));
+  return { previewImageUrl: freshPreviewUrl(previewPath) };
+}
+
+async function cacheProjectPreview(_event, payload = {}) {
+  const project = await getProject(payload.projectId);
+  const pdfPath = pdfPathFor(project);
+  if (!fs.existsSync(pdfPath)) throw new Error("Project has no PDF to cache.");
+
+  const previewPath = projectPreviewPngPath(project.id);
+  await fsp.mkdir(path.dirname(previewPath), { recursive: true });
+  await fsp.writeFile(previewPath, pngBufferFromDataUrl(payload.dataUrl));
+  return { previewImageUrl: freshPreviewUrl(previewPath, pdfPath) };
 }
 
 async function compileProjectIfPossible(projectId) {
@@ -1963,214 +2024,6 @@ function runTectonic(project) {
   });
 }
 
-function runCommand(command, args, options = {}) {
-  return new Promise((resolve, reject) => {
-    execFile(command, args, {
-      timeout: options.timeout || 600000,
-      maxBuffer: options.maxBuffer || 1024 * 1024 * 16,
-      cwd: options.cwd || repoRoot,
-      env: options.env || process.env
-    }, (error, stdout, stderr) => {
-      const output = [stdout, stderr].filter(Boolean).join("\n");
-      if (error) {
-        error.output = output || error.message;
-        reject(error);
-        return;
-      }
-
-      resolve(output);
-    });
-  });
-}
-
-async function runSuggestion(_event, payload = {}) {
-  const project = await getProject(payload.projectId);
-  const provider = payload.provider === "claude" ? "claude" : "codex";
-  const relativePath = payload.relativePath || relativeProjectPath(project, project.texPath);
-  const liveFilePath = safeProjectPath(project, relativePath);
-  if (!isTextFile(liveFilePath)) throw new Error("Suggestion mode can only edit text project files.");
-
-  const originalText = String(payload.tex || "");
-  const userPrompt = String(payload.prompt || "").trim();
-  if (!userPrompt) throw new Error("Add instructions for the suggestion first.");
-
-  const tempRoot = await fsp.mkdtemp(path.join(os.tmpdir(), "latex-suggestion-work-"));
-  const originalRoot = await fsp.mkdtemp(path.join(os.tmpdir(), "latex-suggestion-original-"));
-  let modelOutput = "";
-
-  try {
-    await copyProjectForSuggestion(project, tempRoot);
-    const tempFilePath = safeTempPath(tempRoot, relativePath);
-    await fsp.mkdir(path.dirname(tempFilePath), { recursive: true });
-    await fsp.writeFile(tempFilePath, originalText, "utf8");
-
-    const instruction = suggestionPrompt(relativePath, userPrompt);
-    modelOutput = provider === "claude"
-      ? await runClaudeSuggestion(tempRoot, instruction)
-      : await runCodexSuggestion(tempRoot, instruction);
-
-    const suggestedText = await fsp.readFile(tempFilePath, "utf8");
-    const originalFilePath = path.join(originalRoot, path.basename(relativePath) || "manuscript.tex");
-    await fsp.writeFile(originalFilePath, originalText, "utf8");
-    const diff = await unifiedDiff(originalFilePath, tempFilePath, relativePath);
-
-    return {
-      provider,
-      relativePath,
-      originalText,
-      suggestedText,
-      diff,
-      hunks: parseUnifiedDiff(diff),
-      modelOutput
-    };
-  } finally {
-    await Promise.allSettled([
-      fsp.rm(tempRoot, { recursive: true, force: true }),
-      fsp.rm(originalRoot, { recursive: true, force: true })
-    ]);
-  }
-}
-
-async function copyProjectForSuggestion(project, tempRoot) {
-  const sourceRoot = projectRootFor(project);
-  await fsp.cp(sourceRoot, tempRoot, {
-    recursive: true,
-    filter: (source) => {
-      const name = path.basename(source);
-      if ([".git", "node_modules", "__pycache__"].includes(name)) return false;
-      if (shouldSkipFile(name)) return false;
-      return true;
-    }
-  });
-}
-
-function safeTempPath(tempRoot, relativePath) {
-  const resolved = path.resolve(tempRoot, relativePath || ".");
-  if (resolved !== tempRoot && !resolved.startsWith(`${tempRoot}${path.sep}`)) {
-    throw new Error("Suggestion file path escapes the temporary project folder.");
-  }
-  return resolved;
-}
-
-function suggestionPrompt(relativePath, userPrompt) {
-  return [
-    "You are editing a temporary copy of a LaTeX manuscript.",
-    `Modify only ${relativePath}.`,
-    "Do not compile, do not rename files, and do not edit any original project path.",
-    "Make the requested manuscript edits directly in that file and then stop.",
-    "",
-    "Requested edits:",
-    userPrompt
-  ].join("\n");
-}
-
-function runCodexSuggestion(tempRoot, instruction) {
-  return runCommand(resolveExecutable("codex"), [
-    "exec",
-    "--sandbox",
-    "workspace-write",
-    "--skip-git-repo-check",
-    "--ephemeral",
-    "--color",
-    "never",
-    "-C",
-    tempRoot,
-    instruction
-  ], {
-    cwd: tempRoot,
-    env: terminalEnv(tempRoot)
-  });
-}
-
-function runClaudeSuggestion(tempRoot, instruction) {
-  return runCommand(resolveExecutable("claude"), [
-    "-p",
-    "--permission-mode",
-    "acceptEdits",
-    "--no-session-persistence",
-    "--output-format",
-    "text",
-    "--add-dir",
-    tempRoot,
-    "--",
-    instruction
-  ], {
-    cwd: tempRoot,
-    env: terminalEnv(tempRoot)
-  });
-}
-
-function unifiedDiff(originalPath, suggestedPath, relativePath) {
-  return new Promise((resolve, reject) => {
-    execFile("git", [
-      "diff",
-      "--no-index",
-      "--no-color",
-      "--",
-      originalPath,
-      suggestedPath
-    ], {
-      timeout: 30000,
-      maxBuffer: 1024 * 1024 * 8
-    }, (error, stdout, stderr) => {
-      if (error && error.code !== 1) {
-        reject(new Error([stdout, stderr, error.message].filter(Boolean).join("\n")));
-        return;
-      }
-
-      resolve(String(stdout || "")
-        .replaceAll(originalPath, `a/${relativePath}`)
-        .replaceAll(suggestedPath, `b/${relativePath}`));
-    });
-  });
-}
-
-function parseUnifiedDiff(diff) {
-  const hunks = [];
-  let current = null;
-
-  String(diff || "").split("\n").forEach((line) => {
-    const header = line.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
-    if (header) {
-      current = {
-        index: hunks.length,
-        oldStart: Number(header[1]),
-        oldLines: Number(header[2] || 1),
-        newStart: Number(header[3]),
-        newLines: Number(header[4] || 1),
-        diff: [line],
-        oldTextLines: [],
-        newTextLines: []
-      };
-      hunks.push(current);
-      return;
-    }
-
-    if (!current || line === "\\ No newline at end of file") return;
-    current.diff.push(line);
-
-    if (line.startsWith(" ")) {
-      current.oldTextLines.push(line.slice(1));
-      current.newTextLines.push(line.slice(1));
-    } else if (line.startsWith("-") && !line.startsWith("---")) {
-      current.oldTextLines.push(line.slice(1));
-    } else if (line.startsWith("+") && !line.startsWith("+++")) {
-      current.newTextLines.push(line.slice(1));
-    }
-  });
-
-  return hunks.map((hunk) => ({
-    index: hunk.index,
-    oldStart: hunk.oldStart,
-    oldLines: hunk.oldLines,
-    newStart: hunk.newStart,
-    newLines: hunk.newLines,
-    diff: hunk.diff.join("\n"),
-    oldText: hunk.oldTextLines.join("\n"),
-    newText: hunk.newTextLines.join("\n")
-  }));
-}
-
 async function readPdf(_event, projectId) {
   const project = await getProject(projectId);
   await ensureProjectPdf(project);
@@ -2257,6 +2110,8 @@ ipcMain.handle("add-project", addProject);
 ipcMain.handle("add-project-from-path", addProjectFromPath);
 ipcMain.handle("list-templates", listTemplates);
 ipcMain.handle("template-preview-pdf", templatePreviewPdf);
+ipcMain.handle("cache-template-preview", cacheTemplatePreview);
+ipcMain.handle("cache-project-preview", cacheProjectPreview);
 ipcMain.handle("import-template", importTemplate);
 ipcMain.handle("remove-template", removeTemplate);
 ipcMain.handle("create-project-from-template", createProjectFromTemplate);
@@ -2269,7 +2124,6 @@ ipcMain.handle("import-project-files", importProjectFiles);
 ipcMain.handle("load-manuscript", loadManuscript);
 ipcMain.handle("save-manuscript", saveManuscript);
 ipcMain.handle("compile-manuscript", compileManuscript);
-ipcMain.handle("run-suggestion", runSuggestion);
 ipcMain.handle("read-pdf", readPdf);
 ipcMain.handle("open-pdf", openPdf);
 ipcMain.handle("download-pdf", downloadPdf);
