@@ -103,6 +103,7 @@ const closeSshProjectButton = document.getElementById("closeSshProjectButton");
 const cancelSshProjectButton = document.getElementById("cancelSshProjectButton");
 const connectSshProjectButton = document.getElementById("connectSshProjectButton");
 const sshKnownHostSelect = document.getElementById("sshKnownHostSelect");
+const sshProjectUserInput = document.getElementById("sshProjectUserInput");
 const sshProjectHostInput = document.getElementById("sshProjectHostInput");
 const sshProjectPathInput = document.getElementById("sshProjectPathInput");
 const sshProjectStatus = document.getElementById("sshProjectStatus");
@@ -188,6 +189,11 @@ const TRASH_ICON_SVG = `
     <path d="M8 6V4h8v2"></path>
     <path d="M6 6l1 14h10l1-14"></path>
     <path d="M10 10v6M14 10v6"></path>
+  </svg>
+`;
+const STAR_ICON_SVG = `
+  <svg class="icon icon-star" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"></path>
   </svg>
 `;
 const EXTERNAL_LINK_ICON_SVG = `
@@ -276,6 +282,28 @@ const LATEX_SNIPPETS = {
   table: "\\begin{table}[h]\n  \\centering\n  \\begin{tabular}{ll}\n    \\hline\n    A & B \\\\\n    \\hline\n  \\end{tabular}\n  \\caption{Caption text.}\n  \\label{tab:example}\n\\end{table}",
   citation: "Recent work~\\cite{key} shows..."
 };
+const TEMPLATE_HIDDEN_STORAGE_KEY = "latexStudioHiddenBuiltInTemplates";
+const LATEX_COMPLETIONS = [
+  { text: "\\begin{equation}\n  \n\\end{equation}", displayText: "\\begin{equation}", className: "latex-hint-environment" },
+  { text: "\\begin{align}\n  \n\\end{align}", displayText: "\\begin{align}", className: "latex-hint-environment" },
+  { text: "\\begin{figure}[h]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{}\n  \\caption{}\n  \\label{fig:}\n\\end{figure}", displayText: "\\begin{figure}", className: "latex-hint-environment" },
+  { text: "\\begin{table}[h]\n  \\centering\n  \\begin{tabular}{}\n  \\end{tabular}\n  \\caption{}\n  \\label{tab:}\n\\end{table}", displayText: "\\begin{table}", className: "latex-hint-environment" },
+  { text: "\\section{}", displayText: "\\section{}", className: "latex-hint-section" },
+  { text: "\\subsection{}", displayText: "\\subsection{}", className: "latex-hint-section" },
+  { text: "\\paragraph{}", displayText: "\\paragraph{}", className: "latex-hint-section" },
+  { text: "\\textbf{}", displayText: "\\textbf{}", className: "latex-hint-inline" },
+  { text: "\\emph{}", displayText: "\\emph{}", className: "latex-hint-inline" },
+  { text: "\\cite{}", displayText: "\\cite{}", className: "latex-hint-ref" },
+  { text: "\\ref{}", displayText: "\\ref{}", className: "latex-hint-ref" },
+  { text: "\\label{}", displayText: "\\label{}", className: "latex-hint-ref" },
+  { text: "\\includegraphics[width=0.8\\linewidth]{}", displayText: "\\includegraphics", className: "latex-hint-figure" },
+  { text: "\\frac{}{}", displayText: "\\frac{}{}", className: "latex-hint-math" },
+  { text: "\\sqrt{}", displayText: "\\sqrt{}", className: "latex-hint-math" },
+  { text: "\\sum_{}^{}", displayText: "\\sum_{}^{}", className: "latex-hint-math" },
+  { text: "\\int_{}^{}", displayText: "\\int_{}^{}", className: "latex-hint-math" },
+  { text: "\\mathbf{}", displayText: "\\mathbf{}", className: "latex-hint-math" },
+  { text: "\\mathbb{}", displayText: "\\mathbb{}", className: "latex-hint-math" }
+];
 const PROJECT_GREETINGS = [
   "Hello, {name}!",
   "Hey there, {name}",
@@ -355,6 +383,20 @@ const PROJECT_DAY_GREETINGS = {
   6: {
     named: ["Happy Saturday, {name}", "Welcome to the weekend, {name}"],
     anonymous: ["Happy Saturday!", "Welcome to the weekend"]
+  }
+};
+const PROJECT_TIME_GREETINGS = {
+  morning: {
+    named: ["Good morning, {name}", "Morning, {name}", "Ready when you are, {name}.", "Back at the desk, {name}.", "Good to see you, {name}."],
+    anonymous: ["Good morning", "Morning", "Ready when you are.", "Back at the desk.", "Good to see you."]
+  },
+  afternoon: {
+    named: ["Good afternoon, {name}", "Hi {name}, how are you?", "How's it going, {name}?", "Ready when you are, {name}.", "Let's work, {name}."],
+    anonymous: ["Good afternoon", "Hi, how are you?", "How's it going?", "Ready when you are.", "Let's work."]
+  },
+  evening: {
+    named: ["Good evening, {name}", "Evening, {name}", "How was your day, {name}?", "Back at it, {name}", "Ready when you are, {name}."],
+    anonymous: ["Good evening", "Evening", "How was your day?", "Back at it!", "Ready when you are."]
   }
 };
 const THEME_VARIABLES = [
@@ -1949,8 +1991,9 @@ let minimapVisible = true;
 let textWrappingEnabled = true;
 let spellCheckEnabled = false;
 let selectionAgentChoice = "codex";
-let remoteWorkspace = { host: "", path: "" };
+let remoteWorkspace = { user: "", host: "", path: "" };
 let defaultGithubRemote = DEFAULT_GITHUB_REMOTE;
+let hiddenBuiltInTemplates = [];
 let projectViewMode = "grid";
 let vimModeEnabled = false;
 let vimModeState = "off";
@@ -1978,6 +2021,7 @@ let selectionCodexTimer = null;
 let spellIssueMarks = [];
 let spellCheckTimer = null;
 let spellContextMenu = null;
+let equationPreviewWidget = null;
 let historyEvents = [];
 let historyCaptureTimer = null;
 let lastHistoryText = "";
@@ -1989,6 +2033,7 @@ init();
 
 async function init() {
   relativeLineNumbersEnabled = localStorage.getItem("latexStudioRelativeLineNumbers") === "true";
+  hiddenBuiltInTemplates = readHiddenBuiltInTemplates();
   defineBibtexMode();
   if (historyPanel && historyPanel.parentElement !== document.body) document.body.appendChild(historyPanel);
   setupSettings();
@@ -2039,7 +2084,9 @@ function setupSourceEditor() {
     lineWrapping: textWrappingEnabled,
     indentUnit: 2,
     tabSize: 2,
-    viewportMargin: 80
+    viewportMargin: 80,
+    extraKeys: { "Ctrl-Space": "autocomplete" },
+    hintOptions: { hint: latexCompletionHint, completeSingle: false }
   });
   applyEditorKeyMap();
   installVisualLineVimKeys();
@@ -2062,7 +2109,9 @@ function setupSourceEditor() {
     updateRelativeLineNumbers();
     updateVimModeIndicator();
     scheduleSelectionCodexPopover();
+    updateEquationPreview();
   });
+  editor.on("inputRead", maybeShowLatexCompletion);
   editor.on("viewportChange", updateRelativeLineNumbers);
   editor.on("vim-mode-change", (event) => {
     vimModeState = String((event && event.mode) || "normal").toLowerCase();
@@ -2081,6 +2130,98 @@ function installVisualLineVimKeys() {
     CodeMirror.Vim.mapCommand("k", "motion", "moveByDisplayLines", { forward: false }, {});
     CodeMirror.Vim.__agentDeskDisplayLineKeys = true;
   }
+}
+
+function latexCompletionHint(cm) {
+  const cursor = cm.getCursor();
+  const line = cm.getLine(cursor.line) || "";
+  let startCh = cursor.ch;
+  while (startCh > 0 && /[A-Za-z*]/.test(line[startCh - 1])) startCh -= 1;
+  if (startCh > 0 && line[startCh - 1] === "\\") startCh -= 1;
+  const prefix = line.slice(startCh, cursor.ch).toLowerCase();
+  const list = LATEX_COMPLETIONS
+    .filter((item) => item.displayText.toLowerCase().startsWith(prefix) || item.text.toLowerCase().startsWith(prefix))
+    .map((item) => ({
+      text: item.text,
+      displayText: item.displayText,
+      className: item.className,
+      hint(cmInstance, data, completion) {
+        cmInstance.replaceRange(completion.text, data.from, data.to);
+        const inserted = completion.text;
+        const braceIndex = inserted.indexOf("{}");
+        if (braceIndex >= 0) {
+          const before = inserted.slice(0, braceIndex);
+          const lineOffset = before.split("\n").length - 1;
+          const chOffset = lineOffset ? before.split("\n").pop().length : before.length;
+          cmInstance.setCursor({ line: data.from.line + lineOffset, ch: (lineOffset ? 0 : data.from.ch) + chOffset + 1 });
+        }
+      }
+    }));
+  return {
+    list,
+    from: CodeMirror.Pos(cursor.line, startCh),
+    to: CodeMirror.Pos(cursor.line, cursor.ch)
+  };
+}
+
+function maybeShowLatexCompletion(cm, change) {
+  if (!window.CodeMirror || !CodeMirror.showHint || !change || !change.text) return;
+  if (activeMediaFile || !visualEditor.hidden) return;
+  const inserted = change.text.join("\n");
+  if (inserted === "\\" || /^\\[A-Za-z]+$/.test(currentLatexPrefix(cm))) {
+    CodeMirror.showHint(cm, latexCompletionHint, { completeSingle: false });
+  }
+}
+
+function currentLatexPrefix(cm) {
+  const cursor = cm.getCursor();
+  const line = cm.getLine(cursor.line) || "";
+  const left = line.slice(0, cursor.ch);
+  const match = left.match(/\\[A-Za-z*]*$/);
+  return match ? match[0] : "";
+}
+
+function updateEquationPreview() {
+  if (!editor || !window.katex) return;
+  if (equationPreviewWidget) {
+    equationPreviewWidget.clear();
+    equationPreviewWidget = null;
+  }
+  const expression = currentMathExpression();
+  if (!expression) return;
+  const node = document.createElement("div");
+  node.className = "equation-preview-widget";
+  try {
+    katex.render(expression.math, node, { displayMode: expression.display, throwOnError: false });
+  } catch (error) {
+    return;
+  }
+  equationPreviewWidget = editor.addLineWidget(expression.line, node, {
+    above: true,
+    coverGutter: false,
+    noHScroll: true
+  });
+}
+
+function currentMathExpression() {
+  const cursor = editor.getCursor();
+  const line = editor.getLine(cursor.line) || "";
+  const inline = line.match(/\$([^$]{1,240})\$/);
+  if (inline) return { math: inline[1], display: false, line: cursor.line };
+
+  let start = cursor.line;
+  while (start >= 0 && !/\\begin\{(?:equation|align|gather)\*?\}|\\\[/.test(editor.getLine(start) || "")) start -= 1;
+  if (start < 0) return null;
+  let end = cursor.line;
+  while (end <= editor.lastLine() && !/\\end\{(?:equation|align|gather)\*?\}|\\\]/.test(editor.getLine(end) || "")) end += 1;
+  if (end > editor.lastLine()) return null;
+  const source = editor.getRange({ line: start, ch: 0 }, { line: end, ch: (editor.getLine(end) || "").length });
+  const math = source
+    .replace(/\\begin\{(?:equation|align|gather)\*?\}/g, "")
+    .replace(/\\end\{(?:equation|align|gather)\*?\}/g, "")
+    .replace(/\\\[|\\\]/g, "")
+    .trim();
+  return math ? { math, display: true, line: start } : null;
 }
 
 function setupSettings() {
@@ -2249,7 +2390,10 @@ function setupSettings() {
   if (connectSshProjectButton) connectSshProjectButton.addEventListener("click", connectSshProject);
   if (sshKnownHostSelect) {
     sshKnownHostSelect.addEventListener("change", () => {
-      if (sshKnownHostSelect.value) sshProjectHostInput.value = sshKnownHostSelect.value;
+      if (!sshKnownHostSelect.value) return;
+      const parsed = splitRemoteHost(sshKnownHostSelect.value);
+      if (sshProjectUserInput && parsed.user) sshProjectUserInput.value = parsed.user;
+      if (sshProjectHostInput) sshProjectHostInput.value = parsed.host;
     });
   }
   agentsEditor.addEventListener("input", () => {
@@ -2388,15 +2532,34 @@ function readRemoteWorkspace() {
     const parsed = JSON.parse(localStorage.getItem(REMOTE_STORAGE_KEY) || "{}");
     return normalizeRemoteWorkspace(parsed);
   } catch (error) {
-    return { host: "", path: "" };
+    return { user: "", host: "", path: "" };
   }
 }
 
 function normalizeRemoteWorkspace(value) {
+  const parsedHost = splitRemoteHost(value && (value.host || value.server));
   return {
-    host: String(value && value.host ? value.host : "").trim(),
+    user: String(value && value.user ? value.user : parsedHost.user).trim(),
+    host: String(parsedHost.host).trim(),
     path: String(value && value.path ? value.path : "").trim()
   };
+}
+
+function splitRemoteHost(value = "") {
+  const raw = String(value || "").trim();
+  const at = raw.lastIndexOf("@");
+  if (at > 0) return { user: raw.slice(0, at), host: raw.slice(at + 1) };
+  return { user: "", host: raw };
+}
+
+function remoteWorkspaceLabel(remote = remoteWorkspace) {
+  const normalized = normalizeRemoteWorkspace(remote);
+  const target = normalized.user ? `${normalized.user}@${normalized.host}` : normalized.host;
+  return normalized.path ? `${target}:${normalized.path}` : target;
+}
+
+function isRemoteProject() {
+  return Boolean(activeProject && activeProject.remote);
 }
 
 function readDefaultGithubRemote() {
@@ -2441,8 +2604,8 @@ function populateProfileForm() {
 }
 
 function populateRemoteForm() {
-  remoteHostInput.value = remoteWorkspace.host || "";
-  remotePathInput.value = remoteWorkspace.path || "";
+  if (remoteHostInput) remoteHostInput.value = remoteWorkspace.user ? `${remoteWorkspace.user}@${remoteWorkspace.host}` : remoteWorkspace.host || "";
+  if (remotePathInput) remotePathInput.value = remoteWorkspace.path || "";
 }
 
 function populateProjectSettingsForm() {
@@ -2472,13 +2635,15 @@ async function saveProjectSettings() {
 }
 
 function saveRemoteWorkspace() {
+  const parsedHost = splitRemoteHost(remoteHostInput.value);
   remoteWorkspace = normalizeRemoteWorkspace({
-    host: remoteHostInput.value,
+    user: parsedHost.user,
+    host: parsedHost.host,
     path: remotePathInput.value
   });
   localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
   remoteStatus.textContent = remoteWorkspace.host
-    ? `Saved SSH target ${remoteWorkspace.host}${remoteWorkspace.path ? `:${remoteWorkspace.path}` : ""}.`
+    ? `Saved SSH target ${remoteWorkspaceLabel(remoteWorkspace)}.`
     : "Remote target cleared.";
   setStatusClass(remoteStatus, remoteWorkspace.host ? "ok" : undefined);
 }
@@ -2495,7 +2660,10 @@ async function populateSshKnownHosts() {
     hosts = [];
   }
 
-  const uniqueHosts = Array.from(new Set([remoteWorkspace.host, ...hosts].filter(Boolean))).slice(0, 24);
+  const savedTarget = remoteWorkspace.host
+    ? (remoteWorkspace.user ? `${remoteWorkspace.user}@${remoteWorkspace.host}` : remoteWorkspace.host)
+    : "";
+  const uniqueHosts = Array.from(new Set([savedTarget, ...hosts].filter(Boolean))).slice(0, 24);
   sshKnownHostSelect.innerHTML = "";
   const placeholder = document.createElement("option");
   placeholder.value = "";
@@ -2521,11 +2689,12 @@ async function openSshProjectFlow({ startTerminal = true } = {}) {
   sshProjectPanel.hidden = false;
   sshProjectPanel.dataset.startTerminal = String(Boolean(startTerminal));
   if (sshProjectStatus) sshProjectStatus.textContent = "";
+  if (sshProjectUserInput) sshProjectUserInput.value = remoteWorkspace.user || "";
   if (sshProjectHostInput) sshProjectHostInput.value = remoteWorkspace.host || "";
   if (sshProjectPathInput) sshProjectPathInput.value = remoteWorkspace.path || "~";
   await populateSshKnownHosts();
   requestAnimationFrame(() => {
-    if (sshProjectHostInput) sshProjectHostInput.focus();
+    if (sshProjectUserInput) sshProjectUserInput.focus();
   });
 
   return new Promise((resolve) => {
@@ -2544,17 +2713,18 @@ function closeSshProjectPanel({ keepBackdrop = false, value = null } = {}) {
 }
 
 async function connectSshProject() {
+  const user = String(sshProjectUserInput && sshProjectUserInput.value ? sshProjectUserInput.value : "").trim();
   const host = String(sshProjectHostInput && sshProjectHostInput.value ? sshProjectHostInput.value : "").trim();
   const remotePath = String(sshProjectPathInput && sshProjectPathInput.value ? sshProjectPathInput.value : "").trim() || "~";
   if (!host) {
     if (sshProjectStatus) {
-      sshProjectStatus.textContent = "Enter an SSH host first.";
+      sshProjectStatus.textContent = "Enter a server first.";
       setStatusClass(sshProjectStatus, "error");
     }
     return;
   }
 
-  remoteWorkspace = normalizeRemoteWorkspace({ host, path: remotePath });
+  remoteWorkspace = normalizeRemoteWorkspace({ user, host, path: remotePath });
   localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
   populateRemoteForm();
 
@@ -2563,18 +2733,30 @@ async function connectSshProject() {
   if (!shouldStartTerminal) return;
 
   if (editorScreen.hidden) {
+    activeProject = {
+      id: `remote:${remoteWorkspaceLabel(remoteWorkspace)}`,
+      name: `SSH ${remoteWorkspace.host}`,
+      texName: "remote",
+      folderName: remoteWorkspace.path || "~",
+      remote: true
+    };
     showEditorShell();
-    activeDocumentTitle.textContent = `SSH: ${remoteWorkspace.host}${remoteWorkspace.path ? `:${remoteWorkspace.path}` : ""}`;
+    activeDocumentTitle.textContent = `SSH: ${remoteWorkspaceLabel(remoteWorkspace)}`;
     pdfTitle.textContent = "SSH workspace";
     pdfMeta.textContent = remoteWorkspace.path || remoteWorkspace.host;
     pdfViewer.innerHTML = '<div class="pdf-loading">SSH workspace opened in Terminal.</div>';
   }
 
-  setFileSidebarVisible(false, { persist: false });
+  fileTree.innerHTML = '<div class="file-message">Authenticate in Terminal, then refresh files.</div>';
+  setFileSidebarVisible(true, { persist: false });
   setTerminalCollapsed(false, { persist: false });
   setCompileLogCollapsed(true, { persist: false });
   await new Promise((resolve) => setTimeout(resolve, 120));
-  await createTerminalSession("ssh");
+  const session = await createTerminalSession("ssh");
+  if (session) {
+    compileLog.textContent = `Enter SSH password, key passphrase, and authenticator code in the SSH terminal. Files refresh after the connection is ready.`;
+    setTimeout(() => loadProjectFiles(), 2600);
+  }
 }
 
 function saveProfileFromForm() {
@@ -2604,25 +2786,16 @@ function updateProjectHeroGreeting({ rotate = false } = {}) {
   const firstName = String(aiProfile.name || "").trim().split(/\s+/)[0] || "";
   const now = new Date();
   const hour = now.getHours();
-  const dayGreet = PROJECT_DAY_GREETINGS[now.getDay()] || {};
-  const timeGreetings = hour < 5
-    ? { named: ["Hello, night owl"], anonymous: ["Hello, night owl"] }
-    : hour < 12
-      ? { named: ["Good morning, {name}"], anonymous: ["Good morning"] }
-      : hour < 17
-        ? { named: ["Good afternoon, {name}"], anonymous: ["Good afternoon"] }
-        : { named: ["Good evening, {name}", "Evening, {name}"], anonymous: ["Good evening", "Evening"] };
-  const rawGreetings = firstName
-    ? [...(dayGreet.named || []), ...(timeGreetings.named || []), ...PROJECT_GREETINGS]
-    : [...(dayGreet.anonymous || []), ...(timeGreetings.anonymous || []), ...PROJECT_GREETINGS_NO_NAME];
-  const greetings = rawGreetings.filter((greeting) => greetingAllowedForHour(greeting, hour));
+  const bucket = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const timeGreetings = PROJECT_TIME_GREETINGS[bucket] || PROJECT_TIME_GREETINGS.morning;
+  const greetings = firstName ? timeGreetings.named : timeGreetings.anonymous;
   const storageKey = firstName ? `latexStudioGreetingIndex:${firstName.toLowerCase()}` : "latexStudioGreetingIndex";
   let index = clampNumber(Number(localStorage.getItem(storageKey)), 0, greetings.length - 1, 0);
   if (rotate) {
     index = (index + 1) % greetings.length;
     localStorage.setItem(storageKey, String(index));
   }
-  projectHeroTitle.textContent = greetings[index].replace("{name}", firstName);
+  projectHeroTitle.textContent = (greetings[index] || "Hello!").replace("{name}", firstName);
 }
 
 function profilePromptContext() {
@@ -2676,7 +2849,9 @@ function setMinimapVisible(visible) {
 function applyPdfSidebarVisibility({ persist = true } = {}) {
   if (!pdfSidebar || !pdfSidebarButton) return;
   pdfSidebar.hidden = !pdfSidebarVisible;
-  pdfSidebarButton.textContent = pdfSidebarVisible ? "Hide sidebar" : "Show sidebar";
+  const label = pdfSidebarVisible ? "Hide PDF sidebar" : "Show PDF sidebar";
+  pdfSidebarButton.setAttribute("aria-label", label);
+  pdfSidebarButton.title = label;
   pdfSidebarButton.setAttribute("aria-pressed", String(pdfSidebarVisible));
   if (persist) localStorage.setItem("latexStudioPdfSidebarVisible", String(pdfSidebarVisible));
 }
@@ -3412,6 +3587,7 @@ function renderTextTabs() {
     button.title = tab.relativePath;
     button.dataset.relativePath = tab.relativePath;
     button.innerHTML = `
+      ${fileIconMarkup(tab.file || { name: tab.name, relativePath: tab.relativePath, kind: "file" })}
       <span class="text-tab-name">${escapeHtml(tab.name)}</span>
       <span class="text-tab-dirty" aria-hidden="true">${tab.dirty ? "•" : ""}</span>
       <span class="text-tab-close" role="button" aria-label="Close ${escapeHtml(tab.name)}">${CLOSE_ICON_SVG}</span>
@@ -3858,9 +4034,23 @@ async function loadTemplates() {
 }
 
 function renderTemplates() {
-  renderTemplateGrid(onlineTemplateGrid, templateLibrary.builtIn || [], { custom: false });
+  const visibleBuiltIns = (templateLibrary.builtIn || []).filter((template) => !hiddenBuiltInTemplates.includes(template.id));
+  renderTemplateGrid(onlineTemplateGrid, visibleBuiltIns, { custom: false });
   renderTemplateGrid(customTemplateGrid, templateLibrary.custom || [], { custom: true });
   customTemplateEmpty.hidden = Boolean((templateLibrary.custom || []).length);
+}
+
+function readHiddenBuiltInTemplates() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(TEMPLATE_HIDDEN_STORAGE_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeHiddenBuiltInTemplates() {
+  localStorage.setItem(TEMPLATE_HIDDEN_STORAGE_KEY, JSON.stringify(hiddenBuiltInTemplates));
 }
 
 function renderTemplateGrid(container, templates, { custom }) {
@@ -3880,7 +4070,7 @@ function renderTemplateGrid(container, templates, { custom }) {
       <div class="template-card-actions">
         <button class="template-use-button" type="button">Use</button>
         ${template.sourceUrl ? `<button class="template-source-button" type="button" title="Open template source">${EXTERNAL_LINK_ICON_SVG}<span>Source</span></button>` : ""}
-        ${custom ? '<button class="template-remove-button" type="button">Remove</button>' : ""}
+        <button class="template-remove-button" type="button">Remove</button>
       </div>
     `;
 
@@ -3891,11 +4081,19 @@ function renderTemplateGrid(container, templates, { custom }) {
     }
     const removeButton = card.querySelector(".template-remove-button");
     if (removeButton) {
-      removeButton.addEventListener("click", () => removeCustomTemplate(template));
+      removeButton.addEventListener("click", () => (custom ? removeCustomTemplate(template) : hideBuiltInTemplate(template)));
     }
     container.appendChild(card);
     renderRealTemplatePreview(card, template, previewKind);
   });
+}
+
+function hideBuiltInTemplate(template) {
+  const confirmed = window.confirm(`Remove "${template.name}" from the template browser?\n\nYou can restore it by clearing app preferences.`);
+  if (!confirmed) return;
+  hiddenBuiltInTemplates = Array.from(new Set([...hiddenBuiltInTemplates, template.id]));
+  writeHiddenBuiltInTemplates();
+  renderTemplates();
 }
 
 async function renderRealTemplatePreview(card, template, previewKind) {
@@ -4733,7 +4931,7 @@ async function createTerminalSession(kind = "shell") {
   setTerminalControlsDisabled(true);
 
   try {
-    const descriptor = await window.localOverleaf.createTerminal(activeProject && activeProject.id, requestedKind, {
+    const descriptor = await window.localOverleaf.createTerminal(isRemoteProject() ? null : activeProject && activeProject.id, requestedKind, {
       remote: remoteWorkspace
     });
     const sessionIndex = nextTerminalIndex(requestedKind);
@@ -5327,6 +5525,9 @@ function renderProjectGrid() {
     const displayName = project.displayName || project.name;
     const sourceLabel = project.texName || "main.tex";
     card.innerHTML = `
+      <button class="project-favorite-button ${project.favorite ? "active" : ""}" type="button" aria-label="${project.favorite ? "Unfavorite" : "Favorite"} ${escapeHtml(project.name)}" title="${project.favorite ? "Unfavorite project" : "Favorite project"}">
+        ${STAR_ICON_SVG}
+      </button>
       <button class="project-remove-button" type="button" aria-label="Remove ${escapeHtml(project.name)} from editor" title="Remove project">
         ${TRASH_ICON_SVG}
       </button>
@@ -5364,6 +5565,11 @@ function renderProjectGrid() {
       event.stopPropagation();
       removeProject(project);
     });
+    card.querySelector(".project-favorite-button").addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleProjectFavorite(project);
+    });
     projectGrid.appendChild(card);
     renderProjectPreview(card, project);
   });
@@ -5385,6 +5591,14 @@ function showProjectContextMenu(event, project) {
     renameProject(project);
   });
 
+  const favoriteButton = document.createElement("button");
+  favoriteButton.type = "button";
+  favoriteButton.textContent = project.favorite ? "Unfavorite" : "Favorite";
+  favoriteButton.addEventListener("click", (clickEvent) => {
+    clickEvent.stopPropagation();
+    toggleProjectFavorite(project);
+  });
+
   const removeButton = document.createElement("button");
   removeButton.type = "button";
   removeButton.textContent = "Remove";
@@ -5394,7 +5608,7 @@ function showProjectContextMenu(event, project) {
     removeProject(project);
   });
 
-  menu.append(renameButton, removeButton);
+  menu.append(renameButton, favoriteButton, removeButton);
   document.body.appendChild(menu);
 
   const margin = 8;
@@ -5495,6 +5709,20 @@ async function removeProject(project) {
     projectGrid.innerHTML = `<div class="project-loading project-error">${escapeHtml(formatError(error))}</div>`;
   } finally {
     setProjectBusy(false);
+  }
+}
+
+async function toggleProjectFavorite(project) {
+  closeProjectContextMenu();
+  if (!window.localOverleaf || !window.localOverleaf.toggleProjectFavorite) return;
+  try {
+    const result = await window.localOverleaf.toggleProjectFavorite(project.id);
+    projects = result.projects || projects.map((item) => (
+      item.id === project.id ? { ...item, favorite: !item.favorite } : item
+    ));
+    renderProjectGrid();
+  } catch (error) {
+    projectGrid.innerHTML = `<div class="project-loading project-error">${escapeHtml(formatError(error))}</div>`;
   }
 }
 
@@ -5744,8 +5972,10 @@ async function loadProjectFile(relativePath, { confirmUnsaved = true, preview = 
   setSaveState("Loading...");
 
   try {
-    const data = await window.localOverleaf.load(activeProject.id, relativePath);
-    activeProject = data.project;
+    const data = isRemoteProject()
+      ? await window.localOverleaf.readRemoteFile(remoteWorkspace, relativePath)
+      : await window.localOverleaf.load(activeProject.id, relativePath);
+    if (!isRemoteProject()) activeProject = data.project;
     setActiveLoadedTextFile(data.file, data.tex, { preview });
     editor.setValue(data.tex);
     setMode(visualEditor.hidden ? "source" : "visual");
@@ -5773,8 +6003,10 @@ async function loadProjectFiles() {
   fileTree.innerHTML = '<div class="file-message">Loading files...</div>';
 
   try {
-    const data = await window.localOverleaf.listProjectFiles(activeProject.id);
-    activeProject = data.project || activeProject;
+    const data = isRemoteProject()
+      ? await window.localOverleaf.listRemoteFiles(remoteWorkspace)
+      : await window.localOverleaf.listProjectFiles(activeProject.id);
+    if (!isRemoteProject()) activeProject = data.project || activeProject;
     projectFiles = data.files || [];
     updateActiveDocumentTitle();
     populateProjectSettingsForm();
@@ -6180,6 +6412,25 @@ async function runFileContextAction(action, node) {
   if (!activeProject || !node || !node.relativePath) return;
 
   try {
+    if (isRemoteProject()) {
+      if (action === "open") {
+        if (node.editable || node.image) await selectProjectFile(node);
+        return;
+      }
+      if (action === "copy" || action === "copy-relative-path") {
+        await navigator.clipboard.writeText(node.relativePath);
+        compileLog.textContent = `${node.relativePath} copied.`;
+        return;
+      }
+      if (action === "copy-name") {
+        await navigator.clipboard.writeText(node.name || "");
+        compileLog.textContent = `${node.name || ""} copied.`;
+        return;
+      }
+      compileLog.textContent = "That file action is local-only for now. Use the SSH terminal for remote rename, delete, copy, or reveal.";
+      return;
+    }
+
     if (action === "open") {
       if (node.editable || node.image) await selectProjectFile(node);
       else await window.localOverleaf.projectFileAction(activeProject.id, node.relativePath, "open");
@@ -6345,6 +6596,10 @@ function applyFileActionResult(result) {
 
 async function chooseProjectFiles() {
   if (!activeProject) return;
+  if (isRemoteProject()) {
+    compileLog.textContent = "Use the SSH terminal to upload or copy files into a remote workspace.";
+    return;
+  }
 
   try {
     const result = await window.localOverleaf.chooseProjectFiles(activeProject.id);
@@ -6373,6 +6628,10 @@ function wireFileDrop(target) {
     event.stopPropagation();
     filePane.classList.remove("drop-active");
     if (!activeProject) return;
+    if (isRemoteProject()) {
+      compileLog.textContent = "Drag/drop import is local-only. Use scp, rsync, or git from the SSH terminal for remote files.";
+      return;
+    }
 
     const files = await Promise.all(Array.from(event.dataTransfer.files).map(fileToImportPayload));
     const usableFiles = files.filter(Boolean);
@@ -6445,8 +6704,10 @@ async function saveManuscript({ auto = false } = {}) {
 
   try {
     const tex = getSourceText();
-    const result = await window.localOverleaf.save(activeProject.id, activeFile && activeFile.relativePath, tex);
-    activeProject = result.project || activeProject;
+    const result = isRemoteProject()
+      ? await window.localOverleaf.saveRemoteFile(remoteWorkspace, activeFile && activeFile.relativePath, tex)
+      : await window.localOverleaf.save(activeProject.id, activeFile && activeFile.relativePath, tex);
+    if (!isRemoteProject()) activeProject = result.project || activeProject;
     activeFile = result.file || activeFile;
     savedText = tex;
     updateActiveTextTabAfterSave(activeFile, tex);
@@ -6463,6 +6724,12 @@ async function saveManuscript({ auto = false } = {}) {
 
 async function compileManuscript({ manual = false } = {}) {
   if (!activeProject) return;
+  if (isRemoteProject()) {
+    await saveManuscript();
+    compileLog.textContent = "Saved remote file. Compile from the SSH terminal for remote workspaces.";
+    setCompileState("Remote workspace saved", "ok");
+    return;
+  }
   if (activeMediaFile) {
     compileLog.textContent = "Switch to a text file before compiling.";
     return;
@@ -6541,6 +6808,10 @@ async function downloadPdf() {
 
 async function downloadProjectPackage() {
   if (!activeProject || !window.localOverleaf || !window.localOverleaf.downloadProjectPackage) return;
+  if (isRemoteProject()) {
+    compileLog.textContent = "Use the SSH terminal to archive or download remote workspaces.";
+    return;
+  }
 
   setBusy(true);
   setCompileState("Preparing project package...");
@@ -7547,6 +7818,11 @@ async function setPdf(options = {}) {
 
 async function renderPdf({ showLoading = true, preserveView = false } = {}) {
   if (!activeProject || editorScreen.hidden) return;
+  if (isRemoteProject()) {
+    pdfViewer.innerHTML = '<div class="pdf-loading">Remote workspace. Compile or open PDFs from the SSH terminal.</div>';
+    pdfMeta.textContent = remoteWorkspace.path || remoteWorkspace.host || "Remote";
+    return;
+  }
 
   const token = ++pdfRenderToken;
   const zoomForRender = pdfZoom;
@@ -7636,7 +7912,7 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
     await renderPdfThumbnails(pdf, pdfjsLib, token);
   } catch (error) {
     if (token !== pdfRenderToken) return;
-    pdfViewer.innerHTML = '<div class="pdf-loading pdf-error">Could not render PDF. Compile once if this project has no PDF yet.</div>';
+    pdfViewer.innerHTML = '<div class="pdf-loading pdf-error">Could not render PDF. AgentDesk tried compiling the TeX entry; see Log for details.</div>';
     compileLog.textContent = formatError(error);
   }
 }

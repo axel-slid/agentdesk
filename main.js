@@ -1,5 +1,5 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain, shell, clipboard } = require("electron");
-const { execFile } = require("node:child_process");
+const { execFile, spawn } = require("node:child_process");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
@@ -695,7 +695,10 @@ async function listProjects() {
   return {
     projects: projects
       .map(decorateProject)
-      .sort((a, b) => String(b.lastOpenedAt || "").localeCompare(String(a.lastOpenedAt || "")))
+      .sort((a, b) => (
+        Number(Boolean(b.favorite)) - Number(Boolean(a.favorite))
+        || String(b.lastOpenedAt || "").localeCompare(String(a.lastOpenedAt || ""))
+      ))
   };
 }
 
@@ -1315,6 +1318,56 @@ function posterTemplate() {
   ].join("\n");
 }
 
+function neuripsTemplate() {
+  return [
+    "\\documentclass{article}",
+    "\\usepackage[preprint]{neurips_2026}",
+    "\\usepackage[utf8]{inputenc}",
+    "\\usepackage[T1]{fontenc}",
+    "\\usepackage{hyperref}",
+    "\\usepackage{url}",
+    "\\usepackage{booktabs}",
+    "\\usepackage{amsfonts}",
+    "\\usepackage{nicefrac}",
+    "\\usepackage{microtype}",
+    "\\usepackage{xcolor}",
+    "\\usepackage{graphicx}",
+    "",
+    "\\title{NeurIPS Paper Title}",
+    "",
+    "\\author{%",
+    "  First Author\\\\",
+    "  Department\\\\",
+    "  Institution\\\\",
+    "  \\texttt{email@example.com}",
+    "}",
+    "",
+    "\\begin{document}",
+    "\\maketitle",
+    "",
+    "\\begin{abstract}",
+    "Summarize the contribution, method, and core results.",
+    "\\end{abstract}",
+    "",
+    "\\section{Introduction}",
+    "Motivate the problem and state the main contributions.",
+    "",
+    "\\section{Method}",
+    "Describe the model, algorithm, or experimental setup.",
+    "",
+    "\\section{Experiments}",
+    "Report datasets, baselines, metrics, and ablations.",
+    "",
+    "\\section{Conclusion}",
+    "Summarize limitations and future work.",
+    "",
+    "\\bibliographystyle{plain}",
+    "\\bibliography{references}",
+    "\\end{document}",
+    ""
+  ].join("\n");
+}
+
 const BUILT_IN_TEMPLATES = [
   {
     id: "berkeley-cs170-homework",
@@ -1358,6 +1411,28 @@ const BUILT_IN_TEMPLATES = [
     entry: "main.tex",
     files: {
       "main.tex": articleTemplate(),
+      "references.bib": "@article{example,\n  title={Example Reference},\n  author={Author, A.},\n  journal={Journal Name},\n  year={2026}\n}\n"
+    }
+  },
+  {
+    id: "neurips-paper",
+    name: "NeurIPS Paper",
+    description: "NeurIPS-style manuscript starter with abstract, method, and experiments sections.",
+    sourceName: "NeurIPS style files",
+    sourceUrl: "https://neurips.cc/Conferences/2026/PaperInformation/StyleFiles",
+    entry: "main.tex",
+    files: {
+      "main.tex": neuripsTemplate(),
+      "neurips_2026.sty": [
+        "\\NeedsTeXFormat{LaTeX2e}",
+        "\\ProvidesPackage{neurips_2026}[2026/01/01 AgentDesk NeurIPS-style starter]",
+        "\\RequirePackage[margin=1in]{geometry}",
+        "\\RequirePackage{times}",
+        "\\RequirePackage{natbib}",
+        "\\setlength{\\parindent}{0pt}",
+        "\\setlength{\\parskip}{6pt}",
+        ""
+      ].join("\n"),
       "references.bib": "@article{example,\n  title={Example Reference},\n  author={Author, A.},\n  journal={Journal Name},\n  year={2026}\n}\n"
     }
   },
@@ -1687,11 +1762,9 @@ async function compileProjectIfPossible(projectId) {
 
   try {
     const project = await getProject(projectId);
-    if (path.extname(project.texPath).toLowerCase() !== ".tex") {
-      return { ok: false, output: "Entry file is not TeX." };
-    }
     const output = await runTectonic(project);
-    return { ok: fs.existsSync(pdfPathFor(project)), output };
+    const entryPath = await compileEntryPath(project);
+    return { ok: fs.existsSync(pdfPathFor({ ...project, texPath: entryPath })), output };
   } catch (error) {
     return { ok: false, output: formatMainError(error) };
   }
@@ -1808,6 +1881,51 @@ function execFileAsync(command, args, options = {}) {
   });
 }
 
+function execFileWithInput(command, args, input = "", options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd,
+      env: options.env,
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+      if (stdout.length > (options.maxBuffer || 1024 * 1024 * 16)) child.kill("SIGTERM");
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code) {
+        reject(new Error(stderr || stdout || `${command} exited with code ${code}`));
+        return;
+      }
+      resolve({ stdout, stderr });
+    });
+    child.stdin.end(input);
+  });
+}
+
+function remoteTextExtensions() {
+  return JSON.stringify([
+    ".tex", ".ltx", ".bib", ".bst", ".cls", ".sty", ".txt", ".md", ".markdown", ".log",
+    ".csv", ".tsv", ".json", ".jsonl", ".yaml", ".yml", ".toml", ".ini", ".cfg",
+    ".py", ".r", ".jl", ".m", ".js", ".jsx", ".ts", ".tsx", ".css", ".scss", ".html",
+    ".htm", ".xml", ".sql", ".sh", ".bash", ".zsh", ".fish", ".c", ".cc", ".cpp",
+    ".h", ".hpp", ".java", ".go", ".rs", ".swift", ".kt", ".kts", ".rb", ".php",
+    ".pl", ".lua", ".rst"
+  ]);
+}
+
+function remoteImageExtensions() {
+  return JSON.stringify([".png", ".jpg", ".jpeg", ".gif", ".webp", ".tif", ".tiff", ".bmp", ".svg"]);
+}
+
 async function removeProject(_event, projectId) {
   const projects = await readProjects();
   const nextProjects = projects.filter((project) => project.id !== projectId);
@@ -1839,6 +1957,16 @@ async function saveProjectSettings(_event, payload = {}) {
   project.updatedAt = new Date().toISOString();
   await writeProjects(projects);
   return { project: decorateProject(project), ...(await listProjects()) };
+}
+
+async function toggleProjectFavorite(_event, projectId) {
+  const projects = await readProjects();
+  const project = projects.find((item) => item.id === projectId);
+  if (!project) throw new Error("Project not found.");
+  project.favorite = !project.favorite;
+  project.updatedAt = new Date().toISOString();
+  await writeProjects(projects);
+  return listProjects();
 }
 
 async function getProject(projectId) {
@@ -1999,14 +2127,19 @@ function terminalPreset(kind, cwd, options = {}) {
   if (kind === "ssh") {
     const remote = normalizeRemoteOptions(options.remote);
     if (!remote.host) throw new Error("Choose a New SSH Project before opening an SSH terminal.");
+    const controlPath = sshControlPath(remote);
+    fs.mkdirSync(path.dirname(controlPath), { recursive: true });
+    const target = remoteTarget(remote);
+    const controlArgs = ["-M", "-S", controlPath, "-o", "ControlPersist=8h"];
     const remoteCommand = remote.path
-      ? `cd ${shellQuote(remote.path)} && exec ${remote.shell || "$SHELL"} -l`
+      ? `cd ${shellQuoteRemotePath(remote.path)} && exec ${remote.shell || "$SHELL"} -l`
       : "";
     return {
       title: "SSH",
       command: resolveExecutable("ssh"),
-      args: remoteCommand ? [remote.host, "-t", remoteCommand] : [remote.host],
-      commandLabel: remote.path ? `ssh ${remote.host} (${remote.path})` : `ssh ${remote.host}`
+      args: remoteCommand ? [...controlArgs, target, "-t", remoteCommand] : [...controlArgs, target],
+      commandLabel: remote.path ? `ssh ${target} (${remote.path})` : `ssh ${target}`,
+      remote: { ...remote, target, controlPath }
     };
   }
 
@@ -2019,11 +2152,45 @@ function terminalPreset(kind, cwd, options = {}) {
 }
 
 function normalizeRemoteOptions(remote = {}) {
+  const parsed = splitRemoteHost(remote.host || remote.server || "");
   return {
-    host: String(remote.host || "").trim(),
+    user: String(remote.user || parsed.user || "").trim(),
+    host: String(parsed.host || remote.server || remote.host || "").trim(),
     path: String(remote.path || "").trim(),
     shell: String(remote.shell || "").trim()
   };
+}
+
+function splitRemoteHost(value = "") {
+  const raw = String(value || "").trim();
+  const at = raw.lastIndexOf("@");
+  if (at > 0) return { user: raw.slice(0, at), host: raw.slice(at + 1) };
+  return { user: "", host: raw };
+}
+
+function remoteTarget(remote = {}) {
+  const normalized = normalizeRemoteOptions(remote);
+  return normalized.user ? `${normalized.user}@${normalized.host}` : normalized.host;
+}
+
+function sshControlPath(remote = {}) {
+  const normalized = normalizeRemoteOptions(remote);
+  const key = `${normalized.user || "user"}-${normalized.host || "host"}-${normalized.path || "home"}`;
+  return path.join(app.getPath("userData"), "ssh-control", `${safeCacheName(key)}.sock`);
+}
+
+function sshCommandArgs(remote = {}, commandArgs = []) {
+  const normalized = normalizeRemoteOptions(remote);
+  if (!normalized.host) throw new Error("Missing SSH server.");
+  const controlPath = remote.controlPath || sshControlPath(normalized);
+  return [
+    "-S", controlPath,
+    "-o", "ControlMaster=auto",
+    "-o", "ControlPersist=8h",
+    "-o", "BatchMode=yes",
+    remoteTarget(normalized),
+    ...commandArgs
+  ];
 }
 
 async function listSshHosts() {
@@ -2064,6 +2231,13 @@ async function listSshHosts() {
 
 function shellQuote(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+function shellQuoteRemotePath(value) {
+  const raw = String(value || "").trim();
+  if (raw === "~") return "~";
+  if (raw.startsWith("~/")) return `~/${shellQuote(raw.slice(2))}`;
+  return shellQuote(raw);
 }
 
 function terminalEnv(cwd) {
@@ -2196,6 +2370,118 @@ async function readProjectFile(_event, payload = {}) {
     project: decorateProject(project),
     file: fileDescriptor(project, filePath),
     tex: await fsp.readFile(filePath, "utf8")
+  };
+}
+
+async function listRemoteFiles(_event, remote = {}) {
+  const normalized = normalizeRemoteOptions(remote);
+  const script = `
+import json, os, sys
+root = os.path.abspath(os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~"))
+text_ext = set(${remoteTextExtensions()})
+image_ext = set(${remoteImageExtensions()})
+skip = {".git", "node_modules", "__pycache__", ".venv", "venv", ".DS_Store"}
+def rel(path):
+    value = os.path.relpath(path, root)
+    return "" if value == "." else value.replace(os.sep, "/")
+def node(path, depth=0):
+    name = os.path.basename(path) or path
+    try:
+        stat = os.stat(path)
+    except OSError:
+        return None
+    if os.path.isdir(path):
+        children = []
+        if depth < 6:
+            try:
+                entries = sorted(os.listdir(path), key=lambda x: (not os.path.isdir(os.path.join(path, x)), x.lower()))
+            except OSError:
+                entries = []
+            for entry in entries:
+                if entry in skip or entry.startswith("."):
+                    continue
+                child = node(os.path.join(path, entry), depth + 1)
+                if child:
+                    children.append(child)
+        return {"name": name, "relativePath": rel(path), "kind": "folder", "children": children}
+    ext = os.path.splitext(name.lower())[1]
+    return {"name": name, "relativePath": rel(path), "kind": "file", "editable": ext in text_ext, "image": ext in image_ext, "mtimeMs": stat.st_mtime * 1000, "size": stat.st_size}
+tree = node(root)
+print(json.dumps({"files": tree.get("children", []) if tree else [], "root": root}))
+`;
+  const result = await execFileAsync(resolveExecutable("ssh"), sshCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~"]), {
+    timeout: 20000,
+    maxBuffer: 1024 * 1024 * 8
+  });
+  return JSON.parse(result.stdout || "{\"files\":[]}");
+}
+
+async function readRemoteFile(_event, payload = {}) {
+  const normalized = normalizeRemoteOptions(payload.remote || {});
+  const relativePath = String(payload.relativePath || "").replace(/^\/+/, "");
+  if (!relativePath) throw new Error("Choose a remote file first.");
+  const script = `
+import base64, json, os, sys
+root = os.path.abspath(os.path.expanduser(sys.argv[1]))
+relative = sys.argv[2].lstrip("/")
+path = os.path.abspath(os.path.join(root, relative))
+if path != root and not path.startswith(root + os.sep):
+    raise SystemExit("Path escapes remote workspace")
+with open(path, "rb") as handle:
+    data = handle.read()
+print(json.dumps({"name": os.path.basename(path), "relativePath": relative.replace(os.sep, "/"), "tex": base64.b64encode(data).decode("ascii")}))
+`;
+  const result = await execFileAsync(resolveExecutable("ssh"), sshCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~", relativePath]), {
+    timeout: 20000,
+    maxBuffer: 1024 * 1024 * 16
+  });
+  const parsed = JSON.parse(result.stdout);
+  const fileName = parsed.name || path.basename(relativePath);
+  const extension = path.extname(fileName).toLowerCase();
+  return {
+    file: {
+      name: fileName,
+      relativePath: parsed.relativePath || relativePath,
+      kind: "file",
+      editable: true,
+      image: false
+    },
+    tex: Buffer.from(parsed.tex || "", "base64").toString("utf8"),
+    mtimeMs: Date.now(),
+    extension
+  };
+}
+
+async function saveRemoteFile(_event, payload = {}) {
+  const normalized = normalizeRemoteOptions(payload.remote || {});
+  const relativePath = String(payload.relativePath || "").replace(/^\/+/, "");
+  if (!relativePath) throw new Error("Choose a remote file first.");
+  const script = `
+import base64, os, sys
+root = os.path.abspath(os.path.expanduser(sys.argv[1]))
+relative = sys.argv[2].lstrip("/")
+path = os.path.abspath(os.path.join(root, relative))
+if path != root and not path.startswith(root + os.sep):
+    raise SystemExit("Path escapes remote workspace")
+os.makedirs(os.path.dirname(path), exist_ok=True)
+raw = sys.stdin.read()
+with open(path, "wb") as handle:
+    handle.write(base64.b64decode(raw.encode("ascii")))
+`;
+  await execFileWithInput(
+    resolveExecutable("ssh"),
+    sshCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~", relativePath]),
+    Buffer.from(String(payload.tex || ""), "utf8").toString("base64"),
+    { timeout: 20000, maxBuffer: 1024 * 1024 * 16 }
+  );
+  return {
+    file: {
+      name: path.basename(relativePath),
+      relativePath,
+      kind: "file",
+      editable: true,
+      image: false
+    }
   };
 }
 
@@ -2480,34 +2766,59 @@ function fileDescriptor(project, filePath) {
   };
 }
 
-function runTectonic(project) {
-  return new Promise((resolve, reject) => {
-    execFile(
-      "tectonic",
-      [path.basename(project.texPath)],
-      {
-        cwd: path.dirname(project.texPath),
-        timeout: 180000,
-        maxBuffer: 1024 * 1024 * 8
-      },
-      (error, stdout, stderr) => {
-        const output = [stdout, stderr].filter(Boolean).join("\n");
-        if (error) {
-          reject(new Error(output || error.message));
-          return;
-        }
+async function runTectonic(project) {
+  const entryPath = await compileEntryPath(project);
+  const cwd = path.dirname(entryPath);
+  const entry = path.basename(entryPath);
+  const outputPath = pdfPathFor({ ...project, texPath: entryPath });
+  const attempts = [
+    { label: "tectonic", command: "tectonic", args: [entry] },
+    { label: "latexmk", command: "latexmk", args: ["-pdf", "-interaction=nonstopmode", "-halt-on-error", entry] },
+    { label: "pdflatex", command: "pdflatex", args: ["-interaction=nonstopmode", "-halt-on-error", entry], repeat: 2 }
+  ];
+  const failures = [];
 
-        resolve(output);
+  for (const attempt of attempts) {
+    let output = "";
+    try {
+      for (let index = 0; index < (attempt.repeat || 1); index += 1) {
+        const result = await execFileAsync(resolveExecutable(attempt.command), attempt.args, {
+          cwd,
+          timeout: 180000,
+          maxBuffer: 1024 * 1024 * 12
+        });
+        output += [result.stdout, result.stderr].filter(Boolean).join("\n");
       }
-    );
-  });
+      if (fs.existsSync(outputPath)) {
+        return output || `${attempt.label} compiled ${entry}.`;
+      }
+      failures.push(`${attempt.label}: finished but did not create ${path.basename(outputPath)}.`);
+    } catch (error) {
+      failures.push(`${attempt.label}: ${formatMainError(error)}`);
+    }
+  }
+
+  throw new Error(`Could not compile ${entry}.\n\n${failures.join("\n\n")}`);
+}
+
+async function compileEntryPath(project) {
+  const root = projectRootFor(project);
+  if (project.texPath && fs.existsSync(project.texPath) && path.extname(project.texPath).toLowerCase() === ".tex") {
+    return project.texPath;
+  }
+
+  const mainTex = path.join(root, "main.tex");
+  if (fs.existsSync(mainTex)) return mainTex;
+
+  const entry = await findProjectEntryFile(root);
+  if (entry && path.extname(entry).toLowerCase() === ".tex") return entry;
+  throw new Error("No TeX entry file found. Add main.tex or another .tex file first.");
 }
 
 async function selectedPdfPath(project, relativePath = "") {
   const requestedPath = String(relativePath || "").trim();
   if (!requestedPath) {
-    await ensureProjectPdf(project);
-    return pdfPathFor(project);
+    return ensureProjectPdf(project);
   }
 
   const pdfPath = safeProjectPath(project, requestedPath);
@@ -2851,16 +3162,16 @@ function sanitizeArchiveBaseName(value) {
 }
 
 async function ensureProjectPdf(project) {
-  const pdfPath = pdfPathFor(project);
-  if (fs.existsSync(pdfPath)) return;
-  if (path.extname(project.texPath).toLowerCase() !== ".tex") {
-    throw new Error("No compiled PDF exists yet. Compile the project first.");
-  }
+  const entryPath = await compileEntryPath(project);
+  const compileProject = { ...project, texPath: entryPath };
+  const pdfPath = pdfPathFor(compileProject);
+  if (fs.existsSync(pdfPath)) return pdfPath;
 
-  await runTectonic(project);
+  await runTectonic(compileProject);
   if (!fs.existsSync(pdfPath)) {
     throw new Error(`Compile finished but ${path.basename(pdfPath)} was not found.`);
   }
+  return pdfPath;
 }
 
 async function readAgents(_event, projectId) {
@@ -2907,8 +3218,12 @@ ipcMain.handle("remove-template", removeTemplate);
 ipcMain.handle("create-project-from-template", createProjectFromTemplate);
 ipcMain.handle("rename-project", renameProject);
 ipcMain.handle("remove-project", removeProject);
+ipcMain.handle("toggle-project-favorite", toggleProjectFavorite);
 ipcMain.handle("save-project-settings", saveProjectSettings);
 ipcMain.handle("list-project-files", listProjectFiles);
+ipcMain.handle("list-remote-files", listRemoteFiles);
+ipcMain.handle("read-remote-file", readRemoteFile);
+ipcMain.handle("save-remote-file", saveRemoteFile);
 ipcMain.handle("project-file-action", projectFileAction);
 ipcMain.handle("choose-project-files", chooseProjectFiles);
 ipcMain.handle("import-project-files", importProjectFiles);

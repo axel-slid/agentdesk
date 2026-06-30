@@ -6,7 +6,9 @@
   <title>AgentDesk</title>
   <link rel="stylesheet" href="node_modules/codemirror/lib/codemirror.css">
   <link rel="stylesheet" href="node_modules/codemirror/addon/dialog/dialog.css">
+  <link rel="stylesheet" href="node_modules/codemirror/addon/hint/show-hint.css">
   <link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css">
+  <link rel="stylesheet" href="node_modules/katex/dist/katex.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -314,7 +316,15 @@
               <div id="pdfFileMenu" class="pdf-file-menu" hidden></div>
             </div>
             <div class="pdf-header-actions">
-              <button id="pdfSidebarButton" class="pdf-sidebar-button" type="button" aria-pressed="false">Show sidebar</button>
+              <button id="pdfSidebarButton" class="pdf-sidebar-button" type="button" aria-pressed="false" aria-label="Show PDF sidebar" title="Show PDF sidebar">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                  <path d="M9 4v16"></path>
+                  <path d="M5.5 8h1"></path>
+                  <path d="M5.5 12h1"></path>
+                  <path d="M5.5 16h1"></path>
+                </svg>
+              </button>
               <div class="pdf-action-segment" aria-label="PDF actions">
                 <button id="compileButton" class="pdf-action-button" type="button">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -418,7 +428,12 @@
 
     <div id="selectionCodexPopover" class="selection-codex-popover" hidden>
       <input id="selectionCodexPrompt" type="text" spellcheck="true" placeholder="Ask Codex about this selection">
-      <button id="selectionCodexSendButton" type="button">Send to Codex</button>
+      <button id="selectionCodexSendButton" class="selection-codex-send" type="button" aria-label="Send to Codex" title="Send to Codex">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14"></path>
+          <path d="m13 6 6 6-6 6"></path>
+        </svg>
+      </button>
     </div>
 
     <div class="settings-backdrop" id="settingsBackdrop" hidden></div>
@@ -506,8 +521,12 @@
           </select>
         </label>
         <label class="setting-column">
-          <span>SSH host</span>
-          <input id="sshProjectHostInput" class="settings-text-input" type="text" placeholder="user@server.edu">
+          <span>User</span>
+          <input id="sshProjectUserInput" class="settings-text-input" type="text" placeholder="alex">
+        </label>
+        <label class="setting-column">
+          <span>Server</span>
+          <input id="sshProjectHostInput" class="settings-text-input" type="text" placeholder="server.edu">
         </label>
         <label class="setting-column">
           <span>Server path</span>
@@ -852,11 +871,13 @@ tectonic main.tex</code></pre>
   <script src="node_modules/codemirror/mode/htmlmixed/htmlmixed.js"></script>
   <script src="node_modules/codemirror/mode/shell/shell.js"></script>
   <script src="node_modules/codemirror/addon/dialog/dialog.js"></script>
+  <script src="node_modules/codemirror/addon/hint/show-hint.js"></script>
   <script src="node_modules/codemirror/addon/search/searchcursor.js"></script>
   <script src="node_modules/codemirror/addon/search/search.js"></script>
   <script src="node_modules/codemirror/keymap/vim.js"></script>
   <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
   <script src="node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="node_modules/katex/dist/katex.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
