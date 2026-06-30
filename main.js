@@ -38,10 +38,13 @@ function createWindow() {
     minWidth: 1180,
     minHeight: 700,
     title: "AgentDesk",
-    backgroundColor: "#e9edf2",
+    backgroundColor: "#00000000",
+    transparent: true,
     ...(process.platform === "darwin"
       ? {
           titleBarStyle: "hiddenInset",
+          vibrancy: "under-window",
+          visualEffectState: "active",
           trafficLightPosition: { x: 14, y: 13 }
         }
       : {}),

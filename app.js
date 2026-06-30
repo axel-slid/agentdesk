@@ -246,6 +246,22 @@ const LATEX_SNIPPETS = {
   table: "\\begin{table}[h]\n  \\centering\n  \\begin{tabular}{ll}\n    \\hline\n    A & B \\\\\n    \\hline\n  \\end{tabular}\n  \\caption{Caption text.}\n  \\label{tab:example}\n\\end{table}",
   citation: "Recent work~\\cite{key} shows..."
 };
+const PROJECT_GREETINGS = [
+  "Hello, {name}!",
+  "Welcome back, {name}.",
+  "Ready when you are, {name}.",
+  "Good to see you, {name}.",
+  "Let's work, {name}.",
+  "Back at the desk, {name}."
+];
+const PROJECT_GREETINGS_NO_NAME = [
+  "Hello!",
+  "Welcome back.",
+  "Ready when you are.",
+  "Good to see you.",
+  "Let's work.",
+  "Back at the desk."
+];
 const THEME_VARIABLES = [
   "--bg",
   "--glass",
@@ -294,6 +310,11 @@ const HIGH_CONTRAST_PRESETS = new Set([
   "rose-contrast-hc",
   "pastel-cobalt-hc",
   "dusk-contrast-hc"
+]);
+const TRANSPARENT_PRESETS = new Set([
+  "glass-light",
+  "glass-dark",
+  "glass-mocha"
 ]);
 const THEME_PRESETS = {
   custom: null,
@@ -668,6 +689,104 @@ const THEME_PRESETS = {
       "--cm-number": "#c2410c",
       "--pdf-bg": "#e7cf84",
       "--pdf-paper": "#ffffff"
+    }
+  },
+  "glass-light": {
+    theme: "light",
+    accent: "#2563eb",
+    background: "transparent",
+    transparent: true,
+    colors: {
+      "--bg": "rgba(244, 248, 255, 0.58)",
+      "--glass": "rgba(255, 255, 255, 0.42)",
+      "--glass-strong": "rgba(255, 255, 255, 0.64)",
+      "--panel": "rgba(255, 255, 255, 0.58)",
+      "--page": "#ffffff",
+      "--text": "#111827",
+      "--muted": "#4b5563",
+      "--border": "rgba(60, 72, 94, 0.3)",
+      "--border-strong": "rgba(38, 50, 72, 0.48)",
+      "--red": "#dc2626",
+      "--green": "#15803d",
+      "--blue": "#2563eb",
+      "--blue-dark": "#1d4ed8",
+      "--cm-bg": "rgba(255, 255, 255, 0.82)",
+      "--cm-gutter": "rgba(236, 242, 250, 0.72)",
+      "--cm-text": "#111827",
+      "--cm-keyword": "#9333ea",
+      "--cm-variable": "#1d4ed8",
+      "--cm-atom": "#0f766e",
+      "--cm-comment": "#64748b",
+      "--cm-string": "#166534",
+      "--cm-number": "#c2410c",
+      "--pdf-bg": "#c9d3e0",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "glass-dark": {
+    theme: "dark",
+    accent: "#93c5fd",
+    background: "transparent",
+    transparent: true,
+    colors: {
+      "--bg": "rgba(9, 13, 22, 0.54)",
+      "--glass": "rgba(15, 23, 42, 0.42)",
+      "--glass-strong": "rgba(15, 23, 42, 0.64)",
+      "--panel": "rgba(15, 23, 42, 0.58)",
+      "--page": "#ffffff",
+      "--text": "#f8fafc",
+      "--muted": "#cbd5e1",
+      "--border": "rgba(203, 213, 225, 0.24)",
+      "--border-strong": "rgba(226, 232, 240, 0.42)",
+      "--red": "#fca5a5",
+      "--green": "#86efac",
+      "--blue": "#93c5fd",
+      "--blue-dark": "#60a5fa",
+      "--cm-bg": "rgba(9, 13, 22, 0.82)",
+      "--cm-gutter": "rgba(15, 23, 42, 0.72)",
+      "--cm-text": "#f8fafc",
+      "--cm-keyword": "#d8b4fe",
+      "--cm-variable": "#93c5fd",
+      "--cm-atom": "#99f6e4",
+      "--cm-comment": "#94a3b8",
+      "--cm-string": "#bbf7d0",
+      "--cm-number": "#fdba74",
+      "--pdf-bg": "#111827",
+      "--pdf-paper": "#ffffff",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.1)"
+    }
+  },
+  "glass-mocha": {
+    theme: "dark",
+    accent: "#f5c2e7",
+    background: "transparent",
+    transparent: true,
+    colors: {
+      "--bg": "rgba(17, 17, 27, 0.56)",
+      "--glass": "rgba(30, 30, 46, 0.44)",
+      "--glass-strong": "rgba(30, 30, 46, 0.66)",
+      "--panel": "rgba(30, 30, 46, 0.6)",
+      "--page": "#ffffff",
+      "--text": "#f5e0dc",
+      "--muted": "#cdd6f4",
+      "--border": "rgba(245, 194, 231, 0.26)",
+      "--border-strong": "rgba(245, 224, 220, 0.48)",
+      "--red": "#f38ba8",
+      "--green": "#a6e3a1",
+      "--blue": "#89b4fa",
+      "--blue-dark": "#74a7fa",
+      "--cm-bg": "rgba(17, 17, 27, 0.84)",
+      "--cm-gutter": "rgba(30, 30, 46, 0.74)",
+      "--cm-text": "#f5e0dc",
+      "--cm-keyword": "#f5c2e7",
+      "--cm-variable": "#89b4fa",
+      "--cm-atom": "#94e2d5",
+      "--cm-comment": "#a6adc8",
+      "--cm-string": "#a6e3a1",
+      "--cm-number": "#fab387",
+      "--pdf-bg": "#11111b",
+      "--pdf-paper": "#ffffff",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.1)"
     }
   },
   "github-dark": {
@@ -1402,7 +1521,7 @@ function setupSettings() {
   updateSaveButtonVisibility();
   updateProjectViewButtons();
   updatePdfZoomLabel();
-  updateProjectHeroGreeting();
+  updateProjectHeroGreeting({ rotate: true });
 
   settingsThemePreset.addEventListener("change", () => {
     applyThemePreset(settingsThemePreset.value);
@@ -1534,6 +1653,8 @@ function applyTheme(theme, accent, { presetId = "custom" } = {}) {
   document.body.dataset.theme = normalizedTheme;
   document.body.dataset.themePreset = normalizedPreset;
   document.body.dataset.contrast = HIGH_CONTRAST_PRESETS.has(normalizedPreset) ? "high" : "normal";
+  document.body.classList.toggle("high-contrast", HIGH_CONTRAST_PRESETS.has(normalizedPreset));
+  document.body.classList.toggle("transparent-theme", TRANSPARENT_PRESETS.has(normalizedPreset));
   document.documentElement.style.setProperty("--accent", normalizedAccent);
   document.documentElement.style.setProperty("--accent-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
   document.body.style.setProperty("--accent", normalizedAccent);
@@ -1686,10 +1807,17 @@ function saveProfileFromForm() {
   updateProjectHeroGreeting();
 }
 
-function updateProjectHeroGreeting() {
+function updateProjectHeroGreeting({ rotate = false } = {}) {
   if (!projectHeroTitle) return;
   const firstName = String(aiProfile.name || "").trim().split(/\s+/)[0] || "";
-  projectHeroTitle.textContent = firstName ? `Hello, ${firstName}!` : "Hello!";
+  const greetings = firstName ? PROJECT_GREETINGS : PROJECT_GREETINGS_NO_NAME;
+  const storageKey = firstName ? `latexStudioGreetingIndex:${firstName.toLowerCase()}` : "latexStudioGreetingIndex";
+  let index = clampNumber(Number(localStorage.getItem(storageKey)), 0, greetings.length - 1, 0);
+  if (rotate) {
+    index = (index + 1) % greetings.length;
+    localStorage.setItem(storageKey, String(index));
+  }
+  projectHeroTitle.textContent = greetings[index].replace("{name}", firstName);
 }
 
 function profilePromptContext() {
@@ -3740,6 +3868,9 @@ function renderProjectGrid() {
     card.role = "button";
     card.tabIndex = 0;
     card.dataset.projectId = project.id;
+    const displayName = project.displayName || project.name;
+    const sourceLabel = project.texName || "main.tex";
+    const pdfLabel = project.pdfExists ? "PDF" : "Source";
     card.innerHTML = `
       <button class="project-remove-button" type="button" aria-label="Remove ${escapeHtml(project.name)} from editor" title="Remove project">
         ${TRASH_ICON_SVG}
@@ -3748,9 +3879,14 @@ function renderProjectGrid() {
         <span class="project-preview-message">${project.pdfExists ? "Rendering preview" : "No PDF yet"}</span>
       </span>
       <span class="project-card-copy">
-        <span class="project-name">${escapeHtml(project.displayName || project.name)}</span>
-        <span class="project-file">${escapeHtml(project.texName)} · ${escapeHtml(project.folderName)}</span>
-        <span class="project-meta">Edited ${escapeHtml(relativeTime(project.modifiedAt))}</span>
+        <span class="project-card-title-row">
+          <span class="project-name">${escapeHtml(displayName)}</span>
+        </span>
+        <span class="project-file">${escapeHtml(sourceLabel)} · ${escapeHtml(project.folderName)}</span>
+        <span class="project-card-meta-row">
+          <span class="project-chip">${escapeHtml(pdfLabel)}</span>
+          <span class="project-meta">Edited ${escapeHtml(relativeTime(project.modifiedAt))}</span>
+        </span>
       </span>
     `;
     card.addEventListener("click", (event) => {
@@ -4076,6 +4212,7 @@ async function showProjects() {
   }
 
   clearTimeout(autoCompileTimer);
+  updateProjectHeroGreeting({ rotate: true });
   projectScreen.hidden = false;
   editorScreen.hidden = true;
   await loadProjects();
@@ -4936,9 +5073,11 @@ function updateSourceMinimapViewport() {
   if (!sourceMinimapViewport || !editor) return;
 
   const info = editor.getScrollInfo();
-  const fullHeight = Math.max(info.height, 1);
-  const top = clampNumber((info.top / fullHeight) * 100, 0, 100, 0);
-  const height = clampNumber((info.clientHeight / fullHeight) * 100, 8, 100, 100);
+  const lineCount = Math.max(editor.lineCount(), 1);
+  const from = clampNumber(editor.lineAtHeight(info.top, "local"), 0, lineCount - 1, 0);
+  const to = clampNumber(editor.lineAtHeight(info.top + info.clientHeight, "local"), from, lineCount - 1, from);
+  const top = clampNumber((from / lineCount) * 100, 0, 100, 0);
+  const height = clampNumber(((to - from + 1) / lineCount) * 100, 8, 100, 100);
   sourceMinimapViewport.style.top = `${top}%`;
   sourceMinimapViewport.style.height = `${Math.min(height, 100 - top)}%`;
 }
