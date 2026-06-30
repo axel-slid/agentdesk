@@ -2927,6 +2927,7 @@ function applyMinimapVisibility() {
   if (sourceMinimap.hidden) workspace.classList.add("minimap-hidden");
   else workspace.classList.remove("minimap-hidden");
   updateMinimapToggleButton();
+  if (editor) requestAnimationFrame(() => editor.refresh());
   scheduleSourceMinimapUpdate();
 }
 
@@ -2948,7 +2949,9 @@ function setMinimapVisible(visible) {
 
 function applyPdfSidebarVisibility({ persist = true } = {}) {
   if (!pdfSidebar || !pdfSidebarButton) return;
-  pdfSidebar.hidden = !pdfSidebarVisible;
+  pdfSidebar.hidden = false;
+  pdfSidebar.inert = !pdfSidebarVisible;
+  pdfSidebar.setAttribute("aria-hidden", String(!pdfSidebarVisible));
   if (pdfSidebar.parentElement) {
     pdfSidebar.parentElement.classList.toggle("pdf-sidebar-visible", pdfSidebarVisible);
   }
