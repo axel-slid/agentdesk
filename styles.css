@@ -8338,3 +8338,82 @@ li.CodeMirror-hint-active {
 .pdf-sidebar-button[aria-pressed="true"] .pdf-sidebar-chevron {
   transform: rotate(180deg);
 }
+
+/* Stronger glass mode: keep chrome present, but let the desktop show through. */
+body.transparent-theme .topbar,
+body.transparent-theme .file-rail,
+body.transparent-theme .source-rail,
+body.transparent-theme .preview-rail,
+body.transparent-theme .file-pane,
+body.transparent-theme .source-pane,
+body.transparent-theme .preview-pane,
+body.transparent-theme .pane-header,
+body.transparent-theme .text-tabs,
+body.transparent-theme .terminal-panel,
+body.transparent-theme .terminal-header,
+body.transparent-theme .terminal-tabs,
+body.transparent-theme .log-panel,
+body.transparent-theme .log-header,
+body.transparent-theme .file-outline,
+body.transparent-theme .pdf-sidebar {
+  background: color-mix(in srgb, var(--panel) 18%, transparent) !important;
+  backdrop-filter: blur(18px) saturate(128%) !important;
+}
+
+body.transparent-theme .settings-panel,
+body.transparent-theme .templates-panel,
+body.transparent-theme .new-project-panel,
+body.transparent-theme .ssh-project-panel,
+body.transparent-theme .history-panel,
+body.transparent-theme .command-palette {
+  background: color-mix(in srgb, var(--panel) 32%, transparent) !important;
+  backdrop-filter: blur(22px) saturate(138%) !important;
+}
+
+body.transparent-theme .project-card,
+body.transparent-theme .project-tools,
+body.transparent-theme .project-view-toggle,
+body.transparent-theme .theme-switch,
+body.transparent-theme .accent-control,
+body.transparent-theme .setting-row,
+body.transparent-theme .setting-column,
+body.transparent-theme .text-tab.active,
+body.transparent-theme .file-preview,
+body.transparent-theme .pdf-thumbnail,
+body.transparent-theme .terminal-tab.active,
+body.transparent-theme input,
+body.transparent-theme select,
+body.transparent-theme textarea {
+  background: color-mix(in srgb, var(--glass) 30%, transparent) !important;
+}
+
+body.transparent-theme .CodeMirror {
+  background: color-mix(in srgb, var(--cm-bg) 12%, transparent) !important;
+}
+
+body.transparent-theme .CodeMirror-gutters,
+body.transparent-theme .source-minimap-lines,
+body.transparent-theme .terminal-body,
+body.transparent-theme .terminal-instance,
+body.transparent-theme .terminal-instance .xterm,
+body.transparent-theme .terminal-instance .xterm-screen,
+body.transparent-theme .terminal-instance .xterm-viewport,
+body.transparent-theme #compileLog {
+  background: color-mix(in srgb, var(--cm-bg) 8%, transparent) !important;
+}
+
+body.transparent-theme .splitter,
+body.transparent-theme .file-splitter,
+body.transparent-theme .terminal-resize-handle,
+body.transparent-theme .compile-log-resize-handle {
+  background: color-mix(in srgb, var(--border) 22%, transparent) !important;
+}
+
+body.transparent-theme .pdf-viewer,
+body.transparent-theme .editor-stack,
+body.transparent-theme .CodeMirror-scroll,
+body.transparent-theme .CodeMirror-sizer,
+body.transparent-theme .CodeMirror-lines,
+body.transparent-theme .CodeMirror-code {
+  background: transparent !important;
+}
