@@ -2219,6 +2219,14 @@ function sshCommandArgs(remote = {}, commandArgs = []) {
   ];
 }
 
+function remoteShellCommand(commandArgs = []) {
+  return commandArgs.map((arg) => shellQuote(arg)).join(" ");
+}
+
+function sshRemoteCommandArgs(remote = {}, commandArgs = []) {
+  return sshCommandArgs(remote, [remoteShellCommand(commandArgs)]);
+}
+
 async function verifySshConnection(_event, remote = {}) {
   const normalized = normalizeRemoteOptions(remote);
   if (!normalized.host) throw new Error("Missing SSH server.");
@@ -2231,7 +2239,7 @@ print(json.dumps({"root": root}))
 `;
   const result = await execFileAsync(
     resolveExecutable("ssh"),
-    sshCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~"]),
+    sshRemoteCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~"]),
     { timeout: 20000, maxBuffer: 1024 * 1024 }
   );
   const parsed = JSON.parse(result.stdout || "{}");
@@ -2460,7 +2468,7 @@ def node(path, depth=0):
 tree = node(root)
 print(json.dumps({"files": tree.get("children", []) if tree else [], "root": root}))
 `;
-  const result = await execFileAsync(resolveExecutable("ssh"), sshCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~"]), {
+  const result = await execFileAsync(resolveExecutable("ssh"), sshRemoteCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~"]), {
     timeout: 20000,
     maxBuffer: 1024 * 1024 * 8
   });
@@ -2482,7 +2490,7 @@ with open(path, "rb") as handle:
     data = handle.read()
 print(json.dumps({"name": os.path.basename(path), "relativePath": relative.replace(os.sep, "/"), "tex": base64.b64encode(data).decode("ascii")}))
 `;
-  const result = await execFileAsync(resolveExecutable("ssh"), sshCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~", relativePath]), {
+  const result = await execFileAsync(resolveExecutable("ssh"), sshRemoteCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~", relativePath]), {
     timeout: 20000,
     maxBuffer: 1024 * 1024 * 16
   });
@@ -2521,7 +2529,7 @@ with open(path, "wb") as handle:
 `;
   await execFileWithInput(
     resolveExecutable("ssh"),
-    sshCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~", relativePath]),
+    sshRemoteCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~", relativePath]),
     Buffer.from(String(payload.tex || ""), "utf8").toString("base64"),
     { timeout: 20000, maxBuffer: 1024 * 1024 * 16 }
   );
