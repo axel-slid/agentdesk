@@ -2583,6 +2583,406 @@ body.transparent-theme #compileLog {
   -webkit-app-region: no-drag;
 }
 
+/* Latest request overrides: keep these last. */
+.project-tools {
+  background: color-mix(in srgb, var(--panel) 80%, transparent) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  grid-template-columns: minmax(360px, 1fr) auto auto !important;
+  max-width: 100% !important;
+}
+
+.project-tools input,
+.project-view-toggle,
+#refreshProjectsButton {
+  background: color-mix(in srgb, var(--cm-bg) 72%, transparent) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+}
+
+.project-view-toggle button:hover,
+#refreshProjectsButton:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent) !important;
+}
+
+.project-view-toggle button.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel)) !important;
+  color: color-mix(in srgb, var(--accent) 72%, var(--text)) !important;
+}
+
+.file-header-actions {
+  overflow: visible !important;
+  position: relative;
+}
+
+.file-header-actions .icon-button {
+  background: color-mix(in srgb, var(--panel) 80%, var(--page)) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: var(--text);
+  overflow: visible;
+  position: relative;
+}
+
+.file-header-actions .icon-button:hover {
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel)) !important;
+  color: var(--text);
+}
+
+.file-header-actions .icon-button::after {
+  background: color-mix(in srgb, var(--page) 92%, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+  color: var(--text);
+  content: attr(aria-label);
+  font-size: 11px;
+  font-weight: 650;
+  left: 50%;
+  line-height: 1;
+  opacity: 0;
+  padding: 7px 9px;
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  transform: translate(-50%, -3px);
+  transition: opacity 120ms ease, transform 120ms ease;
+  white-space: nowrap;
+  z-index: 400;
+}
+
+.file-header-actions .icon-button:hover::after,
+.file-header-actions .icon-button:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.source-minimap,
+.source-minimap *,
+.source-minimap-lines {
+  scrollbar-width: none !important;
+}
+
+.source-minimap::-webkit-scrollbar,
+.source-minimap *::-webkit-scrollbar,
+.source-minimap-lines::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+.source-minimap,
+.source-minimap-lines {
+  overflow: hidden !important;
+}
+
+.text-tab.preview .text-tab-name {
+  font-style: italic !important;
+}
+
+.github-icon {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+.vim-mode-indicator,
+.vim-mode-indicator[data-vim-state="normal"],
+.vim-mode-indicator[data-vim-state="insert"],
+.vim-mode-indicator[data-vim-state="visual"] {
+  color: #05070a !important;
+  font-weight: 760 !important;
+  text-shadow: none !important;
+}
+
+.vim-mode-indicator[data-vim-state="insert"] {
+  background: color-mix(in srgb, var(--green) 28%, var(--panel)) !important;
+}
+
+.vim-mode-indicator[data-vim-state="visual"] {
+  background: color-mix(in srgb, var(--accent) 32%, var(--panel)) !important;
+}
+
+.vim-mode-indicator[data-vim-state="normal"] {
+  background: color-mix(in srgb, var(--blue) 24%, var(--panel)) !important;
+}
+
+.history-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: min(520px, 48vw);
+  padding: 0;
+}
+
+.history-panel header {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.history-back-button {
+  align-items: center;
+  background: color-mix(in srgb, var(--panel) 84%, var(--page));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  display: inline-flex;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+}
+
+.history-panel-body {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.history-entry-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.history-entry {
+  background: color-mix(in srgb, var(--panel) 84%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  text-align: left;
+}
+
+.history-entry.active {
+  background: color-mix(in srgb, var(--accent) 20%, var(--panel));
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+}
+
+.history-entry span,
+.history-entry small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.history-document-preview {
+  background: color-mix(in srgb, var(--cm-bg) 88%, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.history-document-preview header {
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.history-document-preview header span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.history-document-preview pre {
+  color: var(--cm-text);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0;
+  overflow: auto;
+  padding: 14px;
+  white-space: pre-wrap;
+}
+
+/* Final polish overrides */
+.project-tools {
+  background: color-mix(in srgb, var(--panel) 80%, transparent) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  grid-template-columns: minmax(360px, 1fr) auto auto !important;
+  max-width: 100% !important;
+}
+
+.project-tools input,
+.project-view-toggle,
+#refreshProjectsButton {
+  background: color-mix(in srgb, var(--cm-bg) 72%, transparent) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+.project-view-toggle button:hover,
+#refreshProjectsButton:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent) !important;
+}
+
+.project-view-toggle button.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel)) !important;
+  color: color-mix(in srgb, var(--accent) 72%, var(--text)) !important;
+}
+
+.file-header-actions {
+  overflow: visible;
+  position: relative;
+}
+
+.file-header-actions .icon-button {
+  background: color-mix(in srgb, var(--panel) 80%, var(--page)) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: var(--text);
+  overflow: visible;
+  position: relative;
+}
+
+.file-header-actions .icon-button:hover {
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel)) !important;
+  color: var(--text);
+}
+
+.file-header-actions .icon-button::after {
+  background: color-mix(in srgb, var(--page) 92%, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+  color: var(--text);
+  content: attr(aria-label);
+  font-size: 11px;
+  font-weight: 650;
+  left: 50%;
+  line-height: 1;
+  opacity: 0;
+  padding: 7px 9px;
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  transform: translate(-50%, -3px);
+  transition: opacity 120ms ease, transform 120ms ease;
+  white-space: nowrap;
+  z-index: 400;
+}
+
+.file-header-actions .icon-button:hover::after,
+.file-header-actions .icon-button:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.source-minimap,
+.source-minimap *,
+.source-minimap-lines {
+  scrollbar-width: none !important;
+}
+
+.source-minimap::-webkit-scrollbar,
+.source-minimap *::-webkit-scrollbar,
+.source-minimap-lines::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+.source-minimap,
+.source-minimap-lines {
+  overflow: hidden !important;
+}
+
+.text-tab.preview .text-tab-name {
+  font-style: italic;
+}
+
+.vim-mode-indicator {
+  background: color-mix(in srgb, var(--accent) 22%, var(--panel)) !important;
+  color: var(--text) !important;
+}
+
+.vim-mode-indicator[data-vim-state="insert"] {
+  background: color-mix(in srgb, var(--green) 26%, var(--panel)) !important;
+  color: var(--text) !important;
+}
+
+.vim-mode-indicator[data-vim-state="visual"] {
+  background: color-mix(in srgb, var(--accent) 28%, var(--panel)) !important;
+  color: var(--text) !important;
+}
+
+body[data-theme="dark"] .vim-mode-indicator,
+body[data-theme="dark"] .vim-mode-indicator[data-vim-state="insert"],
+body[data-theme="dark"] .vim-mode-indicator[data-vim-state="visual"] {
+  color: #05070a !important;
+  text-shadow: none !important;
+}
+
+.settings-nav-spacer {
+  flex: 1 1 auto;
+  min-height: 16px;
+}
+
+.settings-nav-divider {
+  border-top: 1px solid var(--border);
+  margin: 4px 2px 6px;
+}
+
+.settings-nav-reference {
+  color: color-mix(in srgb, var(--text) 88%, var(--accent));
+}
+
+.documentation-panel {
+  display: grid;
+  gap: 12px;
+  max-width: 780px;
+}
+
+.documentation-panel h3 {
+  font-size: 16px;
+  margin: 10px 0 0;
+}
+
+.documentation-panel p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.documentation-code {
+  background: color-mix(in srgb, var(--cm-bg) 86%, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--cm-text);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0;
+  overflow: auto;
+  padding: 12px 14px;
+  white-space: pre;
+}
+
+.documentation-code code {
+  font: inherit;
+}
+
+.icon-only-topbar {
+  min-width: 28px;
+  padding: 0 6px !important;
+}
+
 /* Current interaction polish */
 .workspace {
   grid-template-columns: var(--file-width) 8px minmax(320px, var(--editor-width)) 8px minmax(var(--pdf-min-width), 1fr);
@@ -6202,4 +6602,512 @@ body.transparent-theme #compileLog {
 .new-project-panel,
 .settings-drawer {
   -webkit-app-region: no-drag;
+}
+
+/* Final current-turn overrides. */
+body.window-fullscreen .topbar {
+  padding-left: 10px !important;
+}
+
+body.window-fullscreen .project-back-button {
+  justify-self: start !important;
+}
+
+.project-tools {
+  align-items: center !important;
+  background: color-mix(in srgb, var(--panel) 82%, transparent) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  display: grid !important;
+  gap: 6px !important;
+  grid-template-columns: minmax(360px, 1fr) auto auto !important;
+  max-width: 100% !important;
+  padding: 4px !important;
+  width: 100% !important;
+}
+
+.project-tools input,
+.project-view-toggle,
+#refreshProjectsButton {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.project-tools input {
+  height: 38px !important;
+  padding: 0 8px !important;
+}
+
+.project-tools input:focus {
+  background: color-mix(in srgb, var(--text) 5%, transparent) !important;
+  outline: 0 !important;
+}
+
+.project-view-toggle {
+  padding: 0 !important;
+}
+
+.project-view-toggle button,
+#refreshProjectsButton,
+.hero-actions .hero-action,
+.hero-actions .settingsButton,
+.topbar-action-button,
+.project-back-button {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.project-view-toggle button:hover,
+.project-view-toggle button.active,
+#refreshProjectsButton:hover,
+.hero-actions .hero-action:hover,
+.hero-actions .settingsButton:hover,
+.topbar-action-button:hover,
+.project-back-button:hover {
+  background: color-mix(in srgb, var(--text) 9%, transparent) !important;
+}
+
+.project-view-toggle button.active {
+  color: color-mix(in srgb, var(--accent) 74%, var(--text)) !important;
+}
+
+.project-chip {
+  display: none !important;
+}
+
+.project-hero {
+  background: transparent !important;
+  overflow: visible !important;
+  isolation: isolate;
+}
+
+.project-hero::before {
+  background:
+    radial-gradient(ellipse at 30% 68%, rgba(var(--accent-rgb), 0.16), transparent 62%),
+    linear-gradient(100deg, rgba(var(--accent-rgb), 0.08), transparent 76%);
+  content: "";
+  filter: blur(30px);
+  inset: -30px -12vw -22px -10vw;
+  opacity: 0.86;
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+}
+
+.terminal-header {
+  align-items: start !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.terminal-tabs {
+  align-content: start !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 3px !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+  overflow: hidden auto !important;
+  padding-top: 2px !important;
+}
+
+.terminal-tab {
+  flex: 0 1 152px !important;
+  min-width: 84px !important;
+}
+
+.terminal-actions {
+  align-self: start !important;
+  justify-self: end !important;
+  max-width: 100% !important;
+}
+
+.file-rail[hidden],
+.source-rail[hidden],
+.preview-rail[hidden] {
+  display: none !important;
+}
+
+.workspace:not(.files-hidden) .file-rail,
+.workspace:not(.source-hidden) .source-rail,
+.workspace:not(.pdf-hidden) .preview-rail {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.source-pane:not(.terminal-collapsed) .terminal-collapsed-rail,
+.log-panel:not(.log-collapsed) .log-collapsed-rail {
+  display: none !important;
+}
+
+.vim-mode-indicator,
+.vim-mode-indicator[data-vim-state="normal"],
+.vim-mode-indicator[data-vim-state="insert"],
+.vim-mode-indicator[data-vim-state="visual"] {
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel)) !important;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border)) !important;
+  color: var(--text) !important;
+  text-shadow: none !important;
+}
+
+body[data-theme="dark"] .vim-mode-indicator,
+body[data-theme="dark"] .vim-mode-indicator[data-vim-state="normal"],
+body[data-theme="dark"] .vim-mode-indicator[data-vim-state="insert"],
+body[data-theme="dark"] .vim-mode-indicator[data-vim-state="visual"] {
+  background: color-mix(in srgb, var(--accent) 24%, var(--panel)) !important;
+  color: var(--text) !important;
+}
+
+.source-minimap,
+.source-minimap *,
+.source-minimap-lines {
+  scrollbar-width: none !important;
+}
+
+.source-minimap::-webkit-scrollbar,
+.source-minimap *::-webkit-scrollbar,
+.source-minimap-lines::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+.source-minimap,
+.source-minimap-lines {
+  overflow: hidden !important;
+}
+
+.text-tab.preview .text-tab-name {
+  font-style: italic !important;
+}
+
+/* Final icon and toolbar corrections. */
+#refreshProjectsButton {
+  align-items: center !important;
+  display: inline-flex !important;
+  height: 36px !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  width: 40px !important;
+}
+
+#refreshProjectsButton .refresh-icon {
+  height: 18px !important;
+  width: 18px !important;
+}
+
+.file-header-actions .icon-button {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.file-header-actions .icon-button:hover,
+.file-header-actions .icon-button:focus-visible {
+  background: color-mix(in srgb, var(--text) 10%, transparent) !important;
+}
+
+.topbar-action-button .topbar-icon {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  height: 16px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  stroke-width: 2 !important;
+  width: 16px !important;
+}
+
+.topbar-action-button .github-icon {
+  fill: currentColor !important;
+  stroke: none !important;
+}
+
+.topbar-action-button .settings-icon,
+.topbar-icon.settings-icon {
+  height: 17px !important;
+  width: 17px !important;
+  stroke-width: 2 !important;
+}
+
+/* Final project row and preview polish. */
+.project-grid.rows-view .project-card {
+  align-items: start !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  height: 104px !important;
+  min-height: 104px !important;
+  max-width: 1040px !important;
+  overflow: hidden !important;
+  padding: 18px 54px 16px 18px !important;
+}
+
+.project-grid.rows-view .project-card-copy {
+  gap: 6px !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding-right: 0 !important;
+}
+
+.project-grid.rows-view .project-name {
+  font-size: 17px !important;
+  line-height: 1.15 !important;
+  max-height: 40px !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+.project-grid.rows-view .project-file,
+.project-grid.rows-view .project-meta {
+  flex: 0 0 auto !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  max-height: 17px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.project-grid.rows-view .project-card-meta-row {
+  margin-top: 0 !important;
+  min-height: 16px !important;
+}
+
+.template-preview {
+  height: 300px !important;
+  max-width: 100% !important;
+  padding: 4px !important;
+  width: min(260px, 72%) !important;
+}
+
+.template-preview img,
+.template-preview canvas {
+  image-rendering: auto !important;
+  max-height: 100% !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  transform: translateZ(0);
+}
+
+/* Match Projects button to the other topbar action buttons. */
+.project-back-button,
+.topbar-action-button {
+  background: color-mix(in srgb, var(--text) 7%, transparent) !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+}
+
+.project-back-button:hover,
+.topbar-action-button:hover {
+  background: color-mix(in srgb, var(--text) 12%, transparent) !important;
+}
+
+/* Final terminal side-list, PDF reader, and minimap cleanup. */
+.terminal-panel {
+  grid-template-rows: 34px minmax(0, 1fr) !important;
+}
+
+.terminal-header {
+  align-items: center !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  padding: 3px 8px 3px 14px !important;
+}
+
+.terminal-title {
+  color: var(--terminal-text);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 184px);
+  min-height: 0;
+}
+
+.terminal-body {
+  min-width: 0;
+}
+
+.terminal-tabs {
+  align-content: start !important;
+  background: color-mix(in srgb, var(--terminal-header-bg) 88%, var(--terminal-bg)) !important;
+  border-left: 1px solid var(--border);
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  gap: 2px !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+  overflow: auto !important;
+  padding: 8px !important;
+}
+
+.terminal-tab {
+  align-items: center !important;
+  border-radius: 7px !important;
+  display: grid !important;
+  flex: 0 0 auto !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  gap: 7px !important;
+  height: 28px !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  padding: 0 7px !important;
+  text-align: left !important;
+  width: 100% !important;
+}
+
+.terminal-tab-kind {
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--terminal-text) 52%, transparent);
+  border-radius: 4px;
+  color: color-mix(in srgb, var(--terminal-text) 72%, transparent);
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 9px;
+  height: 16px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 18px;
+  padding: 0 3px;
+}
+
+.terminal-tab.active .terminal-tab-kind {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--terminal-text));
+  color: var(--accent);
+}
+
+.terminal-tab-close {
+  opacity: 0.72;
+}
+
+.terminal-tab-close:hover {
+  background: color-mix(in srgb, var(--terminal-text) 10%, transparent) !important;
+  opacity: 1;
+}
+
+.terminal-tab-split {
+  display: none !important;
+}
+
+.source-pane.terminal-collapsed .terminal-workbench {
+  display: none !important;
+}
+
+.pdf-reader-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  color: var(--text);
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  width: 32px;
+}
+
+.pdf-reader-button:hover,
+.pdf-reader-button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.pdf-reader-button .icon {
+  height: 17px;
+  width: 17px;
+}
+
+body.pdf-reader-mode .workspace,
+.workspace.pdf-reader-mode {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+body.pdf-reader-mode .file-rail,
+body.pdf-reader-mode .file-pane,
+body.pdf-reader-mode .file-splitter,
+body.pdf-reader-mode .source-rail,
+body.pdf-reader-mode .source-pane,
+body.pdf-reader-mode .splitter,
+body.pdf-reader-mode .preview-rail,
+.workspace.pdf-reader-mode .file-rail,
+.workspace.pdf-reader-mode .file-pane,
+.workspace.pdf-reader-mode .file-splitter,
+.workspace.pdf-reader-mode .source-rail,
+.workspace.pdf-reader-mode .source-pane,
+.workspace.pdf-reader-mode .splitter,
+.workspace.pdf-reader-mode .preview-rail {
+  display: none !important;
+}
+
+body.pdf-reader-mode .preview-pane,
+.workspace.pdf-reader-mode .preview-pane {
+  grid-column: 1 / -1 !important;
+  grid-template-rows: 52px minmax(0, 1fr) !important;
+  min-width: 0 !important;
+}
+
+body.pdf-reader-mode .log-panel,
+.workspace.pdf-reader-mode .log-panel {
+  display: none !important;
+}
+
+body.pdf-reader-mode .pdf-viewer {
+  padding-inline: clamp(42px, 11vw, 180px) !important;
+}
+
+.editor-stack {
+  grid-template-columns: minmax(0, 1fr) 168px !important;
+}
+
+.source-minimap {
+  box-sizing: border-box !important;
+  padding: 6px !important;
+  width: auto !important;
+}
+
+.source-minimap-lines {
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.project-grid.rows-view .project-card {
+  height: 124px !important;
+  min-height: 124px !important;
+}
+
+.project-grid.rows-view .project-card-copy {
+  justify-content: center !important;
+}
+
+.project-grid.rows-view .project-card-meta-row {
+  display: flex !important;
+  min-height: 20px !important;
+}
+
+.project-grid.rows-view .project-meta {
+  max-height: none !important;
+}
+
+.topbar-action-button .settings-icon,
+.topbar-icon.settings-icon {
+  height: 16px !important;
+  width: 16px !important;
 }

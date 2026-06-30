@@ -51,7 +51,13 @@
               <span class="visually-hidden">Rows view</span>
             </button>
           </div>
-          <button id="refreshProjectsButton" type="button">Refresh</button>
+          <button id="refreshProjectsButton" type="button" aria-label="Refresh projects" title="Refresh projects">
+            <svg class="view-icon refresh-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+              <path d="M21 4v6h-6"></path>
+            </svg>
+            <span class="visually-hidden">Refresh projects</span>
+          </button>
         </div>
 
         <div id="projectGrid" class="project-grid" aria-live="polite"></div>
@@ -68,7 +74,10 @@
         <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
         <div class="topbar-actions">
           <button id="topRefreshFilesButton" class="topbar-action-button" type="button" title="Refresh project">
-            <span aria-hidden="true">&#8635;</span>
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+              <path d="M21 4v6h-6"></path>
+            </svg>
             <span>Refresh Project</span>
           </button>
           <button id="historyButton" class="topbar-action-button" type="button" title="History">
@@ -78,6 +87,12 @@
               <path d="M12 7v5l3 2"></path>
             </svg>
             <span>History</span>
+          </button>
+          <button id="pushGithubButton" class="topbar-action-button" type="button" title="Push active project to GitHub">
+            <svg class="topbar-icon github-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 .8a11.2 11.2 0 0 0-3.54 21.83c.56.1.77-.24.77-.54v-1.9c-3.14.68-3.8-1.34-3.8-1.34-.52-1.3-1.26-1.65-1.26-1.65-1.02-.7.08-.68.08-.68 1.13.08 1.73 1.16 1.73 1.16 1 .1 2.63.9 3.28.55.1-.73.4-1.23.72-1.51-2.5-.29-5.14-1.25-5.14-5.57 0-1.23.44-2.24 1.16-3.03-.12-.29-.5-1.44.11-2.99 0 0 .95-.3 3.1 1.16A10.8 10.8 0 0 1 12 5.91c.96 0 1.92.13 2.82.38 2.15-1.46 3.1-1.16 3.1-1.16.61 1.55.23 2.7.11 2.99.72.79 1.16 1.8 1.16 3.03 0 4.33-2.64 5.28-5.15 5.56.41.35.77 1.04.77 2.1v3.12c0 .3.2.65.78.54A11.2 11.2 0 0 0 12 .8Z"></path>
+            </svg>
+            <span>Push</span>
           </button>
           <button class="settingsButton topbar-action-button" type="button" title="Settings">
             <svg class="topbar-icon settings-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -134,11 +149,19 @@
                   <path d="M12 10v6M9 13h6"></path>
                 </svg>
               </button>
-              <button id="uploadFilesButton" class="icon-button" type="button" aria-label="Upload files" title="Upload files">
+              <button id="uploadFilesButton" class="icon-button" type="button" aria-label="Upload files or folders" title="Upload files or folders">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 3v12"></path>
                   <path d="m7 8 5-5 5 5"></path>
                   <path d="M5 21h14"></path>
+                </svg>
+              </button>
+              <button id="downloadPackageButton" class="icon-button" type="button" aria-label="Download package" title="Download package">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"></path>
+                  <path d="M3 8l3-4h12l3 4"></path>
+                  <path d="M12 10v6"></path>
+                  <path d="m8.5 12.5 3.5 3.5 3.5-3.5"></path>
                 </svg>
               </button>
             </div>
@@ -209,7 +232,7 @@
             <div id="terminalResizeHandle" class="terminal-resize-handle" role="separator" aria-label="Resize terminal panel" tabindex="0"></div>
             <button id="terminalCollapsedButton" class="collapsed-panel-rail terminal-collapsed-rail" type="button" aria-label="Expand terminal">Terminal</button>
             <header class="terminal-header">
-              <div class="terminal-tabs" id="terminalTabs" aria-label="Terminal sessions"></div>
+              <span class="terminal-title">Terminal</span>
               <div class="terminal-actions">
                 <button id="terminalNewButton" type="button" aria-label="New shell terminal" title="New terminal">+</button>
                 <button id="terminalRemoteButton" type="button" aria-label="New SSH terminal" title="SSH">SSH</button>
@@ -240,8 +263,11 @@
                 </button>
               </div>
             </header>
-            <div class="terminal-body" id="terminalBody">
-              <div class="terminal-empty" id="terminalEmpty">Start Shell, Codex, or Claude. Use + for another shell.</div>
+            <div class="terminal-workbench">
+              <div class="terminal-body" id="terminalBody">
+                <div class="terminal-empty" id="terminalEmpty">Start Shell, Codex, or Claude. Use + for another shell.</div>
+              </div>
+              <div class="terminal-tabs" id="terminalTabs" aria-label="Terminal sessions"></div>
             </div>
           </section>
         </section>
@@ -260,7 +286,6 @@
             </div>
             <div class="pdf-header-actions">
               <div class="pdf-action-segment" aria-label="PDF actions">
-                <button id="saveButton" class="pdf-action-button" type="button">Save</button>
                 <button id="compileButton" class="pdf-action-button" type="button">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 3v4"></path>
@@ -304,15 +329,24 @@
                 </button>
               </div>
               <span id="pdfPageIndicator" class="pdf-page-indicator">Page 0 / 0</span>
+              <button id="pdfReaderButton" class="pdf-reader-button" type="button" aria-label="Toggle PDF reader mode" title="PDF reader mode" aria-pressed="false">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+                  <path d="M16 3h3a2 2 0 0 1 2 2v3"></path>
+                  <path d="M8 21H5a2 2 0 0 1-2-2v-3"></path>
+                  <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                </svg>
+              </button>
             </div>
           </div>
           <div id="pdfViewer" class="pdf-viewer" aria-label="Compiled manuscript pages"></div>
           <aside id="historyPanel" class="history-panel" hidden>
             <header>
-              <button id="closeHistoryButton" class="icon-button" type="button" aria-label="Close history" title="Close">
-                <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18 6 6 18M6 6l12 12"></path>
+              <button id="closeHistoryButton" class="history-back-button" type="button" aria-label="Back to PDF" title="Back to PDF">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M15 18 9 12l6-6"></path>
                 </svg>
+                <span>Back</span>
               </button>
               <h3>History</h3>
             </header>
@@ -426,13 +460,15 @@
           </svg>
         </button>
         <button class="settings-nav-button active" type="button" data-settings-section="appearance">Appearance</button>
-        <button class="settings-nav-button" type="button" data-settings-section="profile">Profile</button>
         <button class="settings-nav-button" type="button" data-settings-section="workspace">Workspace</button>
         <button class="settings-nav-button" type="button" data-settings-section="remote">Remote</button>
-        <button class="settings-nav-button" type="button" data-settings-section="latex">LaTeX</button>
         <button class="settings-nav-button" type="button" data-settings-section="agents">AGENTS.md</button>
         <button class="settings-nav-button" type="button" data-settings-section="shortcuts">Keyboard</button>
-        <button class="settings-nav-button" type="button" data-settings-section="documentation">Documentation</button>
+        <div class="settings-nav-spacer" aria-hidden="true"></div>
+        <div class="settings-nav-divider" aria-hidden="true"></div>
+        <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="profile">Profile</button>
+        <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="latex">LaTeX Handbook</button>
+        <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="documentation">Documentation</button>
       </nav>
 
       <div class="settings-main">
@@ -556,6 +592,10 @@
               <input id="settingsMinimapToggle" type="checkbox" checked>
             </label>
             <label class="setting-row">
+              <span>Wrap editor text</span>
+              <input id="settingsTextWrappingToggle" type="checkbox" checked>
+            </label>
+            <label class="setting-row">
               <span>Spell and grammar check</span>
               <input id="settingsSpellCheckToggle" type="checkbox">
             </label>
@@ -655,6 +695,7 @@
               <div><span>Toggle terminal</span><kbd>Cmd/Ctrl</kbd><kbd>Shift</kbd><kbd>T</kbd></div>
               <div><span>Toggle minimap</span><kbd>/minimap</kbd></div>
               <div><span>Toggle relative line numbers</span><kbd>/relative</kbd></div>
+              <div><span>Toggle text wrapping</span><kbd>/wrap</kbd></div>
               <div><span>Open settings</span><kbd>Cmd/Ctrl</kbd><kbd>,</kbd></div>
               <div><span>Close panel</span><kbd>Esc</kbd></div>
             </div>
@@ -663,14 +704,31 @@
           <section class="settings-section" data-settings-panel="documentation">
             <div class="documentation-panel">
               <h3>Run locally</h3>
-              <pre>git clone https://github.com/axel-slid/agentdesk.git
+              <p>Clone the public repo, install dependencies, then launch the Electron app from the project directory.</p>
+              <pre class="documentation-code"><code>git clone https://github.com/axel-slid/agentdesk.git
 cd agentdesk
 npm install
-npm start</pre>
+npm start</code></pre>
+              <h3>Project workflow</h3>
+              <p>Use New Project for a blank paper, TeX entry file, folder, zip, tar, tar.gz, or tgz archive. The file toolbar can create files, create folders, upload files or folders into the current project, and export the whole project package.</p>
+              <h3>GitHub push</h3>
+              <p>Push copies only LaTeX source files into the dedicated public documents repo at github.com/axel-slid/agentdesk-latex-documents. It does not upload generated PDFs, figures, datasets, caches, or the full project folder unless those files are LaTeX source files.</p>
               <h3>Remote workspace</h3>
-              <p>Set an SSH host in Remote settings, open the SSH terminal, then clone or open a project path from the remote shell.</p>
-              <h3>Keyboard shortcuts</h3>
-              <p>Use Cmd+P for commands, Cmd+F for find, Cmd+Enter to compile, /minimap for the minimap, and /relative for relative line numbers.</p>
+              <p>Open Settings, choose Remote, then enter an SSH host such as user@host.edu and an optional path. Use the SSH terminal button to start a remote shell. From there you can git clone, pull, compile, or inspect the remote project just like a VS Code remote workflow.</p>
+              <pre class="documentation-code"><code>ssh user@host.edu
+cd /path/to/project
+git pull
+tectonic main.tex</code></pre>
+              <h3>AGENTS.md</h3>
+              <p>The AGENTS.md settings page lets you write project instructions for AI-assisted edits. Put build commands, style rules, file ownership notes, and safety constraints there. Save it once, and AgentDesk keeps it in the project root so Codex or other agents can read the same context.</p>
+              <h3>Command palette</h3>
+              <p>Press Cmd+P to open commands. Useful commands include /open, /templates, /settings, /compile, /history, /vim, /minimap, and /relative. Type a project name after /open to jump directly to it.</p>
+              <h3>Editing and review</h3>
+              <p>Use Code for source editing and Visual for structured manuscript edits. Cmd+F highlights every match in the current text. If Vim is enabled, the mode indicator appears next to Code and Visual. History shows session edits inside the app so you can review changes without leaving the workspace.</p>
+              <h3>PDF and packages</h3>
+              <p>Compile PDF saves the active text file and runs the project compiler. Open PDF launches the compiled output. Download PDF saves just the compiled PDF. Download project package exports the whole project as zip, tar, tar.gz, or tgz.</p>
+              <h3>Troubleshooting</h3>
+              <p>If a PDF does not render, compile once and check the Log panel. If figures do not appear, verify they are inside the project folder and referenced with the correct relative path. Refresh Project reloads files and the PDF from disk.</p>
             </div>
           </section>
         </div>

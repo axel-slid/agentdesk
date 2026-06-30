@@ -10,6 +10,8 @@ const pty = require("node-pty");
 const repoRoot = resolveRepoRoot();
 const defaultTexPath = path.join(repoRoot, "papers", "sashimi2026_synthetic_cnf", "main.tex");
 const homeDir = process.env.HOME || "";
+const latexDocumentsRemoteUrl = "https://github.com/axel-slid/agentdesk-latex-documents.git";
+const latexSourceExtensions = new Set([".tex", ".ltx", ".bib", ".bst", ".cls", ".sty"]);
 
 let mainWindow;
 const terminalSessions = new Map();
@@ -64,6 +66,9 @@ function createWindow() {
     shell.openExternal(url);
     return { action: "deny" };
   });
+
+  mainWindow.on("enter-full-screen", () => sendEditorCommand("fullscreen-enter"));
+  mainWindow.on("leave-full-screen", () => sendEditorCommand("fullscreen-leave"));
 
   mainWindow.on("closed", () => {
     killTerminalSessions();
@@ -180,6 +185,13 @@ function buildMenu() {
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+function toggleFullscreen() {
+  if (!mainWindow || mainWindow.isDestroyed()) return { fullscreen: false };
+  const next = !mainWindow.isFullScreen();
+  mainWindow.setFullScreen(next);
+  return { fullscreen: next };
 }
 
 function storePath() {
@@ -2120,9 +2132,9 @@ async function listProjectFiles(_event, projectId) {
 async function chooseProjectFiles(_event, projectId) {
   const project = await getProject(projectId);
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: "Add Files to Project",
-    buttonLabel: "Add Files",
-    properties: ["openFile", "multiSelections"],
+    title: "Add Files or Folders to Project",
+    buttonLabel: "Add",
+    properties: ["openFile", "openDirectory", "multiSelections"],
     filters: [
       { name: "Project assets", extensions: ["tex", "ltx", "bib", "bst", "cls", "sty", "png", "jpg", "jpeg", "gif", "webp", "svg", "pdf", "csv", "tsv", "txt", "md", "json", "yaml", "yml", "py", "js", "ts", "tsx", "jsx", "css", "html", "xml", "sh"] },
       { name: "All files", extensions: ["*"] }
@@ -2148,18 +2160,28 @@ async function importFiles(project, files) {
 
   for (const file of files) {
     const fileName = path.basename(file.name || file.path || "asset");
-    const targetDir = importTargetDir(project, fileName);
-    const destination = await uniqueDestination(targetDir, fileName);
 
     if (file.path) {
-      await fsp.copyFile(file.path, destination);
+      const stat = await fsp.stat(file.path);
+      const targetDir = stat.isDirectory() ? projectRootFor(project) : importTargetDir(project, fileName);
+      const destination = await uniqueDestination(targetDir, fileName);
+      if (stat.isDirectory()) {
+        await fsp.cp(file.path, destination, {
+          recursive: true,
+          filter: (source) => !shouldSkipFile(path.basename(source))
+        });
+      } else {
+        await fsp.copyFile(file.path, destination);
+      }
+      imported.push(fileDescriptor(project, destination));
     } else if (file.bytes) {
+      const targetDir = importTargetDir(project, fileName);
+      const destination = await uniqueDestination(targetDir, fileName);
       await fsp.writeFile(destination, Buffer.from(file.bytes));
+      imported.push(fileDescriptor(project, destination));
     } else {
       continue;
     }
-
-    imported.push(fileDescriptor(project, destination));
   }
 
   if (imported.length) await touchProject(project.id);
@@ -2429,6 +2451,177 @@ async function downloadPdf(_event, projectId) {
   return { filePath: destination };
 }
 
+async function downloadProjectPackage(_event, projectId) {
+  const project = await getProject(projectId);
+  const root = projectRootFor(project);
+  const baseName = sanitizeArchiveBaseName(project.name || path.basename(root) || "agentdesk-project");
+  const formats = [
+    { label: "zip", extension: "zip" },
+    { label: "tar.gz", extension: "tar.gz" },
+    { label: "tar", extension: "tar" },
+    { label: "tgz", extension: "tgz" }
+  ];
+
+  const choice = await dialog.showMessageBox(mainWindow, {
+    type: "question",
+    title: "Download Project Package",
+    message: "Choose a package format.",
+    buttons: [...formats.map((format) => format.label), "Cancel"],
+    cancelId: formats.length,
+    defaultId: 0
+  });
+  if (choice.response >= formats.length) return { canceled: true };
+
+  const format = formats[choice.response];
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: "Save Project Package",
+    buttonLabel: "Download",
+    defaultPath: path.join(app.getPath("downloads"), `${baseName}.${format.extension}`),
+    filters: [
+      { name: `${format.label} archive`, extensions: [format.extension] },
+      { name: "All files", extensions: ["*"] }
+    ]
+  });
+  if (result.canceled || !result.filePath) return { canceled: true };
+
+  const destination = result.filePath.toLowerCase().endsWith(`.${format.extension}`)
+    ? result.filePath
+    : `${result.filePath}.${format.extension}`;
+  await createProjectArchive(root, destination, format.label);
+  return { filePath: destination, format: format.label };
+}
+
+async function createProjectArchive(root, destination, format) {
+  const parent = path.dirname(root);
+  const folderName = path.basename(root);
+  const excludes = [
+    `${folderName}/.git/*`,
+    `${folderName}/node_modules/*`,
+    `${folderName}/__pycache__/*`,
+    `${folderName}/.DS_Store`
+  ];
+
+  if (format === "zip") {
+    await execFileAsync("zip", ["-qry", destination, folderName, "-x", ...excludes], { cwd: parent });
+    return;
+  }
+
+  const args = [];
+  if (format === "tar.gz" || format === "tgz") args.push("-czf", destination);
+  else args.push("-cf", destination);
+  args.push(
+    "--exclude", ".git",
+    "--exclude", "node_modules",
+    "--exclude", "__pycache__",
+    "--exclude", ".DS_Store",
+    "-C", parent,
+    folderName
+  );
+  await execFileAsync("tar", args);
+}
+
+async function pushProjectToGithub(_event, projectId) {
+  const project = await getProject(projectId);
+  const latexFiles = await listProjectLatexFiles(project);
+  if (!latexFiles.length) throw new Error("No LaTeX source files found to push.");
+
+  const sourceRoot = projectRootFor(project);
+  const repoPath = await ensureLatexDocumentsRepo();
+  const folderName = sanitizeArchiveBaseName(project.displayName || project.name || path.basename(sourceRoot));
+  const targetRoot = path.join(repoPath, folderName);
+  await fsp.rm(targetRoot, { recursive: true, force: true });
+
+  for (const relativePath of latexFiles) {
+    const sourcePath = path.join(sourceRoot, relativePath);
+    const targetPath = path.join(targetRoot, relativePath);
+    await fsp.mkdir(path.dirname(targetPath), { recursive: true });
+    await fsp.copyFile(sourcePath, targetPath);
+  }
+
+  await execFileAsync("git", ["add", "-A", "--", folderName], { cwd: repoPath });
+  const status = await execFileAsync("git", ["diff", "--cached", "--name-only"], { cwd: repoPath });
+  let committed = false;
+  let commit = "";
+
+  if (status.stdout.trim()) {
+    await execFileAsync("git", ["commit", "-m", `Update ${project.name || folderName} LaTeX sources from AgentDesk`], { cwd: repoPath });
+    committed = true;
+    const rev = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd: repoPath });
+    commit = rev.stdout.trim();
+  }
+
+  const push = await execFileAsync("git", ["push", "-u", "origin", "HEAD:main"], { cwd: repoPath });
+  return {
+    ok: true,
+    committed,
+    commit,
+    folder: folderName,
+    files: latexFiles,
+    remote: latexDocumentsRemoteUrl,
+    output: [push.stdout, push.stderr].filter(Boolean).join("\n").trim()
+  };
+}
+
+async function listProjectLatexFiles(project) {
+  const root = projectRootFor(project);
+  const files = [];
+
+  async function walk(dir) {
+    const entries = await fsp.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (shouldSkipFile(entry.name)) continue;
+      const absolutePath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(absolutePath);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      if (!latexSourceExtensions.has(path.extname(entry.name).toLowerCase())) continue;
+      files.push(path.relative(root, absolutePath));
+    }
+  }
+
+  await walk(root);
+  return files.sort();
+}
+
+function latexDocumentsRepoPath() {
+  return path.join(app.getPath("userData"), "latex-documents-repo");
+}
+
+async function ensureLatexDocumentsRepo() {
+  const repoPath = latexDocumentsRepoPath();
+  const gitPath = path.join(repoPath, ".git");
+
+  if (!fs.existsSync(gitPath)) {
+    await fsp.rm(repoPath, { recursive: true, force: true });
+    await fsp.mkdir(path.dirname(repoPath), { recursive: true });
+    await execFileAsync("git", ["clone", latexDocumentsRemoteUrl, repoPath]);
+  } else {
+    await execFileAsync("git", ["remote", "set-url", "origin", latexDocumentsRemoteUrl], { cwd: repoPath });
+  }
+
+  await ensureGitIdentity(repoPath);
+  await execFileAsync("git", ["checkout", "-B", "main"], { cwd: repoPath });
+  await execFileAsync("git", ["pull", "--ff-only", "origin", "main"], { cwd: repoPath }).catch(() => {});
+  return repoPath;
+}
+
+async function ensureGitIdentity(cwd) {
+  const name = await execFileAsync("git", ["config", "user.name"], { cwd }).catch(() => ({ stdout: "" }));
+  const email = await execFileAsync("git", ["config", "user.email"], { cwd }).catch(() => ({ stdout: "" }));
+  if (!name.stdout.trim()) await execFileAsync("git", ["config", "user.name", "AgentDesk"], { cwd });
+  if (!email.stdout.trim()) await execFileAsync("git", ["config", "user.email", "agentdesk@users.noreply.github.com"], { cwd });
+}
+
+function sanitizeArchiveBaseName(value) {
+  return String(value || "agentdesk-project")
+    .trim()
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "agentdesk-project";
+}
+
 async function ensureProjectPdf(project) {
   const pdfPath = pdfPathFor(project);
   if (fs.existsSync(pdfPath)) return;
@@ -2496,6 +2689,9 @@ ipcMain.handle("compile-manuscript", compileManuscript);
 ipcMain.handle("read-pdf", readPdf);
 ipcMain.handle("open-pdf", openPdf);
 ipcMain.handle("download-pdf", downloadPdf);
+ipcMain.handle("download-project-package", downloadProjectPackage);
+ipcMain.handle("push-project-to-github", pushProjectToGithub);
+ipcMain.handle("toggle-fullscreen", toggleFullscreen);
 ipcMain.handle("open-external-link", openExternalLink);
 ipcMain.handle("open-history-window", openHistoryWindow);
 ipcMain.handle("read-agents", readAgents);

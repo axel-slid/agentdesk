@@ -38,6 +38,7 @@ const filePreview = document.getElementById("filePreview");
 const newFileButton = document.getElementById("newFileButton");
 const newFolderButton = document.getElementById("newFolderButton");
 const uploadFilesButton = document.getElementById("uploadFilesButton");
+const downloadPackageButton = document.getElementById("downloadPackageButton");
 const latexSource = document.getElementById("latexSource");
 const visualEditor = document.getElementById("visualEditor");
 const mediaViewer = document.getElementById("mediaViewer");
@@ -66,6 +67,8 @@ const compileButton = document.getElementById("compileButton");
 const openPdfButton = document.getElementById("openPdfButton");
 const downloadPdfButton = document.getElementById("downloadPdfButton");
 const historyButton = document.getElementById("historyButton");
+const pushGithubButton = document.getElementById("pushGithubButton");
+const pdfReaderButton = document.getElementById("pdfReaderButton");
 const historyPanel = document.getElementById("historyPanel");
 const closeHistoryButton = document.getElementById("closeHistoryButton");
 const historyPanelBody = document.getElementById("historyPanelBody");
@@ -106,6 +109,7 @@ const settingsPdfGuardValue = document.getElementById("settingsPdfGuardValue");
 const settingsVimModeToggle = document.getElementById("settingsVimModeToggle");
 const settingsRelativeLineNumbersToggle = document.getElementById("settingsRelativeLineNumbersToggle");
 const settingsMinimapToggle = document.getElementById("settingsMinimapToggle");
+const settingsTextWrappingToggle = document.getElementById("settingsTextWrappingToggle");
 const settingsSpellCheckToggle = document.getElementById("settingsSpellCheckToggle");
 const settingsAgentChoice = document.getElementById("settingsAgentChoice");
 const remoteHostInput = document.getElementById("remoteHostInput");
@@ -250,6 +254,18 @@ const LATEX_SNIPPETS = {
 };
 const PROJECT_GREETINGS = [
   "Hello, {name}!",
+  "Hey there, {name}",
+  "Hi {name}, how are you?",
+  "How was your day, {name}?",
+  "How's it going, {name}?",
+  "Welcome, {name}",
+  "What's new, {name}?",
+  "{name} returns!",
+  "Back at it, {name}",
+  "Evening, {name}",
+  "Good afternoon, {name}",
+  "Good evening, {name}",
+  "Good morning, {name}",
   "Welcome back, {name}.",
   "Ready when you are, {name}.",
   "Good to see you, {name}.",
@@ -258,12 +274,54 @@ const PROJECT_GREETINGS = [
 ];
 const PROJECT_GREETINGS_NO_NAME = [
   "Hello!",
+  "Hey there",
+  "Hi, how are you?",
+  "How was your day?",
+  "How's it going?",
+  "Welcome",
+  "What's new?",
+  "Back at it!",
+  "Evening",
+  "Good afternoon",
+  "Good evening",
+  "Good morning",
+  "Greetings, whoever you are",
   "Welcome back.",
   "Ready when you are.",
   "Good to see you.",
   "Let's work.",
   "Back at the desk."
 ];
+const PROJECT_DAY_GREETINGS = {
+  0: {
+    named: ["Happy Sunday, {name}", "Sunday session, {name}?", "Welcome to the weekend, {name}"],
+    anonymous: ["Happy Sunday", "Sunday session?", "Welcome to the weekend"]
+  },
+  1: {
+    named: ["Happy Monday, {name}"],
+    anonymous: ["Happy Monday"]
+  },
+  2: {
+    named: ["Happy Tuesday, {name}"],
+    anonymous: ["Happy Tuesday"]
+  },
+  3: {
+    named: ["Happy Wednesday, {name}"],
+    anonymous: ["Happy Wednesday"]
+  },
+  4: {
+    named: ["Happy Thursday, {name}"],
+    anonymous: ["Happy Thursday"]
+  },
+  5: {
+    named: ["Happy Friday, {name}", "That Friday feeling, {name}"],
+    anonymous: ["Happy Friday", "That Friday feeling"]
+  },
+  6: {
+    named: ["Happy Saturday, {name}", "Welcome to the weekend, {name}"],
+    anonymous: ["Happy Saturday!", "Welcome to the weekend"]
+  }
+};
 const THEME_VARIABLES = [
   "--bg",
   "--glass",
@@ -1431,6 +1489,7 @@ let pdfZoom = DEFAULT_PDF_ZOOM;
 let pdfDarkMode = false;
 let pdfRenderMode = "adaptive";
 let minimapVisible = true;
+let textWrappingEnabled = true;
 let spellCheckEnabled = false;
 let selectionAgentChoice = "codex";
 let remoteWorkspace = { host: "", path: "" };
@@ -1464,6 +1523,8 @@ let spellContextMenu = null;
 let historyEvents = [];
 let historyCaptureTimer = null;
 let lastHistoryText = "";
+let historySelectedIndex = 0;
+let activeFileRenameInput = null;
 
 init();
 
@@ -1482,7 +1543,7 @@ function setupSourceEditor() {
     mode: "stex",
     gutters: editorGutters(),
     lineNumbers: true,
-    lineWrapping: false,
+    lineWrapping: textWrappingEnabled,
     indentUnit: 2,
     tabSize: 2,
     viewportMargin: 80
@@ -1546,6 +1607,7 @@ function setupSettings() {
   vimModeEnabled = localStorage.getItem("latexStudioVimMode") === "true";
   relativeLineNumbersEnabled = localStorage.getItem("latexStudioRelativeLineNumbers") === "true";
   minimapVisible = localStorage.getItem("latexStudioMinimapVisible") !== "false";
+  textWrappingEnabled = localStorage.getItem("latexStudioTextWrapping") !== "false";
   spellCheckEnabled = localStorage.getItem("latexStudioSpellCheck") === "true";
   selectionAgentChoice = normalizeAgentChoice(localStorage.getItem("latexStudioSelectionAgent"));
   remoteWorkspace = readRemoteWorkspace();
@@ -1564,6 +1626,7 @@ function setupSettings() {
   settingsVimModeToggle.checked = vimModeEnabled;
   settingsRelativeLineNumbersToggle.checked = relativeLineNumbersEnabled;
   settingsMinimapToggle.checked = minimapVisible;
+  settingsTextWrappingToggle.checked = textWrappingEnabled;
   settingsSpellCheckToggle.checked = spellCheckEnabled;
   settingsAgentChoice.value = selectionAgentChoice;
   updatePdfRenderModeButtons();
@@ -1622,6 +1685,10 @@ function setupSettings() {
 
   settingsMinimapToggle.addEventListener("change", () => {
     setMinimapVisible(settingsMinimapToggle.checked);
+  });
+
+  settingsTextWrappingToggle.addEventListener("change", () => {
+    setTextWrapping(settingsTextWrappingToggle.checked);
   });
 
   settingsSpellCheckToggle.addEventListener("change", () => {
@@ -1865,7 +1932,19 @@ function saveProfileFromForm() {
 function updateProjectHeroGreeting({ rotate = false } = {}) {
   if (!projectHeroTitle) return;
   const firstName = String(aiProfile.name || "").trim().split(/\s+/)[0] || "";
-  const greetings = firstName ? PROJECT_GREETINGS : PROJECT_GREETINGS_NO_NAME;
+  const now = new Date();
+  const hour = now.getHours();
+  const dayGreet = PROJECT_DAY_GREETINGS[now.getDay()] || {};
+  const timeGreetings = hour < 5
+    ? { named: ["Hello, night owl"], anonymous: ["Hello, night owl"] }
+    : hour < 12
+      ? { named: ["Good morning, {name}"], anonymous: ["Good morning"] }
+      : hour < 17
+        ? { named: ["Good afternoon, {name}"], anonymous: ["Good afternoon"] }
+        : { named: ["Good evening, {name}", "Evening, {name}"], anonymous: ["Good evening", "Evening"] };
+  const greetings = firstName
+    ? [...(dayGreet.named || []), ...(timeGreetings.named || []), ...PROJECT_GREETINGS]
+    : [...(dayGreet.anonymous || []), ...(timeGreetings.anonymous || []), ...PROJECT_GREETINGS_NO_NAME];
   const storageKey = firstName ? `latexStudioGreetingIndex:${firstName.toLowerCase()}` : "latexStudioGreetingIndex";
   let index = clampNumber(Number(localStorage.getItem(storageKey)), 0, greetings.length - 1, 0);
   if (rotate) {
@@ -1921,6 +2000,18 @@ function setMinimapVisible(visible) {
   settingsMinimapToggle.checked = minimapVisible;
   localStorage.setItem("latexStudioMinimapVisible", String(minimapVisible));
   applyMinimapVisibility();
+}
+
+function setTextWrapping(enabled) {
+  textWrappingEnabled = Boolean(enabled);
+  settingsTextWrappingToggle.checked = textWrappingEnabled;
+  localStorage.setItem("latexStudioTextWrapping", String(textWrappingEnabled));
+  if (editor) {
+    editor.setOption("lineWrapping", textWrappingEnabled);
+    editor.refresh();
+    scheduleSourceMinimapUpdate();
+    updateSourceMinimapViewport();
+  }
 }
 
 function applySpellCheckSetting() {
@@ -2180,6 +2271,115 @@ function updateActiveDocumentTitle() {
 
   activeDocumentTitle.textContent = title;
   activeDocumentTitle.title = title;
+}
+
+function currentDocumentTitle() {
+  if (activeMediaFile) return (activeFile && activeFile.name) || "Image preview";
+  const metaTitle = activeProject ? extractVisualMeta(getSourceText()).title : "";
+  return metaTitle
+    || (activeProject && activeProject.name)
+    || (activeFile && activeFile.name)
+    || "No document loaded";
+}
+
+function startActiveTitleEdit() {
+  if (!activeProject || activeMediaFile) return;
+  const originalTitle = currentDocumentTitle();
+  const input = document.createElement("input");
+  input.className = "top-document-title-input";
+  input.type = "text";
+  input.value = originalTitle === "No document loaded" ? "" : originalTitle;
+  input.setAttribute("aria-label", "Rename document title");
+
+  activeDocumentTitle.hidden = true;
+  activeDocumentTitle.insertAdjacentElement("afterend", input);
+
+  let finished = false;
+  const finish = async (commit) => {
+    if (finished) return;
+    finished = true;
+    const nextTitle = input.value.trim();
+    input.remove();
+    activeDocumentTitle.hidden = false;
+    if (!commit || !nextTitle || nextTitle === originalTitle) return;
+    await renameActiveDocumentTitle(nextTitle);
+  };
+
+  input.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === "Enter") {
+      event.preventDefault();
+      finish(true);
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      finish(false);
+    }
+  });
+  input.addEventListener("blur", () => finish(true));
+
+  requestAnimationFrame(() => {
+    input.focus();
+    input.select();
+  });
+}
+
+async function renameActiveDocumentTitle(nextTitle) {
+  if (!activeProject) return;
+  if (activeFile && activeFile.editable && /\.tex$/i.test(activeFile.name || "")) {
+    const nextSource = replaceLatexTitle(getSourceText(), nextTitle);
+    editor.setValue(nextSource);
+    handleSourceChanged({ renderVisual: !visualEditor.hidden });
+    await saveManuscript();
+    return;
+  }
+
+  try {
+    const result = await window.localOverleaf.renameProject(activeProject.id, nextTitle);
+    projects = result.projects || projects;
+    activeProject = (projects || []).find((project) => project.id === activeProject.id) || { ...activeProject, name: nextTitle };
+    updateActiveDocumentTitle();
+    setSaveState("Title updated", "ok");
+  } catch (error) {
+    compileLog.textContent = formatError(error);
+  }
+}
+
+function replaceLatexTitle(tex, title) {
+  const escapedTitle = escapeLatexTitle(title);
+  const pattern = /\\title\s*\{/;
+  const match = pattern.exec(tex);
+  if (!match) {
+    const documentClass = tex.match(/\\documentclass(?:\[[^\]]*\])?\{[^}]+\}\s*/);
+    if (documentClass) {
+      const insertAt = documentClass.index + documentClass[0].length;
+      return `${tex.slice(0, insertAt)}\n\\title{${escapedTitle}}\n${tex.slice(insertAt)}`;
+    }
+    return `\\title{${escapedTitle}}\n${tex}`;
+  }
+
+  let depth = 1;
+  let cursor = match.index + match[0].length;
+  while (cursor < tex.length) {
+    const char = tex[cursor];
+    const previous = tex[cursor - 1];
+    if (char === "{" && previous !== "\\") depth += 1;
+    if (char === "}" && previous !== "\\") depth -= 1;
+    if (depth === 0) {
+      return `${tex.slice(0, match.index)}\\title{${escapedTitle}}${tex.slice(cursor + 1)}`;
+    }
+    cursor += 1;
+  }
+
+  return `${tex}\n\\title{${escapedTitle}}\n`;
+}
+
+function escapeLatexTitle(value) {
+  return String(value || "")
+    .replace(/\\/g, "\\textbackslash{}")
+    .replace(/([#$%&_{}])/g, "\\$1")
+    .replace(/\^/g, "\\^{}")
+    .replace(/~/g, "\\~{}");
 }
 
 function updateEditorFileTitle() {
@@ -2534,6 +2734,12 @@ function wireEvents() {
   newFileButton.addEventListener("click", () => createProjectFile("file"));
   newFolderButton.addEventListener("click", () => createProjectFile("folder"));
   uploadFilesButton.addEventListener("click", chooseProjectFiles);
+  if (downloadPackageButton) downloadPackageButton.addEventListener("click", downloadProjectPackage);
+  activeDocumentTitle.addEventListener("dblclick", startActiveTitleEdit);
+  activeDocumentTitle.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    startActiveTitleEdit();
+  });
   remoteWorkspaceButton.addEventListener("click", () => {
     openSettings();
     setSettingsPanel("remote");
@@ -2568,11 +2774,13 @@ function wireEvents() {
   topRefreshFilesButton.addEventListener("click", refreshActiveProject);
   railRefreshFilesButton.addEventListener("click", refreshActiveProject);
   wireFileDrop(filePane);
-  saveButton.addEventListener("click", saveManuscript);
+  if (saveButton) saveButton.addEventListener("click", saveManuscript);
   compileButton.addEventListener("click", () => compileManuscript({ manual: true }));
   openPdfButton.addEventListener("click", openPdf);
   downloadPdfButton.addEventListener("click", downloadPdf);
   historyButton.addEventListener("click", openHistoryWindow);
+  if (pushGithubButton) pushGithubButton.addEventListener("click", pushActiveProjectToGithub);
+  if (pdfReaderButton) pdfReaderButton.addEventListener("click", togglePdfReaderMode);
   closeHistoryButton.addEventListener("click", () => setHistoryPanelOpen(false));
   pdfZoomOutButton.addEventListener("click", () => changePdfZoom(-0.1));
   pdfZoomInButton.addEventListener("click", () => changePdfZoom(0.1));
@@ -2662,6 +2870,8 @@ function wireEvents() {
       if (command === "find-next") findNextMatch(false);
       if (command === "find-previous") findNextMatch(true);
       if (command === "history") openHistoryWindow();
+      if (command === "fullscreen-enter") document.body.classList.add("window-fullscreen");
+      if (command === "fullscreen-leave") document.body.classList.remove("window-fullscreen");
     });
   }
 }
@@ -2876,15 +3086,23 @@ function renderTemplateGrid(container, templates, { custom }) {
 async function renderRealTemplatePreview(card, template, previewKind) {
   const preview = card.querySelector(".template-preview");
   if (!preview) return;
+  let cachedImageIsSharp = false;
   if (template.previewImageUrl) {
     preview.classList.remove("template-preview-source");
     preview.classList.add("template-preview-pdf");
-    preview.replaceChildren(previewImageElement(template.previewImageUrl, `${template.name} preview`));
-    return;
+    const image = previewImageElement(template.previewImageUrl, `${template.name} preview`);
+    preview.replaceChildren(image);
+    try {
+      await image.decode();
+      cachedImageIsSharp = image.naturalWidth >= 720 || image.naturalHeight >= 900;
+    } catch (error) {
+      cachedImageIsSharp = false;
+    }
+    if (cachedImageIsSharp || !card.isConnected) return;
+  } else {
+    preview.innerHTML = templateSourcePreviewMarkup(template.previewText, previewKind);
+    preview.classList.add("template-preview-source");
   }
-
-  preview.innerHTML = templateSourcePreviewMarkup(template.previewText, previewKind);
-  preview.classList.add("template-preview-source");
 
   if (!window.localOverleaf.templatePreviewPdf) return;
 
@@ -2901,10 +3119,10 @@ async function renderRealTemplatePreview(card, template, previewKind) {
     if (!card.isConnected) return;
 
     const baseViewport = page.getViewport({ scale: 1 });
-    const fitWidth = Math.max(120, preview.clientWidth - 18) / baseViewport.width;
-    const fitHeight = Math.max(90, preview.clientHeight - 16) / baseViewport.height;
+    const fitWidth = Math.max(180, preview.clientWidth - 10) / baseViewport.width;
+    const fitHeight = Math.max(220, preview.clientHeight - 10) / baseViewport.height;
     const viewport = page.getViewport({ scale: Math.min(fitWidth, fitHeight) });
-    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+    const outputScale = Math.min(Math.max(window.devicePixelRatio || 1, 4), 4);
     const canvas = document.createElement("canvas");
     canvas.width = Math.floor(viewport.width * outputScale);
     canvas.height = Math.floor(viewport.height * outputScale);
@@ -3163,6 +3381,7 @@ function commandPaletteCommands() {
     { id: "vim", label: "/vim", detail: `${vimModeEnabled ? "Disable" : "Enable"} Vim shortcuts`, hint: "toggle", action: () => { closeCommandPalette(); toggleVimMode(); } },
     { id: "minimap", label: "/minimap", detail: `${minimapVisible ? "Hide" : "Show"} the editor minimap`, hint: "toggle", action: () => { closeCommandPalette(); setMinimapVisible(!minimapVisible); } },
     { id: "relative", label: "/relative", detail: `${relativeLineNumbersEnabled ? "Disable" : "Enable"} relative line numbers`, hint: "toggle", action: () => { closeCommandPalette(); setRelativeLineNumbers(!relativeLineNumbersEnabled); } },
+    { id: "wrap", label: "/wrap", detail: `${textWrappingEnabled ? "Disable" : "Enable"} editor text wrapping`, hint: "toggle", action: () => { closeCommandPalette(); setTextWrapping(!textWrappingEnabled); } },
     { id: "visual", label: "/visual", detail: "Switch to visual mode", hint: "view", action: () => { closeCommandPalette(); setMode("visual"); } },
     { id: "code", label: "/code", detail: "Switch to code mode", hint: "view", action: () => { closeCommandPalette(); setMode("source"); } },
     { id: "history", label: "/history", detail: "Open project history", hint: "window", action: () => { closeCommandPalette(); openHistoryWindow(); } },
@@ -3611,7 +3830,7 @@ function applyPdfLiveZoom() {
 }
 
 function updateSaveButtonVisibility() {
-  saveButton.hidden = autoSaveToggle.checked;
+  if (saveButton) saveButton.hidden = autoSaveToggle.checked;
 }
 
 function setProjectView(view) {
@@ -3735,8 +3954,8 @@ function renderTerminalTabs() {
     button.draggable = true;
     button.dataset.terminalId = session.id;
     button.innerHTML = `
+      <span class="terminal-tab-kind" aria-hidden="true">${terminalKindIcon(session.kind)}</span>
       <span class="terminal-tab-title">${escapeHtml(session.title)}</span>
-      <span class="terminal-tab-split" role="button" aria-label="Split terminal" title="Split terminal">▣</span>
       <span class="terminal-tab-close" role="button" aria-label="Close terminal">${CLOSE_ICON_SVG}</span>
     `;
     button.addEventListener("click", () => activateTerminal(session.id));
@@ -3754,11 +3973,6 @@ function renderTerminalTabs() {
       button.classList.remove("drop-target");
       splitTerminals(event.dataTransfer.getData("text/plain"), session.id);
     });
-    button.querySelector(".terminal-tab-split").addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      splitTerminals(activeTerminalId, session.id);
-    });
     button.querySelector(".terminal-tab-close").addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -3766,6 +3980,13 @@ function renderTerminalTabs() {
     });
     terminalTabs.appendChild(button);
   });
+}
+
+function terminalKindIcon(kind) {
+  if (kind === "codex") return "C";
+  if (kind === "claude") return "Cl";
+  if (kind === "ssh") return "SSH";
+  return ">";
 }
 
 function nextTerminalIndex(kind) {
@@ -4111,37 +4332,11 @@ function summarizeTextChange(previousText, currentText) {
 }
 
 async function openHistoryWindow() {
-  if (!window.localOverleaf || !window.localOverleaf.openHistoryWindow) {
-    setHistoryPanelOpen(true);
-    return;
-  }
-
-  recordHistoryEvent("Current version");
+  recordHistoryEvent("Current version", { force: true });
   const currentText = activeMediaFile ? "" : getSourceText();
   if (!historyEvents.length) resetHistoryEvents(currentText);
-
-  const payload = {
-    title: activeDocumentTitle.textContent || (activeProject && activeProject.name) || "History",
-    fileName: (activeFile && activeFile.name) || (activeProject && activeProject.texName) || "document",
-    entries: historyEvents,
-    currentText,
-    theme: {
-      mode: document.body.dataset.theme || "light",
-      preset: document.body.dataset.themePreset || "custom",
-      accent: themeColor("--accent", DEFAULT_ACCENT),
-      bg: themeColor("--bg", "#111827"),
-      panel: themeColor("--panel", "#ffffff"),
-      text: themeColor("--text", "#111827"),
-      muted: themeColor("--muted", "#6b7280"),
-      border: themeColor("--border", "rgba(120,120,120,0.3)")
-    }
-  };
-
-  try {
-    await window.localOverleaf.openHistoryWindow(payload);
-  } catch (error) {
-    compileLog.textContent = formatError(error);
-  }
+  historySelectedIndex = 0;
+  setHistoryPanelOpen(true);
 }
 
 function toggleHistoryPanel() {
@@ -4157,18 +4352,41 @@ function setHistoryPanelOpen(open) {
 
 function renderHistoryPanel() {
   if (!historyPanelBody) return;
-  const fileName = (activeFile && activeFile.name) || (activeProject && activeProject.texName) || "document";
-  const rows = [
-    { title: "Current session", detail: `${openTextTabs.length} open tab${openTextTabs.length === 1 ? "" : "s"}` },
-    { title: "Last loaded", detail: activeProject ? relativeTime(activeProject.modifiedAt) : "No project" },
-    { title: "Working file", detail: fileName }
-  ];
-  historyPanelBody.innerHTML = rows.map((row) => `
-    <article class="history-entry">
-      <strong>${escapeHtml(row.title)}</strong>
-      <span>${escapeHtml(row.detail)}</span>
+  const currentText = activeMediaFile ? "" : getSourceText();
+  const entries = historyEvents.length
+    ? historyEvents
+    : [makeHistoryEntry("Current version", "No recorded edits in this session.", currentText, currentText)];
+  historySelectedIndex = clampNumber(historySelectedIndex, 0, entries.length - 1, 0);
+  const selected = entries[historySelectedIndex] || entries[0];
+  const previewLines = String(selected.text || "")
+    .split("\n")
+    .slice(0, 220);
+
+  historyPanelBody.innerHTML = `
+    <div class="history-entry-list" role="listbox" aria-label="History entries">
+      ${entries.map((entry, index) => `
+        <button class="history-entry ${index === historySelectedIndex ? "active" : ""}" type="button" data-history-index="${index}">
+          <strong>${escapeHtml(entry.time || entry.title)}</strong>
+          <span>${escapeHtml(entry.summary || entry.title)}</span>
+          <small>${escapeHtml(entry.fileName || "")}${entry.added || entry.removed ? ` · +${entry.added || 0} -${entry.removed || 0}` : ""}</small>
+        </button>
+      `).join("")}
+    </div>
+    <article class="history-document-preview">
+      <header>
+        <strong>${escapeHtml(selected.title || "History")}</strong>
+        <span>${escapeHtml(selected.time || "")}</span>
+      </header>
+      <pre>${escapeHtml(previewLines.join("\n"))}</pre>
     </article>
-  `).join("");
+  `;
+
+  historyPanelBody.querySelectorAll("[data-history-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      historySelectedIndex = Number(button.dataset.historyIndex) || 0;
+      renderHistoryPanel();
+    });
+  });
 }
 
 function updatePdfPageIndicator() {
@@ -4193,6 +4411,12 @@ function updatePdfPageIndicator() {
 function insertLatexSnippet(snippetId) {
   const snippet = LATEX_SNIPPETS[snippetId];
   if (!snippet) return;
+  if (!activeProject || activeMediaFile) {
+    compileLog.textContent = "Open a text file before adding LaTeX handbook snippets.";
+    closeSettings();
+    return;
+  }
+
   closeSettings();
   setMode("source");
   requestAnimationFrame(() => {
@@ -4238,7 +4462,6 @@ function renderProjectGrid() {
     card.dataset.projectId = project.id;
     const displayName = project.displayName || project.name;
     const sourceLabel = project.texName || "main.tex";
-    const pdfLabel = project.pdfExists ? "PDF" : "Source";
     card.innerHTML = `
       <button class="project-remove-button" type="button" aria-label="Remove ${escapeHtml(project.name)} from editor" title="Remove project">
         ${TRASH_ICON_SVG}
@@ -4252,7 +4475,6 @@ function renderProjectGrid() {
         </span>
         <span class="project-file">${escapeHtml(sourceLabel)} · ${escapeHtml(project.folderName)}</span>
         <span class="project-card-meta-row">
-          <span class="project-chip">${escapeHtml(pdfLabel)}</span>
           <span class="project-meta">Edited ${escapeHtml(relativeTime(project.modifiedAt))}</span>
         </span>
       </span>
@@ -4416,8 +4638,15 @@ async function renderProjectPreview(card, project) {
   const preview = card.querySelector(".project-preview");
   if (!preview || !project.pdfExists) return;
   if (project.previewImageUrl) {
-    preview.replaceChildren(previewImageElement(project.previewImageUrl, `${project.name} preview`));
-    return;
+    const image = previewImageElement(project.previewImageUrl, `${project.name} preview`);
+    preview.replaceChildren(image);
+    try {
+      await image.decode();
+      if (image.naturalWidth >= 480 || image.naturalHeight >= 640) return;
+    } catch (error) {
+      // Replace stale cached previews with a fresh render below.
+    }
+    if (!card.isConnected) return;
   }
 
   try {
@@ -4437,7 +4666,7 @@ async function renderProjectPreview(card, project) {
     const targetHeight = Math.max(120, preview.clientHeight);
     const scale = Math.min(targetWidth / baseViewport.width, targetHeight / baseViewport.height) * 0.94;
     const viewport = page.getViewport({ scale });
-    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+    const outputScale = Math.min(Math.max(window.devicePixelRatio || 1, 3), 4);
     const canvas = document.createElement("canvas");
     canvas.width = Math.floor(viewport.width * outputScale);
     canvas.height = Math.floor(viewport.height * outputScale);
@@ -4574,6 +4803,7 @@ function showEditorShell() {
 
 async function showProjects() {
   syncActiveTextTabFromEditor();
+  togglePdfReaderMode(false);
   if (activeProject && openTextTabs.some((tab) => tab.dirty)) {
     const confirmed = window.confirm("Return to Projects and keep unsaved editor changes only in this window?");
     if (!confirmed) return;
@@ -4702,6 +4932,7 @@ function renderFileNode(node, depth) {
     details.style.setProperty("--depth-indent", depthIndent);
 
     const summary = document.createElement("summary");
+    summary.dataset.filePath = node.relativePath;
     summary.innerHTML = `
       <span class="file-folder-icon" aria-hidden="true">
         <img src="${MATERIAL_ICON_BASE}/${folderIconName(node)}" alt="">
@@ -4722,6 +4953,7 @@ function renderFileNode(node, depth) {
   const button = document.createElement("button");
   button.className = "file-item";
   button.type = "button";
+  button.dataset.filePath = node.relativePath;
   button.style.setProperty("--depth-indent", depthIndent);
   button.classList.toggle("active", Boolean(activeFile && activeFile.relativePath === node.relativePath));
   button.innerHTML = `
@@ -5015,19 +5247,7 @@ async function runFileContextAction(action, node) {
     }
 
     if (action === "rename") {
-      const nextName = window.prompt("Rename file", node.name);
-      if (nextName === null || nextName.trim() === node.name) return;
-      const result = await window.localOverleaf.projectFileAction(activeProject.id, node.relativePath, "rename", { name: nextName });
-      const renamedTab = openTextTabs.find((tab) => tab.relativePath === node.relativePath);
-      if (renamedTab && result.file) {
-        renamedTab.relativePath = result.file.relativePath;
-        renamedTab.name = result.file.name;
-        renamedTab.file = result.file;
-        if (activeTextTabPath === node.relativePath) activeTextTabPath = result.file.relativePath;
-      }
-      if (activeFile && activeFile.relativePath === node.relativePath && result.file) activeFile = result.file;
-      applyFileActionResult(result);
-      compileLog.textContent = `Renamed ${node.name} to ${nextName.trim()}.`;
+      startFileRename(node);
       return;
     }
 
@@ -5047,6 +5267,116 @@ async function runFileContextAction(action, node) {
   } catch (error) {
     compileLog.textContent = formatError(error);
   }
+}
+
+function startFileRename(node) {
+  if (!activeProject || !node || !node.relativePath) return;
+  if (activeFileRenameInput) activeFileRenameInput.blur();
+
+  const row = Array.from(fileTree.querySelectorAll("[data-file-path]"))
+    .find((candidate) => candidate.dataset.filePath === node.relativePath);
+  const label = row && row.querySelector(".file-name, .folder-name");
+  if (!row || !label) return;
+
+  const originalName = node.name || "";
+  const input = document.createElement("input");
+  input.className = "file-rename-input";
+  input.type = "text";
+  input.value = originalName;
+  input.setAttribute("aria-label", `Rename ${originalName}`);
+
+  const originalNode = label.cloneNode(true);
+  label.replaceWith(input);
+  row.classList.add("renaming");
+  activeFileRenameInput = input;
+
+  let finished = false;
+  const restore = () => {
+    if (!input.isConnected) return;
+    input.replaceWith(originalNode);
+    row.classList.remove("renaming");
+    if (activeFileRenameInput === input) activeFileRenameInput = null;
+  };
+
+  const commit = async () => {
+    if (finished) return;
+    finished = true;
+    const nextName = input.value.trim();
+    if (!nextName || nextName === originalName) {
+      restore();
+      return;
+    }
+
+    input.disabled = true;
+    try {
+      await renameProjectFileNode(node, nextName);
+    } catch (error) {
+      compileLog.textContent = formatError(error);
+      restore();
+    } finally {
+      if (activeFileRenameInput === input) activeFileRenameInput = null;
+    }
+  };
+
+  const cancel = () => {
+    if (finished) return;
+    finished = true;
+    restore();
+  };
+
+  input.addEventListener("click", (event) => event.stopPropagation());
+  input.addEventListener("dblclick", (event) => event.stopPropagation());
+  input.addEventListener("pointerdown", (event) => event.stopPropagation());
+  input.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commit();
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cancel();
+    }
+  });
+  input.addEventListener("blur", commit);
+
+  requestAnimationFrame(() => {
+    input.focus();
+    const extensionStart = originalName.lastIndexOf(".");
+    const selectionEnd = extensionStart > 0 && node.kind !== "folder" ? extensionStart : originalName.length;
+    input.setSelectionRange(0, selectionEnd);
+  });
+}
+
+async function renameProjectFileNode(node, nextName) {
+  const previousPath = node.relativePath;
+  const result = await window.localOverleaf.projectFileAction(activeProject.id, previousPath, "rename", { name: nextName });
+  const renamedFile = result.file;
+
+  if (renamedFile) {
+    const oldPrefix = `${previousPath}/`;
+    const newPrefix = `${renamedFile.relativePath}/`;
+    openTextTabs.forEach((tab) => {
+      if (tab.relativePath === previousPath) {
+        tab.relativePath = renamedFile.relativePath;
+        tab.name = renamedFile.name;
+        tab.file = renamedFile;
+      } else if (tab.relativePath.startsWith(oldPrefix)) {
+        tab.relativePath = `${newPrefix}${tab.relativePath.slice(oldPrefix.length)}`;
+      }
+    });
+    if (activeTextTabPath === previousPath) activeTextTabPath = renamedFile.relativePath;
+    else if (activeTextTabPath.startsWith(oldPrefix)) activeTextTabPath = `${newPrefix}${activeTextTabPath.slice(oldPrefix.length)}`;
+    if (activeFile && activeFile.relativePath === previousPath) activeFile = renamedFile;
+    else if (activeFile && activeFile.relativePath && activeFile.relativePath.startsWith(oldPrefix)) {
+      activeFile = { ...activeFile, relativePath: `${newPrefix}${activeFile.relativePath.slice(oldPrefix.length)}` };
+    }
+  }
+
+  applyFileActionResult(result);
+  updateEditorFileTitle();
+  updateActiveDocumentTitle();
+  compileLog.textContent = `Renamed ${node.name} to ${nextName}.`;
 }
 
 function applyFileActionResult(result) {
@@ -5251,6 +5581,70 @@ async function downloadPdf() {
   } finally {
     setBusy(false);
   }
+}
+
+async function downloadProjectPackage() {
+  if (!activeProject || !window.localOverleaf || !window.localOverleaf.downloadProjectPackage) return;
+
+  setBusy(true);
+  setCompileState("Preparing project package...");
+
+  try {
+    const result = await window.localOverleaf.downloadProjectPackage(activeProject.id);
+    if (result && result.filePath) {
+      setCompileState(`Package downloaded (${result.format || "archive"})`, "ok");
+      compileLog.textContent = `Saved project package to ${result.filePath}.`;
+    } else {
+      setCompileState("Package download canceled");
+    }
+  } catch (error) {
+    setCompileState("Package download failed", "error");
+    compileLog.textContent = formatError(error);
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function pushActiveProjectToGithub() {
+  if (!activeProject || !window.localOverleaf || !window.localOverleaf.pushProjectToGithub) return;
+
+  setBusy(true);
+  setSaveState("Pushing...");
+  setCompileState("Pushing to GitHub...");
+
+  try {
+    if (!activeMediaFile && getSourceText() !== savedText) {
+      await saveManuscript();
+    }
+    const result = await window.localOverleaf.pushProjectToGithub(activeProject.id);
+    const commitText = result && result.commit ? ` (${result.commit.slice(0, 7)})` : "";
+    setSaveState("Saved", "ok");
+    setCompileState(`Pushed LaTeX sources${commitText}`, "ok");
+    const targetText = result && result.remote
+      ? `Pushed LaTeX sources to ${result.remote}${result.folder ? `/${result.folder}` : ""}.`
+      : "Pushed LaTeX sources to GitHub.";
+    compileLog.textContent = [targetText, result && result.output].filter(Boolean).join("\n\n");
+  } catch (error) {
+    setSaveState(activeMediaFile || getSourceText() === savedText ? "Saved" : "Unsaved changes");
+    setCompileState("GitHub push failed", "error");
+    compileLog.textContent = formatError(error);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function togglePdfReaderMode(force) {
+  const next = typeof force === "boolean" ? force : !document.body.classList.contains("pdf-reader-mode");
+  document.body.classList.toggle("pdf-reader-mode", next);
+  workspace.classList.toggle("pdf-reader-mode", next);
+  if (pdfReaderButton) {
+    pdfReaderButton.setAttribute("aria-pressed", String(next));
+    pdfReaderButton.title = next ? "Exit PDF reader mode" : "PDF reader mode";
+  }
+  requestAnimationFrame(() => {
+    renderPdf({ showLoading: false });
+    updatePdfPageIndicator();
+  });
 }
 
 async function loadAgentsFile() {
@@ -6894,10 +7288,13 @@ function setStatusClass(node, type) {
 }
 
 function setBusy(value) {
-  saveButton.disabled = value;
+  if (saveButton) saveButton.disabled = value;
   compileButton.disabled = value;
   openPdfButton.disabled = value;
   downloadPdfButton.disabled = value;
+  if (downloadPackageButton) downloadPackageButton.disabled = value;
+  if (pushGithubButton) pushGithubButton.disabled = value;
+  if (pdfReaderButton) pdfReaderButton.disabled = value;
 }
 
 function setProjectBusy(value) {
