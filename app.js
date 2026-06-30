@@ -85,6 +85,7 @@ const visualModeButton = document.getElementById("visualModeButton");
 const vimModeIndicator = document.getElementById("vimModeIndicator");
 const undoButton = document.getElementById("undoButton");
 const redoButton = document.getElementById("redoButton");
+const minimapToggleButton = document.getElementById("minimapToggleButton");
 const editorTitle = document.getElementById("editorTitle");
 const activeDocumentTitle = document.getElementById("activeDocumentTitle");
 const editTitleButton = document.getElementById("editTitleButton");
@@ -2925,7 +2926,17 @@ function applyMinimapVisibility() {
   sourceMinimap.hidden = !minimapVisible || !visualEditor.hidden || Boolean(mediaViewer && !mediaViewer.hidden);
   if (sourceMinimap.hidden) workspace.classList.add("minimap-hidden");
   else workspace.classList.remove("minimap-hidden");
+  updateMinimapToggleButton();
   scheduleSourceMinimapUpdate();
+}
+
+function updateMinimapToggleButton() {
+  if (!minimapToggleButton) return;
+  const label = minimapVisible ? "Hide minimap" : "Show minimap";
+  minimapToggleButton.setAttribute("aria-label", label);
+  minimapToggleButton.setAttribute("title", label);
+  minimapToggleButton.setAttribute("aria-pressed", String(minimapVisible));
+  minimapToggleButton.classList.toggle("active", minimapVisible);
 }
 
 function setMinimapVisible(visible) {
@@ -3803,6 +3814,7 @@ function wireEvents() {
   previewRailButton.addEventListener("click", () => setPdfCollapsed(false));
   undoButton.addEventListener("click", () => editor.undo());
   redoButton.addEventListener("click", () => editor.redo());
+  if (minimapToggleButton) minimapToggleButton.addEventListener("click", () => setMinimapVisible(!minimapVisible));
   if (fileHeaderRefreshButton) fileHeaderRefreshButton.addEventListener("click", refreshActiveProject);
   newFileButton.addEventListener("click", () => createProjectFile("file"));
   newFolderButton.addEventListener("click", () => createProjectFile("folder"));

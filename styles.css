@@ -8196,3 +8196,50 @@ li.CodeMirror-hint-active {
   stroke-linejoin: round !important;
   stroke-width: 2.1 !important;
 }
+
+#minimapToggleButton {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  position: relative;
+}
+
+#minimapToggleButton:hover,
+#minimapToggleButton:focus-visible,
+#minimapToggleButton.active {
+  background: transparent !important;
+  color: var(--text) !important;
+}
+
+#minimapToggleButton::after {
+  background: var(--accent);
+  border-radius: 999px;
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 18%;
+  opacity: 0;
+  position: absolute;
+  right: 18%;
+  transform: scaleX(0.4);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+#minimapToggleButton:hover::after,
+#minimapToggleButton:focus-visible::after,
+#minimapToggleButton.active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+#minimapToggleButton .minimap-toggle-chevron {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 140ms ease;
+}
+
+#minimapToggleButton:not(.active) .minimap-toggle-chevron {
+  transform: rotate(180deg);
+}
