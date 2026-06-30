@@ -8417,3 +8417,70 @@ body.transparent-theme .CodeMirror-lines,
 body.transparent-theme .CodeMirror-code {
   background: transparent !important;
 }
+
+.pdf-sidebar,
+.pdf-thumbnail-list {
+  scrollbar-width: none !important;
+}
+
+.pdf-sidebar::-webkit-scrollbar,
+.pdf-thumbnail-list::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+.pdf-thumbnail-list {
+  align-items: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  padding: 0 !important;
+}
+
+.pdf-thumbnail {
+  align-items: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: transparent !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  justify-content: center !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
+.pdf-thumbnail:hover,
+.pdf-thumbnail.active {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.pdf-thumbnail canvas {
+  background: var(--pdf-paper) !important;
+  border-radius: 6px !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+}
+
+.pdf-thumbnail.active canvas {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 76%, transparent) !important;
+}
+
+.pdf-thumbnail span {
+  display: none !important;
+}
+
+.workspace:not(.minimap-hidden) .CodeMirror-vscrollbar,
+.workspace:not(.minimap-hidden) .CodeMirror-hscrollbar,
+.workspace:not(.minimap-hidden) .CodeMirror-scrollbar-filler,
+.workspace:not(.minimap-hidden) .CodeMirror-gutter-filler {
+  display: none !important;
+}

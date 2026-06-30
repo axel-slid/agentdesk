@@ -8063,7 +8063,7 @@ async function renderPdfThumbnails(pdf, pdfjsLib, token) {
     if (token !== pdfRenderToken) return;
     const page = await pdf.getPage(pageNumber);
     const baseViewport = page.getViewport({ scale: 1 });
-    const targetWidth = 78;
+    const targetWidth = 96;
     const scale = targetWidth / baseViewport.width;
     const viewport = page.getViewport({ scale });
     const outputScale = Math.min(window.devicePixelRatio || 1, 2);
@@ -8071,7 +8071,7 @@ async function renderPdfThumbnails(pdf, pdfjsLib, token) {
     button.className = "pdf-thumbnail";
     button.type = "button";
     button.dataset.page = String(pageNumber);
-    button.innerHTML = `<span>${pageNumber}</span>`;
+    button.setAttribute("aria-label", `Page ${pageNumber}`);
 
     const canvas = document.createElement("canvas");
     canvas.width = Math.floor(viewport.width * outputScale);
