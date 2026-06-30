@@ -537,6 +537,13 @@
           <button id="cancelSshProjectButton" class="settings-action-button" type="button">Cancel</button>
         </div>
         <p id="sshProjectStatus" class="settings-status"></p>
+        <div id="sshAuthTerminalShell" class="ssh-auth-terminal-shell" hidden>
+          <div class="ssh-auth-terminal-header">
+            <span>Authentication</span>
+            <small>Enter SSH prompts here. AgentDesk opens the project after the connection is verified.</small>
+          </div>
+          <div id="sshAuthTerminal" class="ssh-auth-terminal" aria-label="SSH authentication terminal"></div>
+        </div>
       </div>
     </section>
     <aside class="settings-drawer" id="settingsDrawer" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
@@ -546,17 +553,25 @@
             <path d="M18 6 6 18M6 6l12 12"></path>
           </svg>
         </button>
-        <button class="settings-nav-button active" type="button" data-settings-section="general">General</button>
-        <button class="settings-nav-button" type="button" data-settings-section="appearance">Appearance</button>
-        <button class="settings-nav-button" type="button" data-settings-section="workspace">Workspace</button>
-        <button class="settings-nav-button" type="button" data-settings-section="project">Project</button>
-        <button class="settings-nav-button" type="button" data-settings-section="agents">AGENTS.md</button>
-        <button class="settings-nav-button" type="button" data-settings-section="shortcuts">Keyboard</button>
+        <div class="settings-nav-group">
+          <span class="settings-nav-label">General</span>
+          <button class="settings-nav-button active" type="button" data-settings-section="general">General</button>
+          <button class="settings-nav-button" type="button" data-settings-section="appearance">Appearance</button>
+          <button class="settings-nav-button" type="button" data-settings-section="workspace">Workspace</button>
+          <button class="settings-nav-button" type="button" data-settings-section="shortcuts">Keyboard</button>
+        </div>
+        <div class="settings-nav-group settings-nav-project-group">
+          <span class="settings-nav-label">Project</span>
+          <button class="settings-nav-button" type="button" data-settings-section="project">GitHub</button>
+          <button class="settings-nav-button" type="button" data-settings-section="agents">AGENTS.md</button>
+        </div>
         <div class="settings-nav-spacer" aria-hidden="true"></div>
         <div class="settings-nav-divider" aria-hidden="true"></div>
-        <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="profile">Profile</button>
-        <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="latex">LaTeX Handbook</button>
-        <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="documentation">Documentation</button>
+        <div class="settings-nav-group settings-nav-reference-group">
+          <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="profile">Profile</button>
+          <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="latex">LaTeX Handbook</button>
+          <button class="settings-nav-button settings-nav-reference" type="button" data-settings-section="documentation">Documentation</button>
+        </div>
       </nav>
 
       <div class="settings-main">
@@ -753,36 +768,36 @@
             <div class="latex-handbook" id="latexHandbook">
               <article>
                 <h3>Figure</h3>
-                <pre>\\begin{figure}[h]
+                <pre class="latex-snippet-code"><code>\\begin{figure}[h]
   \\centering
   \\includegraphics[width=0.8\\linewidth]{figures/example.png}
   \\caption{Caption text.}
   \\label{fig:example}
-\\end{figure}</pre>
+\\end{figure}</code></pre>
                 <button type="button" data-latex-snippet="figure">Add</button>
               </article>
               <article>
                 <h3>Equation</h3>
-                <pre>\\begin{equation}
+                <pre class="latex-snippet-code"><code>\\begin{equation}
   y = mx + b
-\\end{equation}</pre>
+\\end{equation}</code></pre>
                 <button type="button" data-latex-snippet="equation">Add</button>
               </article>
               <article>
                 <h3>Table</h3>
-                <pre>\\begin{table}[h]
+                <pre class="latex-snippet-code"><code>\\begin{table}[h]
   \\centering
   \\begin{tabular}{ll}
     \\hline
     A & B \\\\
     \\hline
   \\end{tabular}
-\\end{table}</pre>
+\\end{table}</code></pre>
                 <button type="button" data-latex-snippet="table">Add</button>
               </article>
               <article>
                 <h3>Citation</h3>
-                <pre>Recent work~\\cite{key} shows...</pre>
+                <pre class="latex-snippet-code"><code>Recent work~\\cite{key} shows...</code></pre>
                 <button type="button" data-latex-snippet="citation">Add</button>
               </article>
             </div>

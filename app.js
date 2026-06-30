@@ -107,6 +107,8 @@ const sshProjectUserInput = document.getElementById("sshProjectUserInput");
 const sshProjectHostInput = document.getElementById("sshProjectHostInput");
 const sshProjectPathInput = document.getElementById("sshProjectPathInput");
 const sshProjectStatus = document.getElementById("sshProjectStatus");
+const sshAuthTerminalShell = document.getElementById("sshAuthTerminalShell");
+const sshAuthTerminal = document.getElementById("sshAuthTerminal");
 const settingsDrawer = document.getElementById("settingsDrawer");
 const closeSettingsButton = document.getElementById("closeSettingsButton");
 const settingsTitle = document.getElementById("settingsTitle");
@@ -1899,6 +1901,7 @@ const SOURCE_COLLAPSE_THRESHOLD = 235;
 const PDF_COLLAPSE_THRESHOLD = 260;
 const DEFAULT_PDF_MIN_WIDTH = 540;
 const DEFAULT_PDF_ZOOM = 1;
+const PDF_BASE_RENDER_SCALE = 0.72;
 const MIN_PDF_ZOOM = 0.7;
 const MAX_PDF_ZOOM = 4;
 const MAX_PDF_RENDER_SCALE = 5;
@@ -2028,6 +2031,8 @@ let lastHistoryText = "";
 let historySelectedIndex = 0;
 let activeFileRenameInput = null;
 let sshProjectResolve = null;
+let sshAuthSession = null;
+const pendingTerminalExits = new Map();
 
 init();
 
@@ -2681,6 +2686,7 @@ async function populateSshKnownHosts() {
 
 async function openSshProjectFlow({ startTerminal = true } = {}) {
   if (!sshProjectPanel) return null;
+  cleanupSshAuthSession();
   closeCommandPalette({ keepBackdrop: true });
   closeSettings({ keepBackdrop: true });
   closeNewProjectPanel({ keepBackdrop: true });
@@ -2689,6 +2695,8 @@ async function openSshProjectFlow({ startTerminal = true } = {}) {
   sshProjectPanel.hidden = false;
   sshProjectPanel.dataset.startTerminal = String(Boolean(startTerminal));
   if (sshProjectStatus) sshProjectStatus.textContent = "";
+  if (sshAuthTerminalShell) sshAuthTerminalShell.hidden = true;
+  if (sshAuthTerminal) sshAuthTerminal.innerHTML = "";
   if (sshProjectUserInput) sshProjectUserInput.value = remoteWorkspace.user || "";
   if (sshProjectHostInput) sshProjectHostInput.value = remoteWorkspace.host || "";
   if (sshProjectPathInput) sshProjectPathInput.value = remoteWorkspace.path || "~";
@@ -2703,6 +2711,7 @@ async function openSshProjectFlow({ startTerminal = true } = {}) {
 }
 
 function closeSshProjectPanel({ keepBackdrop = false, value = null } = {}) {
+  cleanupSshAuthSession();
   if (sshProjectPanel) sshProjectPanel.hidden = true;
   if (sshProjectResolve) {
     const resolve = sshProjectResolve;
@@ -2724,39 +2733,119 @@ async function connectSshProject() {
     return;
   }
 
-  remoteWorkspace = normalizeRemoteWorkspace({ user, host, path: remotePath });
-  localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
-  populateRemoteForm();
-
+  const pendingRemote = normalizeRemoteWorkspace({ user, host, path: remotePath });
   const shouldStartTerminal = sshProjectPanel && sshProjectPanel.dataset.startTerminal !== "false";
-  closeSshProjectPanel({ value: remoteWorkspace });
-  if (!shouldStartTerminal) return;
 
-  if (editorScreen.hidden) {
-    activeProject = {
-      id: `remote:${remoteWorkspaceLabel(remoteWorkspace)}`,
-      name: `SSH ${remoteWorkspace.host}`,
-      texName: "remote",
-      folderName: remoteWorkspace.path || "~",
-      remote: true
-    };
-    showEditorShell();
-    activeDocumentTitle.textContent = `SSH: ${remoteWorkspaceLabel(remoteWorkspace)}`;
-    pdfTitle.textContent = "SSH workspace";
-    pdfMeta.textContent = remoteWorkspace.path || remoteWorkspace.host;
-    pdfViewer.innerHTML = '<div class="pdf-loading">SSH workspace opened in Terminal.</div>';
+  if (sshProjectStatus) {
+    sshProjectStatus.textContent = "Authenticating SSH connection...";
+    setStatusClass(sshProjectStatus);
   }
+  if (connectSshProjectButton) connectSshProjectButton.disabled = true;
 
-  fileTree.innerHTML = '<div class="file-message">Authenticate in Terminal, then refresh files.</div>';
+  try {
+    await runSshAuthentication(pendingRemote);
+    const verification = await window.localOverleaf.verifySshConnection(pendingRemote);
+    remoteWorkspace = normalizeRemoteWorkspace({
+      ...pendingRemote,
+      path: verification && verification.root ? verification.root : pendingRemote.path
+    });
+    localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
+    populateRemoteForm();
+    if (sshProjectStatus) {
+      sshProjectStatus.textContent = `Connected to ${remoteWorkspaceLabel(remoteWorkspace)}.`;
+      setStatusClass(sshProjectStatus, "ok");
+    }
+    closeSshProjectPanel({ value: remoteWorkspace });
+    if (shouldStartTerminal) await openVerifiedRemoteWorkspace();
+  } catch (error) {
+    if (sshProjectStatus) {
+      sshProjectStatus.textContent = formatError(error);
+      setStatusClass(sshProjectStatus, "error");
+    }
+  } finally {
+    if (connectSshProjectButton) connectSshProjectButton.disabled = false;
+  }
+}
+
+async function runSshAuthentication(remote) {
+  if (!window.localOverleaf || !window.Terminal || !window.FitAddon || !sshAuthTerminal || !sshAuthTerminalShell) return;
+  cleanupSshAuthSession();
+  sshAuthTerminalShell.hidden = false;
+  sshAuthTerminal.innerHTML = "";
+
+  const descriptor = await window.localOverleaf.createTerminal(null, "ssh-auth", { remote });
+  const term = new Terminal({
+    allowProposedApi: false,
+    convertEol: true,
+    cursorBlink: true,
+    fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
+    fontSize: 12,
+    lineHeight: 1.25,
+    rows: 8,
+    scrollback: 500,
+    theme: terminalTheme()
+  });
+  const fitAddon = new FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+  term.open(sshAuthTerminal);
+  term.onData((data) => window.localOverleaf.writeTerminal(descriptor.id, data));
+  term.onResize(({ cols, rows }) => window.localOverleaf.resizeTerminal(descriptor.id, cols, rows));
+  term.writeln(`\x1b[38;5;214m${descriptor.commandLabel}\x1b[0m`);
+
+  const exitResult = await new Promise((resolve) => {
+    sshAuthSession = { id: descriptor.id, term, fitAddon, exited: false, resolve };
+    requestAnimationFrame(() => {
+      fitAddon.fit();
+      sshAuthTerminal.focus();
+    });
+    if (pendingTerminalExits.has(descriptor.id)) {
+      const pendingExit = pendingTerminalExits.get(descriptor.id);
+      pendingTerminalExits.delete(descriptor.id);
+      resolve(pendingExit);
+    }
+  });
+
+  if (Number(exitResult && exitResult.code) !== 0) {
+    throw new Error("SSH authentication did not complete. Check the prompt above and try again.");
+  }
+}
+
+function cleanupSshAuthSession() {
+  if (sshAuthSession && !sshAuthSession.exited && window.localOverleaf) {
+    window.localOverleaf.killTerminal(sshAuthSession.id).catch(() => {});
+  }
+  if (sshAuthSession && sshAuthSession.term) {
+    try {
+      sshAuthSession.term.dispose();
+    } catch (error) {
+    }
+  }
+  sshAuthSession = null;
+}
+
+async function openVerifiedRemoteWorkspace() {
+  activeProject = {
+    id: `remote:${remoteWorkspaceLabel(remoteWorkspace)}`,
+    name: `SSH ${remoteWorkspace.host}`,
+    texName: "remote",
+    folderName: remoteWorkspace.path || "~",
+    remote: true
+  };
+  showEditorShell();
+  activeDocumentTitle.textContent = `SSH: ${remoteWorkspaceLabel(remoteWorkspace)}`;
+  pdfTitle.textContent = "SSH workspace";
+  pdfMeta.textContent = remoteWorkspace.path || remoteWorkspace.host;
+  pdfViewer.innerHTML = '<div class="pdf-loading">Remote workspace. Compile or open PDFs from the SSH terminal.</div>';
+  fileTree.innerHTML = '<div class="file-message">Loading remote files...</div>';
   setFileSidebarVisible(true, { persist: false });
   setTerminalCollapsed(false, { persist: false });
   setCompileLogCollapsed(true, { persist: false });
   await new Promise((resolve) => setTimeout(resolve, 120));
   const session = await createTerminalSession("ssh");
   if (session) {
-    compileLog.textContent = `Enter SSH password, key passphrase, and authenticator code in the SSH terminal. Files refresh after the connection is ready.`;
-    setTimeout(() => loadProjectFiles(), 2600);
+    compileLog.textContent = `Connected to ${remoteWorkspaceLabel(remoteWorkspace)}.`;
   }
+  await loadProjectFiles();
 }
 
 function saveProfileFromForm() {
@@ -2849,6 +2938,9 @@ function setMinimapVisible(visible) {
 function applyPdfSidebarVisibility({ persist = true } = {}) {
   if (!pdfSidebar || !pdfSidebarButton) return;
   pdfSidebar.hidden = !pdfSidebarVisible;
+  if (pdfSidebar.parentElement) {
+    pdfSidebar.parentElement.classList.toggle("pdf-sidebar-visible", pdfSidebarVisible);
+  }
   const label = pdfSidebarVisible ? "Hide PDF sidebar" : "Show PDF sidebar";
   pdfSidebarButton.setAttribute("aria-label", label);
   pdfSidebarButton.title = label;
@@ -4070,7 +4162,10 @@ function renderTemplateGrid(container, templates, { custom }) {
       <div class="template-card-actions">
         <button class="template-use-button" type="button">Use</button>
         ${template.sourceUrl ? `<button class="template-source-button" type="button" title="Open template source">${EXTERNAL_LINK_ICON_SVG}<span>Source</span></button>` : ""}
-        <button class="template-remove-button" type="button">Remove</button>
+        <button class="template-remove-button template-trash-button" type="button" aria-label="Remove ${escapeHtml(template.name)}" title="Remove template">
+          ${TRASH_ICON_SVG}
+          <span class="visually-hidden">Remove</span>
+        </button>
       </div>
     `;
 
@@ -4466,7 +4561,7 @@ function setSettingsPanel(section) {
     appearance: "Appearance",
     profile: "Profile",
     workspace: "Workspace",
-    project: "Project",
+    project: "GitHub",
     remote: "Remote",
     latex: "LaTeX Handbook",
     agents: "AGENTS.md",
@@ -4482,6 +4577,7 @@ function setSettingsPanel(section) {
     button.hidden = !settingsSectionAllowed(sectionName);
     button.classList.toggle("active", sectionName === nextSection);
   });
+  updateSettingsNavGroups();
   settingsPanels.forEach((panel) => {
     const sectionName = panel.dataset.settingsPanel;
     const allowed = settingsSectionAllowed(sectionName);
@@ -4553,8 +4649,18 @@ function updateSettingsSearch() {
     const panel = settingsPanels.find((item) => item.dataset.settingsPanel === sectionName);
     button.hidden = !allowed || !panel || panel.hidden;
   });
+  updateSettingsNavGroups();
 
   settingsSearchEmpty.hidden = !query || visibleCount > 0;
+}
+
+function updateSettingsNavGroups() {
+  if (!settingsDrawer) return;
+  settingsDrawer.querySelectorAll(".settings-nav-group").forEach((group) => {
+    const buttons = Array.from(group.querySelectorAll(".settings-nav-button"));
+    if (!buttons.length) return;
+    group.hidden = buttons.every((button) => button.hidden);
+  });
 }
 
 function openFind() {
@@ -4904,13 +5010,29 @@ function setupTerminalPanel() {
   if (!window.localOverleaf || !window.Terminal || !window.FitAddon) return;
 
   window.localOverleaf.onTerminalData(({ id, data }) => {
+    if (sshAuthSession && sshAuthSession.id === id) {
+      sshAuthSession.term.write(data);
+      return;
+    }
     const session = terminalSessions.find((item) => item.id === id);
     if (session) session.term.write(data);
   });
 
   window.localOverleaf.onTerminalExit(({ id, code, signal }) => {
+    if (sshAuthSession && sshAuthSession.id === id) {
+      sshAuthSession.exited = true;
+      sshAuthSession.term.writeln("");
+      sshAuthSession.term.writeln(`\x1b[38;5;244m[ssh auth exited: ${signal || code || 0}]\x1b[0m`);
+      if (sshAuthSession.resolve) sshAuthSession.resolve({ code, signal });
+      return;
+    }
+
     const session = terminalSessions.find((item) => item.id === id);
-    if (!session) return;
+    if (!session) {
+      pendingTerminalExits.set(id, { code, signal });
+      setTimeout(() => pendingTerminalExits.delete(id), 5000);
+      return;
+    }
 
     session.exited = true;
     session.term.writeln("");
@@ -7854,10 +7976,7 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
       if (token !== pdfRenderToken) return;
 
       const page = await pdf.getPage(pageNumber);
-      const baseViewport = page.getViewport({ scale: 1 });
-      const availableWidth = Math.max(420, pdfViewer.clientWidth - 72);
-      const fitScale = Math.max(0.72, availableWidth / baseViewport.width);
-      const scale = Math.min(MAX_PDF_RENDER_SCALE, fitScale * zoomForRender);
+      const scale = Math.min(MAX_PDF_RENDER_SCALE, PDF_BASE_RENDER_SCALE * zoomForRender);
       const viewport = page.getViewport({ scale });
       const outputScale = Math.min(window.devicePixelRatio || 1, 2);
 
@@ -7929,7 +8048,7 @@ async function renderPdfThumbnails(pdf, pdfjsLib, token) {
     if (token !== pdfRenderToken) return;
     const page = await pdf.getPage(pageNumber);
     const baseViewport = page.getViewport({ scale: 1 });
-    const targetWidth = 92;
+    const targetWidth = 78;
     const scale = targetWidth / baseViewport.width;
     const viewport = page.getViewport({ scale });
     const outputScale = Math.min(window.devicePixelRatio || 1, 2);

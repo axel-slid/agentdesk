@@ -3,6 +3,7 @@ const { execFile, spawn } = require("node:child_process");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
+const os = require("node:os");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const pty = require("node-pty");
@@ -2130,7 +2131,7 @@ function terminalPreset(kind, cwd, options = {}) {
     const controlPath = sshControlPath(remote);
     fs.mkdirSync(path.dirname(controlPath), { recursive: true });
     const target = remoteTarget(remote);
-    const controlArgs = ["-M", "-S", controlPath, "-o", "ControlPersist=8h"];
+    const controlArgs = ["-S", controlPath, "-o", "ControlMaster=auto", "-o", "ControlPersist=8h"];
     const remoteCommand = remote.path
       ? `cd ${shellQuoteRemotePath(remote.path)} && exec ${remote.shell || "$SHELL"} -l`
       : "";
@@ -2139,6 +2140,28 @@ function terminalPreset(kind, cwd, options = {}) {
       command: resolveExecutable("ssh"),
       args: remoteCommand ? [...controlArgs, target, "-t", remoteCommand] : [...controlArgs, target],
       commandLabel: remote.path ? `ssh ${target} (${remote.path})` : `ssh ${target}`,
+      remote: { ...remote, target, controlPath }
+    };
+  }
+
+  if (kind === "ssh-auth") {
+    const remote = normalizeRemoteOptions(options.remote);
+    if (!remote.host) throw new Error("Enter a server before connecting.");
+    const controlPath = sshControlPath(remote);
+    fs.mkdirSync(path.dirname(controlPath), { recursive: true });
+    const target = remoteTarget(remote);
+    return {
+      title: "SSH",
+      command: resolveExecutable("ssh"),
+      args: [
+        "-S", controlPath,
+        "-o", "ControlMaster=auto",
+        "-o", "ControlPersist=8h",
+        "-f",
+        "-N",
+        target
+      ],
+      commandLabel: `ssh ${target} (authenticate)`,
       remote: { ...remote, target, controlPath }
     };
   }
@@ -2176,13 +2199,16 @@ function remoteTarget(remote = {}) {
 function sshControlPath(remote = {}) {
   const normalized = normalizeRemoteOptions(remote);
   const key = `${normalized.user || "user"}-${normalized.host || "host"}-${normalized.path || "home"}`;
-  return path.join(app.getPath("userData"), "ssh-control", `${safeCacheName(key)}.sock`);
+  const uid = typeof process.getuid === "function" ? process.getuid() : safeCacheName(os.userInfo().username || "user");
+  const hash = crypto.createHash("sha1").update(key).digest("hex").slice(0, 16);
+  return path.join("/tmp", `agentdesk-ssh-${uid}`, `${hash}.sock`);
 }
 
 function sshCommandArgs(remote = {}, commandArgs = []) {
   const normalized = normalizeRemoteOptions(remote);
   if (!normalized.host) throw new Error("Missing SSH server.");
   const controlPath = remote.controlPath || sshControlPath(normalized);
+  fs.mkdirSync(path.dirname(controlPath), { recursive: true });
   return [
     "-S", controlPath,
     "-o", "ControlMaster=auto",
@@ -2191,6 +2217,31 @@ function sshCommandArgs(remote = {}, commandArgs = []) {
     remoteTarget(normalized),
     ...commandArgs
   ];
+}
+
+async function verifySshConnection(_event, remote = {}) {
+  const normalized = normalizeRemoteOptions(remote);
+  if (!normalized.host) throw new Error("Missing SSH server.");
+  const script = `
+import json, os, sys
+root = os.path.abspath(os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~"))
+if not os.path.isdir(root):
+    raise SystemExit(f"Remote path is not a directory: {root}")
+print(json.dumps({"root": root}))
+`;
+  const result = await execFileAsync(
+    resolveExecutable("ssh"),
+    sshCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~"]),
+    { timeout: 20000, maxBuffer: 1024 * 1024 }
+  );
+  const parsed = JSON.parse(result.stdout || "{}");
+  return {
+    root: parsed.root || normalized.path || "~",
+    remote: {
+      ...normalized,
+      controlPath: sshControlPath(normalized)
+    }
+  };
 }
 
 async function listSshHosts() {
@@ -3224,6 +3275,7 @@ ipcMain.handle("list-project-files", listProjectFiles);
 ipcMain.handle("list-remote-files", listRemoteFiles);
 ipcMain.handle("read-remote-file", readRemoteFile);
 ipcMain.handle("save-remote-file", saveRemoteFile);
+ipcMain.handle("verify-ssh-connection", verifySshConnection);
 ipcMain.handle("project-file-action", projectFileAction);
 ipcMain.handle("choose-project-files", chooseProjectFiles);
 ipcMain.handle("import-project-files", importProjectFiles);

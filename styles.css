@@ -7961,3 +7961,238 @@ li.CodeMirror-hint-active {
   background: color-mix(in srgb, var(--accent) 28%, transparent);
   color: var(--text);
 }
+
+/* Current follow-up: SSH auth, settings grouping, PDF/header polish. */
+.ssh-auth-terminal-shell {
+  background: color-mix(in srgb, var(--cm-bg) 92%, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+  min-height: 190px;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.ssh-auth-terminal-shell[hidden] {
+  display: none !important;
+}
+
+.ssh-auth-terminal-header {
+  display: grid;
+  gap: 3px;
+}
+
+.ssh-auth-terminal-header span {
+  color: var(--text);
+  font: 700 13px/1.2 var(--sans);
+}
+
+.ssh-auth-terminal-header small {
+  color: var(--muted);
+  font: 500 11px/1.3 var(--sans);
+}
+
+.ssh-auth-terminal {
+  min-height: 136px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.settings-nav-group {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-nav-group[hidden] {
+  display: none !important;
+}
+
+.settings-nav-label {
+  color: color-mix(in srgb, var(--muted) 84%, transparent);
+  font: 800 11px/1 var(--sans);
+  letter-spacing: 0.06em;
+  padding: 8px 8px 3px;
+  text-transform: uppercase;
+}
+
+.settings-nav-group .settings-nav-button {
+  margin-left: 8px;
+  width: calc(100% - 8px);
+}
+
+.settings-nav-project-group {
+  margin-top: 8px;
+}
+
+.latex-handbook {
+  display: grid;
+  gap: 14px;
+}
+
+.latex-handbook article {
+  background: color-mix(in srgb, var(--panel) 94%, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+}
+
+.latex-handbook h3 {
+  margin: 0;
+}
+
+.latex-snippet-code {
+  background: var(--cm-bg);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  border-radius: 8px;
+  color: var(--cm-text);
+  font: 12px/1.45 var(--mono);
+  margin: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  white-space: pre;
+}
+
+.latex-snippet-code code {
+  font: inherit;
+}
+
+.template-trash-button {
+  align-items: center;
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  padding: 0 !important;
+  width: 38px;
+}
+
+.template-trash-button .icon-trash {
+  height: 17px;
+  width: 17px;
+}
+
+.template-trash-button:hover .icon-trash {
+  animation: trash-shake 1s ease-in-out both;
+}
+
+.pdf-viewer-shell {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  min-width: 0 !important;
+}
+
+.pdf-viewer-shell.pdf-sidebar-visible {
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+}
+
+.pdf-sidebar {
+  max-width: 112px !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  width: auto !important;
+}
+
+.pdf-thumbnail {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.pdf-thumbnail canvas {
+  height: auto !important;
+  max-width: 100% !important;
+}
+
+.pdf-viewer {
+  align-content: start !important;
+  justify-items: center !important;
+  min-width: 0 !important;
+}
+
+.pdf-page {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.pdf-action-segment,
+.pdf-controls {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.pdf-action-button,
+.pdf-controls button,
+.pdf-sidebar-button,
+.pdf-reader-button {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  position: relative;
+}
+
+.pdf-action-button:hover,
+.pdf-controls button:hover,
+.pdf-sidebar-button:hover,
+.pdf-sidebar-button[aria-pressed="true"],
+.pdf-reader-button:hover,
+.pdf-reader-button[aria-pressed="true"] {
+  background: transparent !important;
+  color: var(--text) !important;
+}
+
+.pdf-action-button::after,
+.pdf-controls button::after,
+.pdf-sidebar-button::after,
+.pdf-reader-button::after,
+.title-edit-button::after {
+  background: var(--accent);
+  border-radius: 999px;
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 18%;
+  opacity: 0;
+  position: absolute;
+  right: 18%;
+  transform: scaleX(0.4);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.pdf-action-button:hover::after,
+.pdf-controls button:hover::after,
+.pdf-sidebar-button:hover::after,
+.pdf-reader-button:hover::after,
+.title-edit-button:hover::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.title-edit-button {
+  color: color-mix(in srgb, var(--text) 84%, var(--muted)) !important;
+  display: inline-flex !important;
+  opacity: 1 !important;
+  position: relative;
+}
+
+.title-edit-button .topbar-icon {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  stroke-width: 2 !important;
+}
+
+#topRefreshFilesButton .topbar-icon,
+#railRefreshFilesButton svg,
+#railRefreshFilesButton .icon {
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  stroke-width: 2.1 !important;
+}

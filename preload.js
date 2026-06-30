@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("localOverleaf", {
   listRemoteFiles: (remote) => ipcRenderer.invoke("list-remote-files", remote),
   readRemoteFile: (remote, relativePath) => ipcRenderer.invoke("read-remote-file", { remote, relativePath }),
   saveRemoteFile: (remote, relativePath, tex) => ipcRenderer.invoke("save-remote-file", { remote, relativePath, tex }),
+  verifySshConnection: (remote) => ipcRenderer.invoke("verify-ssh-connection", remote),
   projectFileAction: (projectId, relativePath, action, options = {}) => ipcRenderer.invoke("project-file-action", { projectId, relativePath, action, options }),
   chooseProjectFiles: (projectId) => ipcRenderer.invoke("choose-project-files", projectId),
   importProjectFiles: (projectId, files) => ipcRenderer.invoke("import-project-files", { projectId, files }),
