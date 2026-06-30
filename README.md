@@ -4,7 +4,79 @@ Agent-native desktop workspace for LaTeX papers, PDFs, terminals, compile logs, 
 
 ![AgentDesk interface](docs/interface-example.png)
 
-## Run
+## Download and Run
+
+AgentDesk is currently distributed from this GitHub repository. Packaged
+Windows and Linux installers are not published yet, so download the source
+archive or clone the repository and run the Electron app locally.
+
+### Windows
+
+Requirements:
+
+- Windows 10 or later.
+- [Node.js LTS](https://nodejs.org/) with npm.
+- [Git for Windows](https://git-scm.com/download/win), if you want to clone
+  instead of downloading the ZIP.
+- A LaTeX compiler on your `PATH` for PDF compilation. AgentDesk tries
+  `tectonic`, then `latexmk`, then `pdflatex`.
+
+Download with the GitHub ZIP:
+
+1. Open https://github.com/axel-slid/agentdesk.
+2. Click **Code** > **Download ZIP**.
+3. Extract the ZIP.
+4. Open PowerShell in the extracted folder.
+5. Run:
+
+```powershell
+npm install
+npm start
+```
+
+Or clone with Git:
+
+```powershell
+git clone https://github.com/axel-slid/agentdesk.git
+cd agentdesk
+npm install
+npm start
+```
+
+### Linux
+
+Requirements:
+
+- Node.js LTS with npm.
+- Git, if you want to clone instead of downloading the ZIP.
+- A LaTeX compiler on your `PATH` for PDF compilation. AgentDesk tries
+  `tectonic`, then `latexmk`, then `pdflatex`.
+- If `npm install` fails while building native dependencies, install your
+  distro's Python 3, `make`, and C++ compiler packages.
+
+Download with the GitHub ZIP:
+
+1. Open https://github.com/axel-slid/agentdesk.
+2. Click **Code** > **Download ZIP**.
+3. Extract the ZIP.
+4. Open a terminal in the extracted folder.
+5. Run:
+
+```bash
+npm install
+npm start
+```
+
+Or clone with Git:
+
+```bash
+git clone https://github.com/axel-slid/agentdesk.git
+cd agentdesk
+npm install
+npm start
+```
+
+## Local Development
 
 ```bash
 cd agentdesk
