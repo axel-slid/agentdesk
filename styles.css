@@ -7556,3 +7556,296 @@ body[data-contrast="high"] .log-collapsed-rail::before {
   display: grid;
   gap: 14px;
 }
+
+/* Follow-up editor/PDF polish. */
+.top-document-title-wrap {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  grid-column: 2;
+  justify-self: center;
+  max-width: min(52vw, 760px);
+  min-width: 0;
+  -webkit-app-region: no-drag;
+}
+
+.top-document-title-wrap .top-document-title {
+  grid-column: auto !important;
+  justify-self: auto !important;
+  margin: 0;
+  max-width: 100%;
+}
+
+.title-edit-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  box-shadow: none;
+  color: var(--muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 24px;
+  justify-content: center;
+  opacity: 0.72;
+  padding: 0;
+  width: 24px;
+}
+
+.title-edit-button:hover {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  color: var(--text);
+  opacity: 1;
+}
+
+.title-edit-button .topbar-icon {
+  height: 14px;
+  width: 14px;
+}
+
+.top-document-title-input {
+  background: color-mix(in srgb, var(--page) 92%, transparent);
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  color: var(--text);
+  font: 700 13px/1.2 var(--sans);
+  min-width: min(420px, 46vw);
+  padding: 5px 8px;
+  text-align: center;
+}
+
+.text-tabs {
+  align-content: flex-end !important;
+  align-items: flex-end !important;
+  flex-wrap: wrap !important;
+  max-height: 104px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding-bottom: 0 !important;
+}
+
+.text-tab {
+  flex: 0 1 174px !important;
+}
+
+.pdf-title-block {
+  min-width: 0;
+  position: relative;
+}
+
+#pdfTitle.clickable,
+#pdfMeta {
+  cursor: pointer;
+}
+
+#pdfTitle.clickable:hover {
+  color: var(--accent);
+}
+
+.pdf-file-menu {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.18);
+  display: grid;
+  gap: 2px;
+  left: 0;
+  max-height: 240px;
+  min-width: 220px;
+  overflow: auto;
+  padding: 6px;
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 60;
+}
+
+.pdf-file-menu[hidden] {
+  display: none !important;
+}
+
+.pdf-file-option {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: none;
+  color: var(--text);
+  display: block;
+  font: 600 12px/1.25 var(--sans);
+  min-height: 28px;
+  overflow: hidden;
+  padding: 6px 8px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.pdf-file-option:hover,
+.pdf-file-option.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text);
+}
+
+.pdf-sidebar-button {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  color: var(--text);
+  font: 700 12px/1 var(--sans);
+  height: 30px;
+  padding: 0 8px;
+}
+
+.pdf-sidebar-button:hover,
+.pdf-sidebar-button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.pdf-viewer-shell {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pdf-sidebar {
+  background: color-mix(in srgb, var(--panel) 92%, var(--pdf-bg));
+  border-right: 1px solid var(--border);
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 8px;
+  width: 126px;
+}
+
+.pdf-sidebar[hidden] {
+  display: none !important;
+}
+
+.pdf-thumbnail-list {
+  display: grid;
+  gap: 10px;
+}
+
+.pdf-thumbnail {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: none;
+  color: var(--muted);
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  padding: 6px 4px;
+}
+
+.pdf-thumbnail:hover,
+.pdf-thumbnail.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 48%, transparent);
+}
+
+.pdf-thumbnail canvas {
+  background: var(--pdf-paper);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 72%, transparent);
+  display: block;
+}
+
+.pdf-thumbnail span {
+  font: 700 11px/1 var(--mono);
+}
+
+.preview-pane {
+  grid-template-rows: 52px minmax(0, 1fr) var(--compile-log-height) !important;
+}
+
+.preview-pane.log-collapsed {
+  grid-template-rows: 52px minmax(0, 1fr) 34px !important;
+}
+
+.pdf-viewer {
+  min-width: 0;
+}
+
+.history-panel {
+  background: var(--panel) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34) !important;
+  color: var(--text) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  height: min(760px, calc(100vh - 72px)) !important;
+  inset: 36px auto auto 50% !important;
+  max-width: calc(100vw - 72px) !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: fixed !important;
+  transform: translateX(-50%) !important;
+  width: min(1120px, calc(100vw - 72px)) !important;
+  z-index: 80 !important;
+}
+
+.history-panel[hidden] {
+  display: none !important;
+}
+
+.history-panel-body {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.history-document-preview {
+  min-width: 0;
+}
+
+.history-document-preview pre {
+  max-height: calc(min(760px, 100vh - 72px) - 88px);
+  overflow: auto;
+}
+
+.history-entry-list {
+  min-height: 0;
+  overflow: auto;
+}
+
+.source-pane.terminal-collapsed {
+  grid-template-rows: 52px auto minmax(0, 1fr) 34px !important;
+}
+
+.source-pane.terminal-collapsed .terminal-header,
+.source-pane.terminal-collapsed .terminal-workbench {
+  display: none !important;
+}
+
+.log-panel.log-collapsed .log-header {
+  display: none !important;
+}
+
+.source-minimap.short .source-minimap-lines {
+  align-content: start;
+  grid-template-rows: repeat(var(--minimap-lines, 1), 3px) !important;
+  height: auto !important;
+  min-height: 96px;
+}
+
+.source-minimap.short .source-minimap-line {
+  line-height: 3px;
+}
+
+.setting-row:has(#settingsThemeToggle),
+.setting-row:has(#settingsAccentPicker) {
+  display: none !important;
+}
+
+.markdown-preview {
+  font-family: var(--sans) !important;
+  max-width: none !important;
+}

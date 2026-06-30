@@ -56,6 +56,10 @@ const saveState = document.getElementById("saveState");
 const compileState = document.getElementById("compileState");
 const pdfTitle = document.getElementById("pdfTitle");
 const pdfMeta = document.getElementById("pdfMeta");
+const pdfFileMenu = document.getElementById("pdfFileMenu");
+const pdfSidebarButton = document.getElementById("pdfSidebarButton");
+const pdfSidebar = document.getElementById("pdfSidebar");
+const pdfThumbnailList = document.getElementById("pdfThumbnailList");
 const pdfViewer = document.getElementById("pdfViewer");
 const previewPane = document.querySelector(".preview-pane");
 const compileLogPanel = document.getElementById("compileLogPanel");
@@ -83,6 +87,7 @@ const undoButton = document.getElementById("undoButton");
 const redoButton = document.getElementById("redoButton");
 const editorTitle = document.getElementById("editorTitle");
 const activeDocumentTitle = document.getElementById("activeDocumentTitle");
+const editTitleButton = document.getElementById("editTitleButton");
 const topSaveStatusButton = document.getElementById("topSaveStatusButton");
 const topSaveStatusLabel = document.getElementById("topSaveStatusLabel");
 const settingsButtons = Array.from(document.querySelectorAll(".settingsButton"));
@@ -392,6 +397,7 @@ const HIGH_CONTRAST_PRESETS = new Set([
   "light-cyan-hc",
   "light-rose-hc",
   "light-amber-hc",
+  "pastel-amber-hc",
   "abyss",
   "tomorrow-night-blue",
   "pastel-graphite-hc",
@@ -661,6 +667,130 @@ const THEME_PRESETS = {
       "--pdf-paper": "#ffffff"
     }
   },
+  "honey-light": {
+    theme: "light",
+    accent: "#d97706",
+    background: "linear-gradient(135deg, #fff7df, #f8ead0 72%, #f0d7aa)",
+    colors: {
+      "--bg": "#fff6df",
+      "--glass": "rgba(255, 250, 232, 0.8)",
+      "--glass-strong": "rgba(255, 247, 223, 0.94)",
+      "--panel": "rgba(255, 250, 232, 0.94)",
+      "--page": "#fffdf7",
+      "--text": "#2f2415",
+      "--muted": "#7f6a4e",
+      "--border": "rgba(141, 94, 28, 0.24)",
+      "--border-strong": "rgba(141, 94, 28, 0.4)",
+      "--red": "#b42318",
+      "--green": "#3f7d20",
+      "--blue": "#b45309",
+      "--blue-dark": "#92400e",
+      "--cm-bg": "#fffdf7",
+      "--cm-gutter": "#fbefd4",
+      "--cm-text": "#2f2415",
+      "--cm-keyword": "#b45309",
+      "--cm-variable": "#7c4a03",
+      "--cm-atom": "#047857",
+      "--cm-comment": "#9a7b55",
+      "--cm-string": "#5f7f1f",
+      "--cm-number": "#c2410c",
+      "--pdf-bg": "#ead4a8",
+      "--pdf-paper": "#fffdf7"
+    }
+  },
+  "marigold-paper": {
+    theme: "light",
+    accent: "#f59e0b",
+    background: "linear-gradient(135deg, #fff4c7, #ffe7a3 68%, #fac46a)",
+    colors: {
+      "--bg": "#fff4c7",
+      "--glass": "rgba(255, 244, 199, 0.78)",
+      "--glass-strong": "rgba(255, 234, 168, 0.94)",
+      "--panel": "rgba(255, 247, 214, 0.94)",
+      "--page": "#fffefa",
+      "--text": "#24170a",
+      "--muted": "#7c5a27",
+      "--border": "rgba(180, 83, 9, 0.28)",
+      "--border-strong": "rgba(146, 64, 14, 0.46)",
+      "--red": "#dc2626",
+      "--green": "#15803d",
+      "--blue": "#ca8a04",
+      "--blue-dark": "#a16207",
+      "--cm-bg": "#fffefa",
+      "--cm-gutter": "#fff0c2",
+      "--cm-text": "#24170a",
+      "--cm-keyword": "#c2410c",
+      "--cm-variable": "#a16207",
+      "--cm-atom": "#0f766e",
+      "--cm-comment": "#a17c45",
+      "--cm-string": "#4d7c0f",
+      "--cm-number": "#b45309",
+      "--pdf-bg": "#f2cf7d",
+      "--pdf-paper": "#fffefa"
+    }
+  },
+  "butterscotch-light": {
+    theme: "light",
+    accent: "#c86f13",
+    background: "linear-gradient(135deg, #fff9ed, #f6dfbd 70%, #e5b56e)",
+    colors: {
+      "--bg": "#fff9ed",
+      "--glass": "rgba(255, 249, 237, 0.78)",
+      "--glass-strong": "rgba(255, 244, 224, 0.94)",
+      "--panel": "rgba(255, 247, 232, 0.94)",
+      "--page": "#fffefb",
+      "--text": "#2b1c0f",
+      "--muted": "#765738",
+      "--border": "rgba(158, 91, 21, 0.26)",
+      "--border-strong": "rgba(124, 66, 14, 0.44)",
+      "--red": "#b91c1c",
+      "--green": "#2f7d32",
+      "--blue": "#b36a12",
+      "--blue-dark": "#8c4d08",
+      "--cm-bg": "#fffefb",
+      "--cm-gutter": "#f7e9d3",
+      "--cm-text": "#2b1c0f",
+      "--cm-keyword": "#b45309",
+      "--cm-variable": "#8a4b09",
+      "--cm-atom": "#0f766e",
+      "--cm-comment": "#8b7357",
+      "--cm-string": "#4d7c0f",
+      "--cm-number": "#be5c12",
+      "--pdf-bg": "#e8c994",
+      "--pdf-paper": "#fffefb"
+    }
+  },
+  "saffron-paper": {
+    theme: "light",
+    accent: "#eab308",
+    background: "linear-gradient(135deg, #fffbea, #fbefb9 66%, #f2c94c)",
+    colors: {
+      "--bg": "#fffbea",
+      "--glass": "rgba(255, 251, 234, 0.8)",
+      "--glass-strong": "rgba(254, 243, 199, 0.94)",
+      "--panel": "rgba(255, 248, 219, 0.94)",
+      "--page": "#ffffff",
+      "--text": "#211707",
+      "--muted": "#71551a",
+      "--border": "rgba(161, 98, 7, 0.26)",
+      "--border-strong": "rgba(113, 63, 18, 0.42)",
+      "--red": "#dc2626",
+      "--green": "#15803d",
+      "--blue": "#ca8a04",
+      "--blue-dark": "#a16207",
+      "--cm-bg": "#fffef8",
+      "--cm-gutter": "#fbefb9",
+      "--cm-text": "#211707",
+      "--cm-keyword": "#b45309",
+      "--cm-variable": "#92400e",
+      "--cm-atom": "#0f766e",
+      "--cm-comment": "#8a7444",
+      "--cm-string": "#4d7c0f",
+      "--cm-number": "#b45309",
+      "--pdf-bg": "#edd27c",
+      "--pdf-paper": "#ffffff"
+    }
+  },
   "github-light": {
     theme: "light",
     accent: "#0969da",
@@ -782,6 +912,37 @@ const THEME_PRESETS = {
       "--cm-string": "#92400e",
       "--cm-number": "#c2410c",
       "--pdf-bg": "#e7cf84",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "pastel-amber-hc": {
+    theme: "light",
+    accent: "#d97706",
+    background: "linear-gradient(135deg, #fffaf0, #fdecc8 68%, #f7d28c)",
+    colors: {
+      "--bg": "#fffaf0",
+      "--glass": "rgba(255, 255, 255, 0.96)",
+      "--glass-strong": "rgba(255, 251, 235, 0.99)",
+      "--panel": "rgba(255, 250, 240, 0.98)",
+      "--page": "#ffffff",
+      "--text": "#1f1304",
+      "--muted": "#4f3411",
+      "--border": "rgba(31, 19, 4, 0.54)",
+      "--border-strong": "rgba(31, 19, 4, 0.86)",
+      "--red": "#b42318",
+      "--green": "#166534",
+      "--blue": "#8a4b09",
+      "--blue-dark": "#713f12",
+      "--cm-bg": "#ffffff",
+      "--cm-gutter": "#fdecc8",
+      "--cm-text": "#1f1304",
+      "--cm-keyword": "#9a3412",
+      "--cm-variable": "#713f12",
+      "--cm-atom": "#166534",
+      "--cm-comment": "#5f5140",
+      "--cm-string": "#4d7c0f",
+      "--cm-number": "#b45309",
+      "--pdf-bg": "#e6c579",
       "--pdf-paper": "#ffffff"
     }
   },
@@ -1182,6 +1343,134 @@ const THEME_PRESETS = {
       "--pdf-bg": "#0a0e13",
       "--pdf-paper": "#fff9ec",
       "--pdf-page-filter": "invert(0.85) hue-rotate(180deg) contrast(0.88) brightness(1.1)"
+    }
+  },
+  "honey-dark": {
+    theme: "dark",
+    accent: "#fbbf24",
+    background: "linear-gradient(135deg, #1b1408, #2a1d0b 70%, #120d05)",
+    colors: {
+      "--bg": "#120d05",
+      "--glass": "rgba(27, 20, 8, 0.82)",
+      "--glass-strong": "rgba(42, 29, 11, 0.94)",
+      "--panel": "rgba(27, 20, 8, 0.95)",
+      "--page": "#fff7e6",
+      "--text": "#f8e7bd",
+      "--muted": "#caa96b",
+      "--border": "rgba(251, 191, 36, 0.2)",
+      "--border-strong": "rgba(251, 191, 36, 0.42)",
+      "--red": "#f87171",
+      "--green": "#bef264",
+      "--blue": "#fbbf24",
+      "--blue-dark": "#d97706",
+      "--cm-bg": "#120d05",
+      "--cm-gutter": "#1b1408",
+      "--cm-text": "#f8e7bd",
+      "--cm-keyword": "#fdba74",
+      "--cm-variable": "#facc15",
+      "--cm-atom": "#86efac",
+      "--cm-comment": "#9f8755",
+      "--cm-string": "#bef264",
+      "--cm-number": "#fca5a5",
+      "--pdf-bg": "#070501",
+      "--pdf-paper": "#fff7e6",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.08) sepia(0.12)"
+    }
+  },
+  "molten-amber": {
+    theme: "dark",
+    accent: "#fb923c",
+    background: "linear-gradient(135deg, #1c0f0a, #351909 70%, #100706)",
+    colors: {
+      "--bg": "#100706",
+      "--glass": "rgba(28, 15, 10, 0.84)",
+      "--glass-strong": "rgba(53, 25, 9, 0.94)",
+      "--panel": "rgba(28, 15, 10, 0.95)",
+      "--page": "#fff4e6",
+      "--text": "#ffe8cf",
+      "--muted": "#e0ad80",
+      "--border": "rgba(251, 146, 60, 0.22)",
+      "--border-strong": "rgba(251, 146, 60, 0.46)",
+      "--red": "#fb7185",
+      "--green": "#a3e635",
+      "--blue": "#fb923c",
+      "--blue-dark": "#ea580c",
+      "--cm-bg": "#100706",
+      "--cm-gutter": "#1c0f0a",
+      "--cm-text": "#ffe8cf",
+      "--cm-keyword": "#fb923c",
+      "--cm-variable": "#fdba74",
+      "--cm-atom": "#5eead4",
+      "--cm-comment": "#9b735a",
+      "--cm-string": "#a3e635",
+      "--cm-number": "#fda4af",
+      "--pdf-bg": "#080302",
+      "--pdf-paper": "#fff4e6",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.92) brightness(1.08) sepia(0.08)"
+    }
+  },
+  "saffron-night": {
+    theme: "dark",
+    accent: "#eab308",
+    background: "linear-gradient(135deg, #171005, #231907 68%, #0f0a03)",
+    colors: {
+      "--bg": "#0f0a03",
+      "--glass": "rgba(23, 16, 5, 0.82)",
+      "--glass-strong": "rgba(35, 25, 7, 0.94)",
+      "--panel": "rgba(23, 16, 5, 0.95)",
+      "--page": "#fff8e1",
+      "--text": "#f8e8b4",
+      "--muted": "#c9aa62",
+      "--border": "rgba(234, 179, 8, 0.22)",
+      "--border-strong": "rgba(234, 179, 8, 0.46)",
+      "--red": "#fb7185",
+      "--green": "#bef264",
+      "--blue": "#facc15",
+      "--blue-dark": "#ca8a04",
+      "--cm-bg": "#0f0a03",
+      "--cm-gutter": "#171005",
+      "--cm-text": "#f8e8b4",
+      "--cm-keyword": "#f59e0b",
+      "--cm-variable": "#fde047",
+      "--cm-atom": "#86efac",
+      "--cm-comment": "#9c8452",
+      "--cm-string": "#bef264",
+      "--cm-number": "#fdba74",
+      "--pdf-bg": "#070501",
+      "--pdf-paper": "#fff8e1",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.08) sepia(0.1)"
+    }
+  },
+  "amber-slate": {
+    theme: "dark",
+    accent: "#f59e0b",
+    background: "linear-gradient(135deg, #111827, #20202a 70%, #0b1020)",
+    colors: {
+      "--bg": "#111827",
+      "--glass": "rgba(17, 24, 39, 0.82)",
+      "--glass-strong": "rgba(31, 41, 55, 0.94)",
+      "--panel": "rgba(17, 24, 39, 0.95)",
+      "--page": "#fff8ec",
+      "--text": "#f4ead8",
+      "--muted": "#c7ad82",
+      "--border": "rgba(245, 158, 11, 0.22)",
+      "--border-strong": "rgba(245, 158, 11, 0.44)",
+      "--red": "#fca5a5",
+      "--green": "#86efac",
+      "--blue": "#fbbf24",
+      "--blue-dark": "#d97706",
+      "--cm-bg": "#0b1020",
+      "--cm-gutter": "#111827",
+      "--cm-text": "#f4ead8",
+      "--cm-keyword": "#fbbf24",
+      "--cm-variable": "#fdba74",
+      "--cm-atom": "#99f6e4",
+      "--cm-comment": "#9ca3af",
+      "--cm-string": "#bbf7d0",
+      "--cm-number": "#fca5a5",
+      "--pdf-bg": "#0b1020",
+      "--pdf-paper": "#fff8ec",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.1)"
     }
   },
   palenight: {
@@ -1654,6 +1943,8 @@ let renderedPdfZoom = DEFAULT_PDF_ZOOM;
 let pdfZoom = DEFAULT_PDF_ZOOM;
 let pdfDarkMode = false;
 let pdfRenderMode = "adaptive";
+let selectedPdfRelativePath = "";
+let pdfSidebarVisible = false;
 let minimapVisible = true;
 let textWrappingEnabled = true;
 let spellCheckEnabled = false;
@@ -1698,11 +1989,45 @@ init();
 
 async function init() {
   relativeLineNumbersEnabled = localStorage.getItem("latexStudioRelativeLineNumbers") === "true";
+  defineBibtexMode();
+  if (historyPanel && historyPanel.parentElement !== document.body) document.body.appendChild(historyPanel);
   setupSettings();
   setupSourceEditor();
   setupTerminalPanel();
   wireEvents();
   await loadProjects();
+}
+
+function defineBibtexMode() {
+  if (!window.CodeMirror || CodeMirror.modes.bibtex) return;
+  CodeMirror.defineMode("bibtex", () => ({
+    startState: () => ({ inString: false }),
+    token(stream, state) {
+      if (stream.eatSpace()) return null;
+      if (stream.peek() === "%") {
+        stream.skipToEnd();
+        return "comment";
+      }
+      if (!state.inString && stream.match(/@[A-Za-z]+/)) return "keyword";
+      if (!state.inString && stream.match(/[A-Za-z_][\w-]*(?=\s*=)/)) return "variable-2";
+      if (stream.peek() === "{" || stream.peek() === "}") {
+        stream.next();
+        return "bracket";
+      }
+      if (stream.peek() === "\"") {
+        stream.next();
+        state.inString = !state.inString;
+        return "string";
+      }
+      if (state.inString) {
+        stream.eatWhile(/[^"]/);
+        return "string";
+      }
+      if (stream.match(/\d+/)) return "number";
+      stream.next();
+      return null;
+    }
+  }));
 }
 
 function setupSourceEditor() {
@@ -1717,6 +2042,7 @@ function setupSourceEditor() {
     viewportMargin: 80
   });
   applyEditorKeyMap();
+  installVisualLineVimKeys();
 
   editor.on("change", () => {
     if (isLoading || !activeProject) return;
@@ -1749,6 +2075,14 @@ function setupSourceEditor() {
   scheduleSpellGrammarCheck();
 }
 
+function installVisualLineVimKeys() {
+  if (window.CodeMirror && CodeMirror.Vim && !CodeMirror.Vim.__agentDeskDisplayLineKeys) {
+    CodeMirror.Vim.mapCommand("j", "motion", "moveByDisplayLines", { forward: true }, {});
+    CodeMirror.Vim.mapCommand("k", "motion", "moveByDisplayLines", { forward: false }, {});
+    CodeMirror.Vim.__agentDeskDisplayLineKeys = true;
+  }
+}
+
 function setupSettings() {
   const savedPreset = normalizeThemePreset(localStorage.getItem("latexStudioThemePreset"));
   const preset = THEME_PRESETS[savedPreset];
@@ -1768,6 +2102,7 @@ function setupSettings() {
   const sourceCollapsed = localStorage.getItem("latexStudioSourceCollapsed") === "true";
   const pdfCollapsed = localStorage.getItem("latexStudioPdfCollapsed") === "true";
   pdfZoom = clampNumber(Number(localStorage.getItem("latexStudioPdfZoom")), MIN_PDF_ZOOM, MAX_PDF_ZOOM, DEFAULT_PDF_ZOOM);
+  pdfSidebarVisible = localStorage.getItem("latexStudioPdfSidebarVisible") === "true";
   pdfRenderMode = normalizePdfRenderMode(
     localStorage.getItem("latexStudioPdfRenderMode")
       || (localStorage.getItem("latexStudioPdfInvertPages") === "true" ? "invert" : "adaptive")
@@ -1793,6 +2128,7 @@ function setupSettings() {
   applyTerminalLayout({ height: terminalHeight, collapsed: terminalCollapsed });
   setTerminalTabsWidth(terminalTabsWidth, { persist: false });
   applyCompileLogLayout({ height: compileLogHeight, collapsed: compileLogCollapsed });
+  applyPdfSidebarVisibility({ persist: false });
   autoSaveToggle.checked = autoSaveEnabled;
   settingsVimModeToggle.checked = vimModeEnabled;
   settingsRelativeLineNumbersToggle.checked = relativeLineNumbersEnabled;
@@ -2256,6 +2592,7 @@ function saveProfileFromForm() {
 function greetingAllowedForHour(greeting, hour) {
   const normalized = String(greeting || "").toLowerCase();
   if (normalized.includes("night owl")) return hour < 5 || hour >= 22;
+  if (normalized.includes("how was your day")) return hour >= 16;
   if (normalized.startsWith("good morning")) return hour >= 5 && hour < 12;
   if (normalized.startsWith("good afternoon")) return hour >= 12 && hour < 17;
   if (normalized.startsWith("good evening") || normalized.startsWith("evening")) return hour >= 17 && hour < 22;
@@ -2334,6 +2671,20 @@ function setMinimapVisible(visible) {
   settingsMinimapToggle.checked = minimapVisible;
   localStorage.setItem("latexStudioMinimapVisible", String(minimapVisible));
   applyMinimapVisibility();
+}
+
+function applyPdfSidebarVisibility({ persist = true } = {}) {
+  if (!pdfSidebar || !pdfSidebarButton) return;
+  pdfSidebar.hidden = !pdfSidebarVisible;
+  pdfSidebarButton.textContent = pdfSidebarVisible ? "Hide sidebar" : "Show sidebar";
+  pdfSidebarButton.setAttribute("aria-pressed", String(pdfSidebarVisible));
+  if (persist) localStorage.setItem("latexStudioPdfSidebarVisible", String(pdfSidebarVisible));
+}
+
+function setPdfSidebarVisible(visible) {
+  pdfSidebarVisible = Boolean(visible);
+  applyPdfSidebarVisibility();
+  if (pdfSidebarVisible) renderPdf({ showLoading: false, preserveView: true });
 }
 
 function setTextWrapping(enabled) {
@@ -2744,8 +3095,33 @@ function isMarkdownFile(file = activeFile) {
 
 function applyEditorModeForFile(file = activeFile) {
   if (!editor) return;
-  const extension = String((file && file.name) || "").toLowerCase();
-  editor.setOption("mode", /\.(tex|ltx|sty|cls|bib|bst)$/.test(extension) ? "stex" : null);
+  const name = String((file && file.name) || "").toLowerCase();
+  const extension = name.includes(".") ? name.slice(name.lastIndexOf(".")) : "";
+  const modeByExtension = {
+    ".tex": "stex",
+    ".ltx": "stex",
+    ".sty": "stex",
+    ".cls": "stex",
+    ".bst": "stex",
+    ".bib": "bibtex",
+    ".md": "markdown",
+    ".markdown": "markdown",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".py": "python",
+    ".js": "javascript",
+    ".jsx": { name: "javascript", jsx: true },
+    ".ts": { name: "javascript", typescript: true },
+    ".tsx": { name: "javascript", typescript: true, jsx: true },
+    ".css": "css",
+    ".html": "htmlmixed",
+    ".xml": "xml",
+    ".sh": "shell",
+    ".bash": "shell",
+    ".zsh": "shell",
+    ".json": { name: "javascript", json: true }
+  };
+  editor.setOption("mode", modeByExtension[extension] || null);
 }
 
 function currentTextTab() {
@@ -3164,10 +3540,7 @@ function wireEvents() {
   newFolderButton.addEventListener("click", () => createProjectFile("folder"));
   if (downloadPackageButton) downloadPackageButton.addEventListener("click", downloadProjectPackage);
   activeDocumentTitle.addEventListener("dblclick", startActiveTitleEdit);
-  activeDocumentTitle.addEventListener("contextmenu", (event) => {
-    event.preventDefault();
-    startActiveTitleEdit();
-  });
+  if (editTitleButton) editTitleButton.addEventListener("click", startActiveTitleEdit);
   remoteWorkspaceButton.addEventListener("click", () => openSshProjectFlow());
   helpButton.addEventListener("click", openDocumentationSettings);
   if (railHelpButton) railHelpButton.addEventListener("click", openDocumentationSettings);
@@ -3203,6 +3576,9 @@ function wireEvents() {
   compileButton.addEventListener("click", () => compileManuscript({ manual: true }));
   openPdfButton.addEventListener("click", openPdf);
   downloadPdfButton.addEventListener("click", downloadPdf);
+  if (pdfSidebarButton) pdfSidebarButton.addEventListener("click", () => setPdfSidebarVisible(!pdfSidebarVisible));
+  if (pdfTitle) pdfTitle.addEventListener("click", togglePdfFileMenu);
+  if (pdfMeta) pdfMeta.addEventListener("click", togglePdfFileMenu);
   historyButton.addEventListener("click", openHistoryWindow);
   if (pushGithubButton) pushGithubButton.addEventListener("click", pushActiveProjectToGithub);
   if (pullGithubButton) pullGithubButton.addEventListener("click", pullActiveProjectFromGithub);
@@ -3276,6 +3652,7 @@ function wireEvents() {
     closeFileContextMenu();
     closeProjectContextMenu();
     closeSpellContextMenu();
+    if (pdfFileMenu) pdfFileMenu.hidden = true;
     if (!selectionCodexPopover.contains(document.activeElement)) hideSelectionCodexPopover();
   });
   window.addEventListener("scroll", () => {
@@ -4842,8 +5219,7 @@ function renderHistoryPanel() {
   historySelectedIndex = clampNumber(historySelectedIndex, 0, entries.length - 1, 0);
   const selected = entries[historySelectedIndex] || entries[0];
   const previewLines = String(selected.text || "")
-    .split("\n")
-    .slice(0, 220);
+    .split("\n");
 
   historyPanelBody.innerHTML = `
     <div class="history-entry-list" role="listbox" aria-label="History entries">
@@ -4889,6 +5265,11 @@ function updatePdfPageIndicator() {
   }, null);
   const pageNumber = nearest && nearest.page ? Number(nearest.page.dataset.page) || 1 : 1;
   pdfPageIndicator.textContent = `Page ${pageNumber} / ${renderedPdfPageCount}`;
+  if (pdfThumbnailList) {
+    pdfThumbnailList.querySelectorAll(".pdf-thumbnail").forEach((button) => {
+      button.classList.toggle("active", Number(button.dataset.page) === pageNumber);
+    });
+  }
 }
 
 function insertLatexSnippet(snippetId) {
@@ -5272,6 +5653,7 @@ function projectPathFromFile(file) {
 
 async function openProject(projectId) {
   resetTextTabs();
+  selectedPdfRelativePath = "";
   const project = projects.find((item) => item.id === projectId);
   activeProject = project || { id: projectId, name: "Project", texName: "main.tex" };
   showEditorShell();
@@ -5317,6 +5699,7 @@ async function loadManuscript(projectId = activeProject && activeProject.id) {
     const data = await window.localOverleaf.load(projectId);
     activeProject = data.project;
     resetTextTabs();
+    selectedPdfRelativePath = "";
     setActiveLoadedTextFile(data.file, data.tex);
     editor.setValue(data.tex);
     setMode("source");
@@ -5412,6 +5795,81 @@ function renderFileTree() {
 
   projectFiles.forEach((node) => fileTree.appendChild(renderFileNode(node, 0)));
   updateFileOutline();
+  updatePdfTitleFromSelection();
+}
+
+function flattenProjectFileNodes(nodes = []) {
+  const flattened = [];
+  nodes.forEach((node) => {
+    flattened.push(node);
+    if (node.children) flattened.push(...flattenProjectFileNodes(node.children));
+  });
+  return flattened;
+}
+
+function isPdfFileNode(node) {
+  return Boolean(node && node.kind === "file" && /\.pdf$/i.test(node.name || node.relativePath || ""));
+}
+
+function projectPdfFiles() {
+  return flattenProjectFileNodes(projectFiles).filter(isPdfFileNode);
+}
+
+function activePdfName() {
+  if (selectedPdfRelativePath) return selectedPdfRelativePath.split("/").pop() || selectedPdfRelativePath;
+  return (activeProject && activeProject.pdfName) || "main.pdf";
+}
+
+function updatePdfTitleFromSelection() {
+  if (!pdfTitle || !activeProject) return;
+  const pdfs = projectPdfFiles();
+  if (selectedPdfRelativePath && !pdfs.some((node) => node.relativePath === selectedPdfRelativePath)) {
+    selectedPdfRelativePath = "";
+  }
+  pdfTitle.textContent = activePdfName();
+  pdfTitle.title = pdfs.length > 1 ? "Choose PDF" : activePdfName();
+  pdfTitle.classList.toggle("clickable", pdfs.length > 1);
+}
+
+function togglePdfFileMenu(event) {
+  if (event) event.stopPropagation();
+  if (!pdfFileMenu || !activeProject) return;
+  if (!pdfFileMenu.hidden) {
+    pdfFileMenu.hidden = true;
+    return;
+  }
+  renderPdfFileMenu();
+}
+
+function renderPdfFileMenu() {
+  const pdfs = projectPdfFiles();
+  if (!pdfFileMenu || !pdfs.length) return;
+  pdfFileMenu.innerHTML = "";
+  const defaultButton = document.createElement("button");
+  defaultButton.type = "button";
+  defaultButton.className = "pdf-file-option";
+  defaultButton.classList.toggle("active", !selectedPdfRelativePath);
+  defaultButton.textContent = (activeProject && activeProject.pdfName) || "Compiled PDF";
+  defaultButton.addEventListener("click", () => selectPdfFile(""));
+  pdfFileMenu.appendChild(defaultButton);
+  pdfs.forEach((node) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pdf-file-option";
+    button.classList.toggle("active", selectedPdfRelativePath === node.relativePath);
+    button.textContent = node.relativePath;
+    button.addEventListener("click", () => selectPdfFile(node.relativePath));
+    pdfFileMenu.appendChild(button);
+  });
+  pdfFileMenu.hidden = false;
+}
+
+async function selectPdfFile(relativePath = "") {
+  selectedPdfRelativePath = relativePath;
+  if (pdfFileMenu) pdfFileMenu.hidden = true;
+  updatePdfTitleFromSelection();
+  pdfMeta.textContent = "Loading pages...";
+  await renderPdf({ showLoading: true, preserveView: false });
 }
 
 function renderFileNode(node, depth) {
@@ -5485,6 +5943,12 @@ function folderIconName(node) {
 }
 
 async function selectProjectFile(node, { preview = true } = {}) {
+  if (isPdfFileNode(node)) {
+    filePreview.hidden = true;
+    await selectPdfFile(node.relativePath);
+    return;
+  }
+
   if (node.editable) {
     filePreview.hidden = true;
     await loadProjectFile(node.relativePath, { preview });
@@ -6051,7 +6515,7 @@ async function openPdf() {
   if (!activeProject) return;
 
   try {
-    await window.localOverleaf.openPdf(activeProject.id);
+    await window.localOverleaf.openPdf(activeProject.id, selectedPdfRelativePath);
   } catch (error) {
     compileLog.textContent = formatError(error);
   }
@@ -6064,7 +6528,7 @@ async function downloadPdf() {
   setCompileState("Preparing PDF download...");
 
   try {
-    const result = await window.localOverleaf.downloadPdf(activeProject.id);
+    const result = await window.localOverleaf.downloadPdf(activeProject.id, selectedPdfRelativePath);
     if (result && result.filePath) setCompileState("PDF downloaded", "ok");
     else setCompileState("Download canceled");
   } catch (error) {
@@ -6304,6 +6768,7 @@ function updateSourceMinimap() {
   if (!sourceMinimap || !sourceMinimapLines || !editor) return;
 
   const lines = editor.getValue().split("\n");
+  sourceMinimap.classList.toggle("short", lines.length <= 80);
   sourceMinimapLines.style.setProperty("--minimap-lines", String(Math.max(lines.length, 1)));
   sourceMinimapLines.innerHTML = lines.map((line) => {
     const trimmed = line.trim();
@@ -6620,8 +7085,10 @@ function markdownToHtml(markdown) {
 
 function inlineMarkdown(value) {
   return escapeHtml(value)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/__([^_]+)__/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>");
 }
 
@@ -7093,7 +7560,7 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
   try {
     const [pdfjsLib, pdfBuffer] = await Promise.all([
       loadPdfJs(),
-      window.localOverleaf.readPdf(activeProject.id)
+      window.localOverleaf.readPdf(activeProject.id, selectedPdfRelativePath)
     ]);
 
     if (token !== pdfRenderToken) return;
@@ -7103,6 +7570,7 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
     if (token !== pdfRenderToken) return;
 
     const fragment = document.createDocumentFragment();
+    updatePdfTitleFromSelection();
     pdfMeta.textContent = `${pdf.numPages} pages`;
     const nextPageTextLines = new Map();
 
@@ -7165,11 +7633,53 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
     }
     if (pdfZoom !== zoomForRender) applyPdfLiveZoom();
     updatePdfPageIndicator();
+    await renderPdfThumbnails(pdf, pdfjsLib, token);
   } catch (error) {
     if (token !== pdfRenderToken) return;
     pdfViewer.innerHTML = '<div class="pdf-loading pdf-error">Could not render PDF. Compile once if this project has no PDF yet.</div>';
     compileLog.textContent = formatError(error);
   }
+}
+
+async function renderPdfThumbnails(pdf, pdfjsLib, token) {
+  if (!pdfThumbnailList) return;
+  if (!pdfSidebarVisible) {
+    pdfThumbnailList.innerHTML = "";
+    return;
+  }
+
+  pdfThumbnailList.innerHTML = "";
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    if (token !== pdfRenderToken) return;
+    const page = await pdf.getPage(pageNumber);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const targetWidth = 92;
+    const scale = targetWidth / baseViewport.width;
+    const viewport = page.getViewport({ scale });
+    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+    const button = document.createElement("button");
+    button.className = "pdf-thumbnail";
+    button.type = "button";
+    button.dataset.page = String(pageNumber);
+    button.innerHTML = `<span>${pageNumber}</span>`;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+    canvas.style.width = `${Math.floor(viewport.width)}px`;
+    canvas.style.height = `${Math.floor(viewport.height)}px`;
+    const context = canvas.getContext("2d");
+    context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+    button.prepend(canvas);
+    button.addEventListener("click", () => {
+      const pageEl = pdfViewer.querySelector(`.pdf-page[data-page="${pageNumber}"]`);
+      if (pageEl) pdfViewer.scrollTo({ top: pageEl.offsetTop - 12, behavior: "smooth" });
+    });
+    pdfThumbnailList.appendChild(button);
+    await page.render({ canvasContext: context, viewport }).promise;
+    if (pdfDarkMode && pdfRenderMode === "adaptive") applyDarkPdfCanvas(context, canvas);
+  }
+  updatePdfPageIndicator();
 }
 
 function buildPdfLinkLayer(annotations, viewport) {

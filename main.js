@@ -2503,24 +2503,38 @@ function runTectonic(project) {
   });
 }
 
-async function readPdf(_event, projectId) {
-  const project = await getProject(projectId);
-  await ensureProjectPdf(project);
-  const pdfPath = pdfPathFor(project);
+async function selectedPdfPath(project, relativePath = "") {
+  const requestedPath = String(relativePath || "").trim();
+  if (!requestedPath) {
+    await ensureProjectPdf(project);
+    return pdfPathFor(project);
+  }
+
+  const pdfPath = safeProjectPath(project, requestedPath);
+  if (path.extname(pdfPath).toLowerCase() !== ".pdf") throw new Error("Only project PDF files can be opened in the PDF viewer.");
+  if (!fs.existsSync(pdfPath)) throw new Error(`PDF not found: ${requestedPath}`);
+  return pdfPath;
+}
+
+async function readPdf(_event, payload) {
+  const options = payload && typeof payload === "object" ? payload : { projectId: payload };
+  const project = await getProject(options.projectId);
+  const pdfPath = await selectedPdfPath(project, options.relativePath);
   const pdf = await fsp.readFile(pdfPath);
   return pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
 }
 
-async function openPdf(_event, projectId) {
-  const project = await getProject(projectId);
-  await ensureProjectPdf(project);
-  return shell.openPath(pdfPathFor(project));
+async function openPdf(_event, payload) {
+  const options = payload && typeof payload === "object" ? payload : { projectId: payload };
+  const project = await getProject(options.projectId);
+  const pdfPath = await selectedPdfPath(project, options.relativePath);
+  return shell.openPath(pdfPath);
 }
 
-async function downloadPdf(_event, projectId) {
-  const project = await getProject(projectId);
-  await ensureProjectPdf(project);
-  const sourcePath = pdfPathFor(project);
+async function downloadPdf(_event, payload) {
+  const options = payload && typeof payload === "object" ? payload : { projectId: payload };
+  const project = await getProject(options.projectId);
+  const sourcePath = await selectedPdfPath(project, options.relativePath);
   if (!fs.existsSync(sourcePath)) throw new Error("No compiled PDF exists yet. Compile the project first.");
 
   const result = await dialog.showSaveDialog(mainWindow, {

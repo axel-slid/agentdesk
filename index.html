@@ -71,7 +71,15 @@
           <span aria-hidden="true">&larr;</span>
           <span>Projects</span>
         </button>
-        <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
+        <div class="top-document-title-wrap">
+          <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
+          <button id="editTitleButton" class="title-edit-button" type="button" aria-label="Edit document title" title="Edit title">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+            </svg>
+          </button>
+        </div>
         <div class="topbar-actions">
           <button id="topRefreshFilesButton" class="topbar-action-button" type="button" title="Refresh project">
             <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -300,11 +308,13 @@
 
         <section class="preview-pane">
           <div class="pane-header">
-            <div>
-              <h2 id="pdfTitle">main.pdf</h2>
+            <div class="pdf-title-block">
+              <h2 id="pdfTitle" title="Choose PDF">main.pdf</h2>
               <p id="pdfMeta">main.pdf</p>
+              <div id="pdfFileMenu" class="pdf-file-menu" hidden></div>
             </div>
             <div class="pdf-header-actions">
+              <button id="pdfSidebarButton" class="pdf-sidebar-button" type="button" aria-pressed="false">Show sidebar</button>
               <div class="pdf-action-segment" aria-label="PDF actions">
                 <button id="compileButton" class="pdf-action-button" type="button">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -359,7 +369,12 @@
               </button>
             </div>
           </div>
-          <div id="pdfViewer" class="pdf-viewer" aria-label="Compiled manuscript pages"></div>
+          <div class="pdf-viewer-shell">
+            <aside id="pdfSidebar" class="pdf-sidebar" hidden>
+              <div id="pdfThumbnailList" class="pdf-thumbnail-list" aria-label="PDF page thumbnails"></div>
+            </aside>
+            <div id="pdfViewer" class="pdf-viewer" aria-label="Compiled manuscript pages"></div>
+          </div>
           <aside id="historyPanel" class="history-panel" hidden>
             <header>
               <button id="closeHistoryButton" class="history-back-button" type="button" aria-label="Back to PDF" title="Back to PDF">
@@ -555,12 +570,17 @@
                   <option value="solarized-light">Solarized Light</option>
                   <option value="catppuccin-latte">Catppuccin Latte</option>
                   <option value="min-light">Min Light</option>
+                  <option value="honey-light">Honey Light</option>
+                  <option value="marigold-paper">Marigold Paper</option>
+                  <option value="butterscotch-light">Butterscotch Light</option>
+                  <option value="saffron-paper">Saffron Paper</option>
                 </optgroup>
                 <optgroup label="Light High Contrast">
                   <option value="github-light">GitHub Light</option>
                   <option value="light-cyan-hc">Cyan Contrast</option>
                   <option value="light-rose-hc">Rose Contrast Light</option>
                   <option value="light-amber-hc">Amber Contrast</option>
+                  <option value="pastel-amber-hc">Pastel Amber Contrast</option>
                 </optgroup>
                 <optgroup label="Transparent">
                   <option value="glass-light">Glass Light</option>
@@ -581,6 +601,10 @@
                   <option value="tokyo-night">Tokyo Night</option>
                   <option value="ayu-dark">Ayu Dark</option>
                   <option value="palenight">Palenight</option>
+                  <option value="honey-dark">Honey Dark</option>
+                  <option value="molten-amber">Molten Amber</option>
+                  <option value="saffron-night">Saffron Night</option>
+                  <option value="amber-slate">Amber Slate</option>
                 </optgroup>
                 <optgroup label="Dark High Contrast">
                   <option value="abyss">Abyss</option>
@@ -606,6 +630,14 @@
               <span>Accent color</span>
               <input id="settingsAccentPicker" type="color" value="#f97316">
             </label>
+            <div class="setting-column">
+              <span>Dark PDF rendering</span>
+              <div id="settingsPdfRenderMode" class="settings-choice-group" role="group" aria-label="Dark PDF rendering">
+                <button type="button" data-pdf-render-mode="adaptive">Dark, keep figures</button>
+                <button type="button" data-pdf-render-mode="original">Original pages</button>
+                <button type="button" data-pdf-render-mode="invert">Invert everything</button>
+              </div>
+            </div>
           </section>
 
           <section class="settings-section" data-settings-panel="profile">
@@ -644,14 +676,6 @@
               <span>Show file sidebar</span>
               <input id="settingsFileSidebarToggle" type="checkbox" checked>
             </label>
-            <div class="setting-column">
-              <span>Dark PDF rendering</span>
-              <div id="settingsPdfRenderMode" class="settings-choice-group" role="group" aria-label="Dark PDF rendering">
-                <button type="button" data-pdf-render-mode="adaptive">Dark, keep figures</button>
-                <button type="button" data-pdf-render-mode="original">Original pages</button>
-                <button type="button" data-pdf-render-mode="invert">Invert everything</button>
-              </div>
-            </div>
             <label class="setting-column">
               <span>Minimum PDF width <strong id="settingsPdfGuardValue">540px</strong></span>
               <input id="settingsPdfGuardRange" type="range" min="480" max="760" step="20" value="540">
@@ -819,6 +843,14 @@ tectonic main.tex</code></pre>
 
   <script src="node_modules/codemirror/lib/codemirror.js"></script>
   <script src="node_modules/codemirror/mode/stex/stex.js"></script>
+  <script src="node_modules/codemirror/mode/markdown/markdown.js"></script>
+  <script src="node_modules/codemirror/mode/yaml/yaml.js"></script>
+  <script src="node_modules/codemirror/mode/python/python.js"></script>
+  <script src="node_modules/codemirror/mode/javascript/javascript.js"></script>
+  <script src="node_modules/codemirror/mode/css/css.js"></script>
+  <script src="node_modules/codemirror/mode/xml/xml.js"></script>
+  <script src="node_modules/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+  <script src="node_modules/codemirror/mode/shell/shell.js"></script>
   <script src="node_modules/codemirror/addon/dialog/dialog.js"></script>
   <script src="node_modules/codemirror/addon/search/searchcursor.js"></script>
   <script src="node_modules/codemirror/addon/search/search.js"></script>
