@@ -56,7 +56,6 @@ const sourceModeButton = document.getElementById("sourceModeButton");
 const visualModeButton = document.getElementById("visualModeButton");
 const suggestionModeButton = document.getElementById("suggestionModeButton");
 const editorTitle = document.getElementById("editorTitle");
-const vimModeBadge = document.getElementById("vimModeBadge");
 const activeDocumentTitle = document.getElementById("activeDocumentTitle");
 const topSaveStatusButton = document.getElementById("topSaveStatusButton");
 const topSaveStatusLabel = document.getElementById("topSaveStatusLabel");
@@ -1319,12 +1318,6 @@ function updatePdfRenderModeButtons() {
 function applyEditorKeyMap() {
   if (!editor) return;
   editor.setOption("keyMap", vimModeEnabled ? "vim" : "default");
-  updateVimModeBadge();
-}
-
-function updateVimModeBadge() {
-  if (!vimModeBadge) return;
-  vimModeBadge.hidden = !vimModeEnabled;
 }
 
 function updateRelativeLineNumbers() {
@@ -1938,7 +1931,11 @@ function renderTemplateGrid(container, templates, { custom }) {
   templates.forEach((template) => {
     const card = document.createElement("article");
     card.className = "template-card";
+    const previewKind = templatePreviewKind(template, custom);
     card.innerHTML = `
+      <div class="template-preview template-preview-${escapeHtml(previewKind)}" aria-hidden="true">
+        ${templatePreviewMarkup(previewKind)}
+      </div>
       <div>
         <h4>${escapeHtml(template.name)}</h4>
         <p>${escapeHtml(template.description || "")}</p>
@@ -1962,6 +1959,50 @@ function renderTemplateGrid(container, templates, { custom }) {
     }
     container.appendChild(card);
   });
+}
+
+function templatePreviewKind(template, custom) {
+  const text = `${template.id || ""} ${template.name || ""} ${template.description || ""}`.toLowerCase();
+  if (text.includes("beamer") || text.includes("presentation") || text.includes("poster")) return "slides";
+  if (text.includes("cv") || text.includes("resume")) return "resume";
+  if (text.includes("homework") || text.includes("cs 170") || text.includes("problem")) return "homework";
+  if (text.includes("lab")) return "lab";
+  if (text.includes("thesis") || text.includes("report")) return "report";
+  if (custom) return "custom";
+  return "paper";
+}
+
+function templatePreviewMarkup(kind) {
+  if (kind === "slides") {
+    return `
+      <span class="template-slide-title"></span>
+      <span class="template-slide-row wide"></span>
+      <span class="template-slide-row"></span>
+      <span class="template-slide-block"></span>
+    `;
+  }
+
+  if (kind === "resume") {
+    return `
+      <span class="template-resume-name"></span>
+      <span class="template-resume-contact"></span>
+      <span class="template-section-line"></span>
+      <span class="template-line wide"></span>
+      <span class="template-line"></span>
+      <span class="template-section-line"></span>
+      <span class="template-line wide"></span>
+    `;
+  }
+
+  const rows = kind === "homework"
+    ? ["template-heading", "template-problem", "template-line wide", "template-line", "template-equation", "template-problem", "template-line wide"]
+    : kind === "lab"
+      ? ["template-heading", "template-line wide", "template-line", "template-table", "template-line wide", "template-line"]
+      : kind === "report"
+        ? ["template-heading", "template-toc", "template-line wide", "template-line", "template-section-line", "template-line wide"]
+        : ["template-heading", "template-abstract", "template-line wide", "template-line", "template-section-line", "template-line wide", "template-line"];
+
+  return rows.map((row) => `<span class="${row}"></span>`).join("");
 }
 
 async function importCustomTemplate() {

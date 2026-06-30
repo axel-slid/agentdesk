@@ -173,7 +173,7 @@ p {
 
 .project-screen {
   overflow: auto;
-  padding: 0 44px 34px;
+  padding: 18px 44px 34px;
 }
 
 .project-shell {
@@ -353,7 +353,7 @@ p {
 .template-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
 .template-card {
@@ -364,6 +364,143 @@ p {
   gap: 14px;
   min-height: 154px;
   padding: 14px;
+}
+
+.template-preview {
+  align-items: stretch;
+  background: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, #d9dee8);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(31, 41, 55, 0.1);
+  display: grid;
+  gap: 5px;
+  height: 128px;
+  overflow: hidden;
+  padding: 15px 18px;
+  position: relative;
+}
+
+.template-preview::before {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  content: "";
+  inset: 0;
+  opacity: 0.18;
+  pointer-events: none;
+  position: absolute;
+}
+
+.template-preview span {
+  background: #1f2937;
+  border-radius: 999px;
+  display: block;
+  height: 4px;
+  opacity: 0.62;
+  position: relative;
+}
+
+.template-preview .template-heading {
+  height: 7px;
+  margin: 0 auto 5px;
+  opacity: 0.86;
+  width: 48%;
+}
+
+.template-preview .template-abstract {
+  height: 18px;
+  opacity: 0.18;
+  width: 100%;
+}
+
+.template-preview .template-line {
+  width: 72%;
+}
+
+.template-preview .template-line.wide {
+  width: 100%;
+}
+
+.template-preview .template-section-line {
+  height: 5px;
+  margin-top: 4px;
+  opacity: 0.74;
+  width: 38%;
+}
+
+.template-preview .template-problem {
+  background: var(--accent);
+  height: 5px;
+  opacity: 0.68;
+  width: 42%;
+}
+
+.template-preview .template-equation {
+  background: color-mix(in srgb, var(--accent) 62%, #1f2937);
+  height: 14px;
+  opacity: 0.22;
+  width: 64%;
+}
+
+.template-preview .template-table {
+  background:
+    linear-gradient(#d7dde8 1px, transparent 1px),
+    linear-gradient(90deg, #d7dde8 1px, transparent 1px),
+    color-mix(in srgb, var(--accent) 10%, #ffffff);
+  background-size: 100% 8px, 34% 100%, auto;
+  border-radius: 4px;
+  height: 30px;
+  opacity: 1;
+  width: 100%;
+}
+
+.template-preview .template-toc {
+  background:
+    linear-gradient(90deg, #1f2937 0 44%, transparent 44% 64%, #1f2937 64% 100%);
+  height: 5px;
+  opacity: 0.26;
+  width: 82%;
+}
+
+.template-preview-slides {
+  align-content: center;
+  background: linear-gradient(135deg, #ffffff, color-mix(in srgb, var(--accent) 9%, #eef2f7));
+  gap: 8px;
+  padding: 22px;
+}
+
+.template-preview-slides .template-slide-title {
+  height: 10px;
+  opacity: 0.85;
+  width: 62%;
+}
+
+.template-preview-slides .template-slide-row {
+  height: 5px;
+  opacity: 0.35;
+  width: 54%;
+}
+
+.template-preview-slides .template-slide-row.wide {
+  width: 82%;
+}
+
+.template-preview-slides .template-slide-block {
+  background: color-mix(in srgb, var(--accent) 44%, #ffffff);
+  border-radius: 5px;
+  height: 28px;
+  opacity: 0.45;
+  width: 100%;
+}
+
+.template-preview-resume .template-resume-name {
+  height: 11px;
+  opacity: 0.9;
+  width: 42%;
+}
+
+.template-preview-resume .template-resume-contact {
+  height: 4px;
+  opacity: 0.32;
+  width: 76%;
 }
 
 .template-card h4 {
@@ -878,7 +1015,7 @@ p {
   gap: 10px;
   grid-template-columns: minmax(0, 1fr) minmax(120px, auto) minmax(0, 1fr);
   min-width: 0;
-  padding: 5px 10px;
+  padding: 5px 10px 5px 78px;
   -webkit-app-region: drag;
 }
 
@@ -1841,24 +1978,6 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.vim-mode-badge {
-  background: color-mix(in srgb, var(--accent) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
-  border-radius: 999px;
-  color: color-mix(in srgb, var(--accent) 68%, var(--text));
-  flex: 0 0 auto;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-  padding: 3px 7px;
-  text-transform: uppercase;
-}
-
-.vim-mode-badge[hidden] {
-  display: none !important;
 }
 
 .source-mode-actions {

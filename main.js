@@ -40,7 +40,12 @@ function createWindow() {
     minHeight: 700,
     title: "AgentDesk",
     backgroundColor: "#e9edf2",
-    frame: false,
+    ...(process.platform === "darwin"
+      ? {
+          titleBarStyle: "hiddenInset",
+          trafficLightPosition: { x: 14, y: 13 }
+        }
+      : {}),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -211,7 +216,7 @@ function makeProject(texPath, name) {
 function inferProjectName(texPath) {
   const folder = path.basename(path.dirname(texPath)).replace(/[-_]+/g, " ");
   if (folder && folder !== ".") return titleCase(folder);
-  return path.basename(texPath, ".tex");
+  return path.basename(texPath, path.extname(texPath));
 }
 
 function titleCase(value) {
@@ -269,7 +274,8 @@ function dedupeProjects(projects) {
 }
 
 function pdfPathFor(project) {
-  return path.join(path.dirname(project.texPath), `${path.basename(project.texPath, ".tex")}.pdf`);
+  const parsed = path.parse(project.texPath);
+  return path.join(parsed.dir, `${parsed.name}.pdf`);
 }
 
 function projectRootFor(project) {
@@ -409,9 +415,9 @@ async function addFolderProject() {
     return { project: null, ...(await listProjects()) };
   }
 
-  const texPath = await findProjectTexEntry(result.filePaths[0]);
-  if (!texPath) throw new Error("No .tex file found in that folder.");
-  return registerProject(texPath);
+  const entryPath = await findProjectEntryFile(result.filePaths[0]);
+  if (!entryPath) throw new Error("No .tex or .txt file found in that folder.");
+  return registerProject(entryPath);
 }
 
 async function addArchiveProject() {
@@ -439,12 +445,12 @@ async function registerProjectFromPath(filePath) {
   const stat = await fsp.stat(resolvedPath);
 
   if (stat.isDirectory()) {
-    const texPath = await findProjectTexEntry(resolvedPath);
-    if (!texPath) throw new Error("No .tex file found in that folder.");
-    return registerProjectRecord(texPath);
+    const entryPath = await findProjectEntryFile(resolvedPath);
+    if (!entryPath) throw new Error("No .tex or .txt file found in that folder.");
+    return registerProjectRecord(entryPath);
   }
 
-  if (path.extname(resolvedPath).toLowerCase() === ".tex") {
+  if ([".tex", ".txt"].includes(path.extname(resolvedPath).toLowerCase())) {
     return registerProjectRecord(resolvedPath);
   }
 
@@ -461,9 +467,9 @@ async function importArchiveToProject(archivePath) {
   await fsp.mkdir(destination, { recursive: true });
   await extractArchive(archivePath, destination);
 
-  const texPath = await findProjectTexEntry(destination);
-  if (!texPath) throw new Error("Imported archive did not contain a .tex file.");
-  return texPath;
+  const entryPath = await findProjectEntryFile(destination);
+  if (!entryPath) throw new Error("Imported archive did not contain a .tex or .txt file.");
+  return entryPath;
 }
 
 async function registerProject(texPath, name) {
@@ -1149,10 +1155,10 @@ async function importTemplate() {
     throw new Error(`Unsupported template import: ${path.basename(sourcePath)}`);
   }
 
-  const texPath = await findProjectTexEntry(destination);
-  if (!texPath) {
+  const entryPath = await findProjectEntryFile(destination);
+  if (!entryPath) {
     await fsp.rm(destination, { recursive: true, force: true });
-    throw new Error("Template does not contain a .tex file.");
+    throw new Error("Template does not contain a .tex or .txt file.");
   }
 
   const now = new Date().toISOString();
@@ -1166,7 +1172,7 @@ async function importTemplate() {
     name,
     description: "Saved local LaTeX template.",
     rootPath: destination,
-    texPath,
+    texPath: entryPath,
     createdAt: now,
     updatedAt: now
   });
@@ -1207,18 +1213,18 @@ async function createProjectFromTemplate(_event, templateId) {
   const destination = await uniqueDirectory(projectLibraryRoot(), template.name || "Template Project");
   await copyTemplateDirectory(template.rootPath, destination);
 
-  let texPath = "";
+  let entryPath = "";
   if (template.texPath) {
     const relativeEntry = path.relative(path.resolve(template.rootPath), path.resolve(template.texPath));
     if (relativeEntry && !relativeEntry.startsWith("..") && !path.isAbsolute(relativeEntry)) {
       const candidate = path.join(destination, relativeEntry);
-      if (fs.existsSync(candidate)) texPath = candidate;
+      if (fs.existsSync(candidate)) entryPath = candidate;
     }
   }
-  if (!texPath) texPath = await findProjectTexEntry(destination);
-  if (!texPath) throw new Error("Template copy did not contain a .tex file.");
+  if (!entryPath) entryPath = await findProjectEntryFile(destination);
+  if (!entryPath) throw new Error("Template copy did not contain a .tex or .txt file.");
 
-  return registerProject(texPath, template.name);
+  return registerProject(entryPath, template.name);
 }
 
 async function writeTemplateFiles(destination, files) {
@@ -1246,7 +1252,11 @@ async function copyTemplateDirectory(sourceDir, destination) {
 }
 
 async function findProjectTexEntry(rootDir) {
-  const texFiles = [];
+  return findProjectEntryFile(rootDir);
+}
+
+async function findProjectEntryFile(rootDir) {
+  const candidates = [];
 
   async function visit(dir, depth = 0) {
     if (depth > 6) return;
@@ -1256,20 +1266,27 @@ async function findProjectTexEntry(rootDir) {
       const itemPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         await visit(itemPath, depth + 1);
-      } else if (entry.isFile() && entry.name.toLowerCase().endsWith(".tex")) {
-        texFiles.push(itemPath);
+      } else if (entry.isFile()) {
+        const lowerName = entry.name.toLowerCase();
+        if (lowerName.endsWith(".tex") || lowerName.endsWith(".txt")) candidates.push(itemPath);
       }
     }
   }
 
   await visit(path.resolve(rootDir));
-  texFiles.sort((a, b) => {
-    const aMain = path.basename(a).toLowerCase() === "main.tex";
-    const bMain = path.basename(b).toLowerCase() === "main.tex";
-    if (aMain !== bMain) return aMain ? -1 : 1;
+  candidates.sort((a, b) => {
+    const rank = (filePath) => {
+      const name = path.basename(filePath).toLowerCase();
+      if (name === "main.tex") return 0;
+      if (name.endsWith(".tex")) return 1;
+      if (name.endsWith(".txt")) return 2;
+      return 3;
+    };
+    const rankDiff = rank(a) - rank(b);
+    if (rankDiff) return rankDiff;
     return a.length - b.length || a.localeCompare(b);
   });
-  return texFiles[0] || "";
+  return candidates[0] || "";
 }
 
 async function uniqueDirectory(parentDir, folderName) {
