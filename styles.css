@@ -1046,9 +1046,17 @@ button:disabled {
   border-radius: 6px;
   box-shadow: none;
   color: var(--muted);
-  height: 28px;
+  font-size: 18px;
+  height: 36px;
   padding: 0;
-  width: 28px;
+  width: 32px;
+}
+
+.file-rail-actions .file-footer-icon span {
+  font-size: 18px;
+  height: 22px;
+  line-height: 1;
+  width: 22px;
 }
 
 .file-rail-actions .file-footer-icon:hover {
@@ -1688,13 +1696,13 @@ button:disabled {
 
 .pdf-action-segment {
   align-items: center;
-  background: color-mix(in srgb, var(--muted) 18%, var(--panel));
-  border: 1px solid color-mix(in srgb, var(--muted) 22%, var(--border));
+  background: transparent;
+  border: 0;
   border-radius: 999px;
   display: flex;
-  gap: 0;
+  gap: 2px;
   overflow: hidden;
-  padding: 3px;
+  padding: 0;
 }
 
 .pdf-action-button {
@@ -2659,28 +2667,30 @@ button:disabled {
   z-index: 3;
 }
 
-.pdf-link-region {
+.pdf-page .pdf-link-region {
   background: transparent;
   border: 0;
   border-radius: 2px;
   box-shadow: none;
+  color: transparent;
   cursor: pointer;
   height: auto;
   min-height: 8px;
+  min-width: 0;
   padding: 0;
   pointer-events: auto;
   position: absolute;
   width: auto;
 }
 
-.pdf-link-region:hover,
-.pdf-link-region:focus-visible {
+.pdf-page .pdf-link-region:hover,
+.pdf-page .pdf-link-region:focus-visible {
   background: rgba(var(--accent-rgb), 0.12);
   box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.55);
   outline: 0;
 }
 
-.pdf-link-region:active {
+.pdf-page .pdf-link-region:active {
   transform: none;
 }
 
@@ -2868,6 +2878,8 @@ button:disabled {
   align-items: center;
   border-bottom: 1px solid var(--border);
   display: flex;
+  gap: 16px;
+  justify-content: space-between;
   min-width: 0;
   padding: 0 26px;
 }
@@ -2875,6 +2887,29 @@ button:disabled {
 .settings-header h2 {
   font-size: 20px;
   font-weight: 650;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-search-input {
+  background: color-mix(in srgb, var(--panel) 82%, var(--page));
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  flex: 0 1 260px;
+  font: inherit;
+  font-size: 13px;
+  height: 34px;
+  min-width: 160px;
+  outline: 0;
+  padding: 0 12px;
+}
+
+.settings-search-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.13);
 }
 
 .settings-close-button {
@@ -2935,6 +2970,27 @@ button:disabled {
 
 .settings-section:not(.active) {
   display: none;
+}
+
+.settings-searching .settings-section {
+  display: grid;
+}
+
+.settings-searching .settings-section[hidden] {
+  display: none;
+}
+
+.settings-search-match {
+  background: rgba(var(--accent-rgb), 0.07);
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.settings-search-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 0;
 }
 
 .setting-row,
@@ -3310,6 +3366,92 @@ body[data-theme="dark"] .project-view-toggle button:hover {
 body[data-theme="dark"] .project-view-toggle button.active {
   background: color-mix(in srgb, var(--accent) 18%, var(--panel));
   color: color-mix(in srgb, var(--accent) 52%, var(--text));
+}
+
+body[data-contrast="high"] {
+  text-shadow: none;
+}
+
+body[data-contrast="high"] .topbar,
+body[data-contrast="high"] .file-pane,
+body[data-contrast="high"] .file-rail,
+body[data-contrast="high"] .source-pane,
+body[data-contrast="high"] .preview-pane,
+body[data-contrast="high"] .settings-drawer,
+body[data-contrast="high"] .new-project-panel,
+body[data-contrast="high"] .project-card {
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+
+body[data-contrast="high"] .topbar,
+body[data-contrast="high"] .pane-header,
+body[data-contrast="high"] .file-pane-header,
+body[data-contrast="high"] .text-tabs,
+body[data-contrast="high"] .terminal-header,
+body[data-contrast="high"] .log-header,
+body[data-contrast="high"] .settings-header {
+  border-bottom-color: var(--border-strong);
+  border-bottom-width: 2px;
+}
+
+body[data-contrast="high"] .file-pane,
+body[data-contrast="high"] .file-rail,
+body[data-contrast="high"] .settings-sidebar {
+  border-right-color: var(--border-strong);
+  border-right-width: 2px;
+}
+
+body[data-contrast="high"] .terminal-panel,
+body[data-contrast="high"] .log-panel {
+  border-top-color: var(--border-strong);
+  border-top-width: 2px;
+}
+
+body[data-contrast="high"] .file-splitter,
+body[data-contrast="high"] .splitter {
+  background: var(--border-strong);
+  border-color: var(--border-strong);
+}
+
+body[data-contrast="high"] button,
+body[data-contrast="high"] input,
+body[data-contrast="high"] textarea,
+body[data-contrast="high"] select,
+body[data-contrast="high"] .source-mode-actions,
+body[data-contrast="high"] .pdf-action-button,
+body[data-contrast="high"] .project-view-toggle,
+body[data-contrast="high"] .project-context-segment,
+body[data-contrast="high"] .file-context-menu,
+body[data-contrast="high"] .source-minimap-lines,
+body[data-contrast="high"] .project-preview,
+body[data-contrast="high"] .settings-choice-group button {
+  border-color: var(--border-strong);
+}
+
+body[data-contrast="high"] .pdf-action-segment,
+body[data-contrast="high"] .pdf-controls {
+  border: 0;
+}
+
+body[data-contrast="high"] .CodeMirror-gutters {
+  border-right: 2px solid var(--border-strong);
+}
+
+body[data-contrast="high"] .CodeMirror {
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+body[data-contrast="high"] .file-item.active,
+body[data-contrast="high"] .project-view-toggle button.active,
+body[data-contrast="high"] .settings-nav-button.active,
+body[data-contrast="high"] .source-mode-actions .mode-button.active {
+  outline: 2px solid color-mix(in srgb, var(--accent) 78%, var(--text));
+  outline-offset: -2px;
+}
+
+body[data-contrast="high"] .pdf-page canvas {
+  box-shadow: 0 0 0 2px var(--border-strong), 0 18px 52px rgba(0, 0, 0, 0.42);
 }
 
 body[data-theme-preset]:not([data-theme-preset="custom"]) .CodeMirror {

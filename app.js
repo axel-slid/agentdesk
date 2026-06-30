@@ -60,6 +60,8 @@ const settingsBackdrop = document.getElementById("settingsBackdrop");
 const settingsDrawer = document.getElementById("settingsDrawer");
 const closeSettingsButton = document.getElementById("closeSettingsButton");
 const settingsTitle = document.getElementById("settingsTitle");
+const settingsSearchInput = document.getElementById("settingsSearchInput");
+const settingsSearchEmpty = document.getElementById("settingsSearchEmpty");
 const settingsNavButtons = Array.from(document.querySelectorAll(".settings-nav-button"));
 const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
 const settingsThemePreset = document.getElementById("settingsThemePreset");
@@ -154,6 +156,7 @@ const THEME_VARIABLES = [
   "--pdf-dark-paper",
   "--pdf-dark-filter"
 ];
+const HIGH_CONTRAST_PRESETS = new Set(["github-light", "abyss", "tomorrow-night-blue"]);
 const THEME_PRESETS = {
   custom: null,
   "light-plus": {
@@ -346,17 +349,17 @@ const THEME_PRESETS = {
   "github-light": {
     theme: "light",
     accent: "#0969da",
-    background: "linear-gradient(135deg, #ffffff, #f6f8fa 72%, #eef2f6)",
+    background: "linear-gradient(135deg, #ffffff, #f5f7fa 72%, #e6ebf0)",
     colors: {
-      "--bg": "#f6f8fa",
-      "--glass": "rgba(255, 255, 255, 0.74)",
-      "--glass-strong": "rgba(255, 255, 255, 0.9)",
-      "--panel": "rgba(255, 255, 255, 0.92)",
+      "--bg": "#ffffff",
+      "--glass": "rgba(255, 255, 255, 0.94)",
+      "--glass-strong": "rgba(255, 255, 255, 0.98)",
+      "--panel": "rgba(255, 255, 255, 0.98)",
       "--page": "#ffffff",
-      "--text": "#24292f",
-      "--muted": "#57606a",
-      "--border": "rgba(87, 96, 106, 0.22)",
-      "--border-strong": "rgba(87, 96, 106, 0.34)",
+      "--text": "#000000",
+      "--muted": "#24292f",
+      "--border": "rgba(0, 0, 0, 0.48)",
+      "--border-strong": "rgba(0, 0, 0, 0.76)",
       "--red": "#cf222e",
       "--green": "#116329",
       "--blue": "#0969da",
@@ -369,7 +372,9 @@ const THEME_PRESETS = {
       "--cm-atom": "#8250df",
       "--cm-comment": "#6e7781",
       "--cm-string": "#0a3069",
-      "--cm-number": "#953800"
+      "--cm-number": "#953800",
+      "--pdf-bg": "#b7bec8",
+      "--pdf-paper": "#ffffff"
     }
   },
   "github-dark": {
@@ -519,31 +524,33 @@ const THEME_PRESETS = {
   },
   abyss: {
     theme: "dark",
-    accent: "#4ec9b0",
-    background: "linear-gradient(135deg, #000c18, #001b33 72%, #000814)",
+    accent: "#00d7ff",
+    background: "linear-gradient(135deg, #000000, #00111f 72%, #000000)",
     colors: {
-      "--bg": "#000c18",
-      "--glass": "rgba(0, 12, 24, 0.78)",
-      "--glass-strong": "rgba(0, 27, 51, 0.9)",
-      "--panel": "rgba(0, 18, 36, 0.94)",
-      "--page": "#f7fbff",
-      "--text": "#d6deeb",
-      "--muted": "#8aa1b4",
-      "--border": "rgba(138, 161, 180, 0.18)",
-      "--border-strong": "rgba(138, 161, 180, 0.3)",
-      "--red": "#ef5350",
-      "--green": "#4ec9b0",
-      "--blue": "#82aaff",
-      "--blue-dark": "#5f86e8",
-      "--cm-bg": "#000c18",
-      "--cm-gutter": "#001b33",
-      "--cm-text": "#d6deeb",
-      "--cm-keyword": "#c792ea",
-      "--cm-variable": "#82aaff",
-      "--cm-atom": "#4ec9b0",
-      "--cm-comment": "#637777",
-      "--cm-string": "#ecc48d",
-      "--cm-number": "#f78c6c"
+      "--bg": "#000000",
+      "--glass": "rgba(0, 8, 16, 0.94)",
+      "--glass-strong": "rgba(0, 17, 31, 0.98)",
+      "--panel": "rgba(0, 8, 16, 0.98)",
+      "--page": "#ffffff",
+      "--text": "#ffffff",
+      "--muted": "#d7f7ff",
+      "--border": "rgba(255, 255, 255, 0.58)",
+      "--border-strong": "rgba(255, 255, 255, 0.86)",
+      "--red": "#ff5c5c",
+      "--green": "#00ffbf",
+      "--blue": "#00d7ff",
+      "--blue-dark": "#39a7ff",
+      "--cm-bg": "#000000",
+      "--cm-gutter": "#001a2e",
+      "--cm-text": "#ffffff",
+      "--cm-keyword": "#ff73d7",
+      "--cm-variable": "#00d7ff",
+      "--cm-atom": "#00ffbf",
+      "--cm-comment": "#a8b7c7",
+      "--cm-string": "#ffe66d",
+      "--cm-number": "#ff9b6d",
+      "--pdf-bg": "#000000",
+      "--pdf-paper": "#ffffff"
     }
   },
   "kimbie-dark": {
@@ -578,22 +585,22 @@ const THEME_PRESETS = {
   "tomorrow-night-blue": {
     theme: "dark",
     accent: "#bbdaff",
-    background: "linear-gradient(135deg, #002451, #00346e 72%, #001733)",
+    background: "linear-gradient(135deg, #001733, #002451 72%, #000a18)",
     colors: {
-      "--bg": "#002451",
-      "--glass": "rgba(0, 36, 81, 0.78)",
-      "--glass-strong": "rgba(0, 52, 110, 0.9)",
-      "--panel": "rgba(0, 36, 81, 0.94)",
-      "--page": "#f4f8ff",
+      "--bg": "#001733",
+      "--glass": "rgba(0, 23, 51, 0.94)",
+      "--glass-strong": "rgba(0, 36, 81, 0.98)",
+      "--panel": "rgba(0, 23, 51, 0.98)",
+      "--page": "#ffffff",
       "--text": "#ffffff",
       "--muted": "#bbdaff",
-      "--border": "rgba(187, 218, 255, 0.16)",
-      "--border-strong": "rgba(187, 218, 255, 0.3)",
+      "--border": "rgba(187, 218, 255, 0.58)",
+      "--border-strong": "rgba(187, 218, 255, 0.86)",
       "--red": "#ff9da4",
       "--green": "#d1f1a9",
       "--blue": "#bbdaff",
       "--blue-dark": "#7aa6da",
-      "--cm-bg": "#002451",
+      "--cm-bg": "#001733",
       "--cm-gutter": "#00346e",
       "--cm-text": "#ffffff",
       "--cm-keyword": "#ebbbff",
@@ -601,7 +608,9 @@ const THEME_PRESETS = {
       "--cm-atom": "#ffc58f",
       "--cm-comment": "#7285b7",
       "--cm-string": "#d1f1a9",
-      "--cm-number": "#ffc58f"
+      "--cm-number": "#ffc58f",
+      "--pdf-bg": "#000a18",
+      "--pdf-paper": "#ffffff"
     }
   }
 };
@@ -684,6 +693,7 @@ function setupSourceEditor() {
     lineWrapping: true,
     indentUnit: 2,
     tabSize: 2,
+    scrollbarStyle: "null",
     viewportMargin: 80
   });
   applyEditorKeyMap();
@@ -792,9 +802,13 @@ function setupSettings() {
     applyLayoutSettings({ showSidebar: settingsFileSidebarToggle.checked, pdfMinWidth: width, fileWidth: getFileSidebarWidth() });
     localStorage.setItem("latexStudioPdfMinWidth", String(width));
   });
+  settingsSearchInput.addEventListener("input", updateSettingsSearch);
 
   settingsNavButtons.forEach((button) => {
-    button.addEventListener("click", () => setSettingsPanel(button.dataset.settingsSection));
+    button.addEventListener("click", () => {
+      clearSettingsSearch();
+      setSettingsPanel(button.dataset.settingsSection);
+    });
   });
   reloadAgentsButton.addEventListener("click", loadAgentsFile);
   saveAgentsButton.addEventListener("click", saveAgentsFile);
@@ -839,6 +853,7 @@ function applyTheme(theme, accent, { presetId = "custom" } = {}) {
 
   document.body.dataset.theme = normalizedTheme;
   document.body.dataset.themePreset = normalizedPreset;
+  document.body.dataset.contrast = HIGH_CONTRAST_PRESETS.has(normalizedPreset) ? "high" : "normal";
   document.documentElement.style.setProperty("--accent", normalizedAccent);
   document.documentElement.style.setProperty("--accent-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
   document.body.style.setProperty("--accent", normalizedAccent);
@@ -1563,6 +1578,7 @@ function openSettings() {
   settingsDrawer.hidden = false;
   const activeSection = settingsDrawer.dataset.activeSection || "appearance";
   setSettingsPanel(activeSection);
+  updateSettingsSearch();
 }
 
 function closeSettings({ keepBackdrop = false } = {}) {
@@ -1584,6 +1600,7 @@ function setSettingsPanel(section) {
   const nextSection = settingsPanels.some((panel) => panel.dataset.settingsPanel === section) ? section : "appearance";
   const title = {
     appearance: "Appearance",
+    profile: "Profile",
     workspace: "Workspace",
     agents: "AGENTS.md",
     ai: "AI assistance",
@@ -1600,6 +1617,60 @@ function setSettingsPanel(section) {
   });
 
   if (nextSection === "agents") loadAgentsFile();
+  updateSettingsSearch();
+}
+
+function clearSettingsSearch() {
+  if (!settingsSearchInput || !settingsSearchInput.value) return;
+  settingsSearchInput.value = "";
+  updateSettingsSearch();
+}
+
+function updateSettingsSearch() {
+  if (!settingsSearchInput || !settingsSearchEmpty) return;
+
+  const query = settingsSearchInput.value.trim().toLowerCase();
+  const activeSection = settingsDrawer.dataset.activeSection || "appearance";
+  settingsDrawer.classList.toggle("settings-searching", Boolean(query));
+  let visibleCount = 0;
+
+  settingsPanels.forEach((panel) => {
+    let panelMatches = 0;
+    const rows = Array.from(panel.querySelectorAll(".setting-row, .setting-column, .settings-action-row, .settings-action-button, .settings-status, .shortcut-list > div"));
+    rows.forEach((row) => {
+      const text = row.textContent.toLowerCase();
+      const matches = !query || text.includes(query);
+      row.hidden = Boolean(query && !matches);
+      row.classList.toggle("settings-search-match", Boolean(query && matches));
+      if (matches) panelMatches += 1;
+    });
+
+    if (query) {
+      const showPanel = panelMatches > 0;
+      panel.hidden = !showPanel;
+      panel.classList.toggle("active", showPanel);
+      if (showPanel) visibleCount += panelMatches;
+    } else {
+      panel.hidden = false;
+      panel.classList.toggle("active", panel.dataset.settingsPanel === activeSection);
+      rows.forEach((row) => {
+        row.hidden = false;
+        row.classList.remove("settings-search-match");
+      });
+    }
+  });
+
+  settingsNavButtons.forEach((button) => {
+    if (!query) {
+      button.hidden = false;
+      button.classList.toggle("active", button.dataset.settingsSection === activeSection);
+      return;
+    }
+    const panel = settingsPanels.find((item) => item.dataset.settingsPanel === button.dataset.settingsSection);
+    button.hidden = !panel || panel.hidden;
+  });
+
+  settingsSearchEmpty.hidden = !query || visibleCount > 0;
 }
 
 function openFind() {
