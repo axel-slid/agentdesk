@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("localOverleaf", {
   addProject: (kind) => ipcRenderer.invoke("add-project", { kind }),
   addProjectFromPath: (paths) => ipcRenderer.invoke("add-project-from-path", { paths }),
   listTemplates: () => ipcRenderer.invoke("list-templates"),
+  templatePreviewPdf: (templateId) => ipcRenderer.invoke("template-preview-pdf", templateId),
   importTemplate: () => ipcRenderer.invoke("import-template"),
   removeTemplate: (templateId) => ipcRenderer.invoke("remove-template", templateId),
   createProjectFromTemplate: (templateId) => ipcRenderer.invoke("create-project-from-template", templateId),

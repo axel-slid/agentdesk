@@ -17,6 +17,7 @@ const backToProjectsButton = document.getElementById("backToProjectsButton");
 const commandPalette = document.getElementById("commandPalette");
 const commandPaletteInput = document.getElementById("commandPaletteInput");
 const commandPaletteList = document.getElementById("commandPaletteList");
+const closeCommandPaletteButton = document.getElementById("closeCommandPaletteButton");
 const fileRail = document.getElementById("fileRail");
 const fileRailButton = document.getElementById("fileRailButton");
 const filePane = document.getElementById("filePane");
@@ -144,6 +145,61 @@ const EXTERNAL_LINK_ICON_SVG = `
     <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path>
   </svg>
 `;
+const MATERIAL_ICON_BASE = "node_modules/material-icon-theme/icons";
+const FILE_ICON_NAMES = new Map([
+  ["readme.md", "readme.svg"],
+  ["license", "license.svg"],
+  ["dockerfile", "docker.svg"],
+  ["makefile", "makefile.svg"]
+]);
+const FILE_ICON_EXTENSIONS = new Map([
+  [".tex", "tex.svg"],
+  [".ltx", "tex.svg"],
+  [".cls", "latex-class.clone.svg"],
+  [".sty", "latex-package.clone.svg"],
+  [".bst", "bibtex-style.svg"],
+  [".bib", "bibliography.svg"],
+  [".pdf", "pdf.svg"],
+  [".md", "markdown.svg"],
+  [".txt", "document.svg"],
+  [".log", "log.svg"],
+  [".yaml", "yaml.svg"],
+  [".yml", "yaml.svg"],
+  [".json", "json.svg"],
+  [".js", "javascript.svg"],
+  [".jsx", "react.svg"],
+  [".ts", "typescript.svg"],
+  [".tsx", "react_ts.svg"],
+  [".css", "css.svg"],
+  [".html", "html.svg"],
+  [".xml", "xml.svg"],
+  [".py", "python.svg"],
+  [".sh", "console.svg"],
+  [".bash", "console.svg"],
+  [".zsh", "console.svg"],
+  [".csv", "table.svg"],
+  [".tsv", "table.svg"],
+  [".zip", "zip.svg"],
+  [".tar", "zip.svg"],
+  [".tgz", "zip.svg"],
+  [".gz", "zip.svg"],
+  [".png", "image.svg"],
+  [".jpg", "image.svg"],
+  [".jpeg", "image.svg"],
+  [".gif", "image.svg"],
+  [".webp", "image.svg"],
+  [".svg", "svg.svg"]
+]);
+const FOLDER_ICON_NAMES = new Map([
+  ["figures", "folder-images.svg"],
+  ["images", "folder-images.svg"],
+  ["img", "folder-images.svg"],
+  ["output", "folder-dist.svg"],
+  ["outputs", "folder-dist.svg"],
+  ["templates", "folder-template.svg"],
+  ["tex", "folder-docs.svg"],
+  ["docs", "folder-docs.svg"]
+]);
 const THEME_VARIABLES = [
   "--bg",
   "--glass",
@@ -1341,7 +1397,7 @@ function updateRelativeLineNumbers() {
       const marker = document.createElement("span");
       marker.className = "relative-line-number";
       const distance = Math.abs(line - cursorLine);
-      marker.textContent = distance === 0 ? "" : String(distance);
+      marker.textContent = String(distance);
       editor.setGutterMarker(line, "relative-line-gutter", marker);
     }
   });
@@ -1639,6 +1695,7 @@ function wireEvents() {
   templatesButton.addEventListener("click", openTemplatesPanel);
   closeTemplatesButton.addEventListener("click", closeTemplatesPanel);
   importTemplateButton.addEventListener("click", importCustomTemplate);
+  closeCommandPaletteButton.addEventListener("click", closeCommandPalette);
   commandPaletteInput.addEventListener("input", renderCommandPalette);
   commandPaletteInput.addEventListener("keydown", handleCommandPaletteKeydown);
   fileRailButton.addEventListener("click", () => setFileSidebarVisible(true));
@@ -1938,7 +1995,6 @@ function renderTemplateGrid(container, templates, { custom }) {
       </div>
       <div>
         <h4>${escapeHtml(template.name)}</h4>
-        <p>${escapeHtml(template.description || "")}</p>
         <small>${escapeHtml(template.sourceName || (custom ? "Custom template" : "Online template"))}</small>
       </div>
       <div class="template-card-actions">
@@ -1958,7 +2014,52 @@ function renderTemplateGrid(container, templates, { custom }) {
       removeButton.addEventListener("click", () => removeCustomTemplate(template));
     }
     container.appendChild(card);
+    renderRealTemplatePreview(card, template, previewKind);
   });
+}
+
+async function renderRealTemplatePreview(card, template, previewKind) {
+  const preview = card.querySelector(".template-preview");
+  if (!preview) return;
+  preview.innerHTML = templateSourcePreviewMarkup(template.previewText, previewKind);
+  preview.classList.add("template-preview-source");
+
+  if (!window.localOverleaf.templatePreviewPdf) return;
+
+  try {
+    const [pdfjsLib, pdfBuffer] = await Promise.all([
+      loadPdfJs(),
+      window.localOverleaf.templatePreviewPdf(template.id)
+    ]);
+    if (!card.isConnected) return;
+
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfBuffer) });
+    const pdf = await loadingTask.promise;
+    const page = await pdf.getPage(1);
+    if (!card.isConnected) return;
+
+    const baseViewport = page.getViewport({ scale: 1 });
+    const fitWidth = Math.max(120, preview.clientWidth - 18) / baseViewport.width;
+    const fitHeight = Math.max(90, preview.clientHeight - 16) / baseViewport.height;
+    const viewport = page.getViewport({ scale: Math.min(fitWidth, fitHeight) });
+    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+    canvas.style.width = `${Math.floor(viewport.width)}px`;
+    canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+    const context = canvas.getContext("2d");
+    context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+    await page.render({ canvasContext: context, viewport }).promise;
+    if (!card.isConnected) return;
+
+    preview.classList.remove("template-preview-source");
+    preview.classList.add("template-preview-pdf");
+    preview.replaceChildren(canvas);
+  } catch (error) {
+    preview.dataset.previewError = formatError(error);
+  }
 }
 
 function templatePreviewKind(template, custom) {
@@ -1970,6 +2071,37 @@ function templatePreviewKind(template, custom) {
   if (text.includes("thesis") || text.includes("report")) return "report";
   if (custom) return "custom";
   return "paper";
+}
+
+function templateSourcePreviewMarkup(source, kind) {
+  const title = extractTemplatePreviewTitle(source) || (kind === "slides" ? "Presentation" : "Template");
+  const sections = Array.from(String(source || "").matchAll(/\\(?:section|chapter)\*?\{([^}]+)\}/g))
+    .map((match) => latexToVisual(match[1]))
+    .slice(0, 5);
+  const bodyLines = String(source || "")
+    .split("\n")
+    .map((line) => latexToVisual(line).trim())
+    .filter((line) => line && !line.startsWith("\\") && !line.startsWith("%"))
+    .slice(0, 7);
+  const previewLines = [
+    ...sections.map((section) => ({ kind: "section", text: section })),
+    ...bodyLines.map((line) => ({ kind: "body", text: line }))
+  ].slice(0, 8);
+
+  return `
+    <div class="template-paper-preview">
+      <strong>${escapeHtml(title)}</strong>
+      ${previewLines.map((line) => `<span class="template-real-line ${line.kind === "section" ? "section" : ""}">${escapeHtml(line.text)}</span>`).join("")}
+    </div>
+  `;
+}
+
+function extractTemplatePreviewTitle(source) {
+  const titleMatch = String(source || "").match(/\\title\{([^}]+)\}/);
+  if (titleMatch) return latexToVisual(titleMatch[1]);
+  const nameMatch = String(source || "").match(/\{\\LARGE\s+([^}]+)\}/);
+  if (nameMatch) return latexToVisual(nameMatch[1]);
+  return "";
 }
 
 function templatePreviewMarkup(kind) {
@@ -2103,19 +2235,20 @@ function renderCommandPalette() {
 function buildCommandPaletteItems(rawQuery) {
   const query = rawQuery.toLowerCase();
   const isOpenMode = query.startsWith("/open");
+  const isHelpMode = query.startsWith("/help");
   const search = isOpenMode ? query.replace(/^\/open\s*/, "") : query.replace(/^\//, "");
-  const commands = [
-    { id: "open", label: "/open", detail: "Open a project", hint: "projects", action: () => openCommandPalette("/open ") },
-    { id: "new", label: "/new", detail: "Create a new project", hint: "project", action: () => { closeCommandPalette(); toggleNewProjectPanel(true); } },
-    { id: "templates", label: "/templates", detail: "Browse and add LaTeX templates", hint: "library", action: () => { closeCommandPalette({ keepBackdrop: true }); openTemplatesPanel(); } },
-    { id: "settings", label: "/settings", detail: "Open settings", hint: "Cmd+,", action: () => { closeCommandPalette({ keepBackdrop: true }); openSettings(); } },
-    { id: "compile", label: "/compile", detail: "Compile the active PDF", hint: "Cmd+Enter", action: () => { closeCommandPalette(); compileManuscript({ manual: true }); } },
-    { id: "save", label: "/save", detail: "Save the active TeX file", hint: "Cmd+S", action: () => { closeCommandPalette(); saveManuscript(); } },
-    { id: "visual", label: "/visual", detail: "Switch to visual mode", hint: "view", action: () => { closeCommandPalette(); setMode("visual"); } },
-    { id: "code", label: "/code", detail: "Switch to code mode", hint: "view", action: () => { closeCommandPalette(); setMode("source"); } },
-    { id: "terminal", label: "/terminal", detail: "Toggle terminal", hint: "panel", action: () => { closeCommandPalette(); setTerminalCollapsed(!sourcePane.classList.contains("terminal-collapsed")); } },
-    { id: "files", label: "/files", detail: "Toggle file sidebar", hint: "sidebar", action: () => { closeCommandPalette(); setFileSidebarVisible(workspace.classList.contains("files-hidden")); } }
-  ];
+  const commands = commandPaletteCommands();
+
+  if (isHelpMode) {
+    const helpSearch = query.replace(/^\/help\s*/, "");
+    return commands
+      .filter((item) => !helpSearch || `${item.label} ${item.detail} ${item.hint}`.toLowerCase().includes(helpSearch))
+      .map((item) => ({
+        ...item,
+        detail: `${item.detail}${item.hint ? ` · ${item.hint}` : ""}`,
+        hint: "run"
+      }));
+  }
 
   if (isOpenMode || rawQuery === "" || !rawQuery.startsWith("/")) {
     const projectItems = projects
@@ -2142,6 +2275,22 @@ function buildCommandPaletteItems(rawQuery) {
   }
 
   return commands.filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query));
+}
+
+function commandPaletteCommands() {
+  return [
+    { id: "help", label: "/help", detail: "Show available command palette actions", hint: "commands", action: () => openCommandPalette("/help ") },
+    { id: "open", label: "/open", detail: "Open a project", hint: "projects", action: () => openCommandPalette("/open ") },
+    { id: "new", label: "/new", detail: "Create a new project", hint: "project", action: () => { closeCommandPalette(); toggleNewProjectPanel(true); } },
+    { id: "templates", label: "/templates", detail: "Browse and add LaTeX templates", hint: "library", action: () => { closeCommandPalette({ keepBackdrop: true }); openTemplatesPanel(); } },
+    { id: "settings", label: "/settings", detail: "Open settings", hint: "Cmd+,", action: () => { closeCommandPalette({ keepBackdrop: true }); openSettings(); } },
+    { id: "compile", label: "/compile", detail: "Compile the active PDF", hint: "Cmd+Enter", action: () => { closeCommandPalette(); compileManuscript({ manual: true }); } },
+    { id: "save", label: "/save", detail: "Save the active TeX file", hint: "Cmd+S", action: () => { closeCommandPalette(); saveManuscript(); } },
+    { id: "visual", label: "/visual", detail: "Switch to visual mode", hint: "view", action: () => { closeCommandPalette(); setMode("visual"); } },
+    { id: "code", label: "/code", detail: "Switch to code mode", hint: "view", action: () => { closeCommandPalette(); setMode("source"); } },
+    { id: "terminal", label: "/terminal", detail: "Toggle terminal", hint: "panel", action: () => { closeCommandPalette(); setTerminalCollapsed(!sourcePane.classList.contains("terminal-collapsed")); } },
+    { id: "files", label: "/files", detail: "Toggle file sidebar", hint: "sidebar", action: () => { closeCommandPalette(); setFileSidebarVisible(workspace.classList.contains("files-hidden")); } }
+  ];
 }
 
 function updateCommandPaletteSelection() {
@@ -2680,20 +2829,22 @@ function setSuggestionPanelOpen(open) {
   }
 }
 
-async function runSuggestionMode() {
-  if (!activeProject) return;
+async function runSuggestionMode(options = {}) {
+  if (!activeProject) return false;
 
   const prompt = suggestionPromptInput.value.trim();
   if (!prompt) {
-    suggestionStatus.textContent = "Add instructions before running suggestion mode.";
-    return;
+    suggestionStatus.textContent = "Tell the agent what you want changed first.";
+    return false;
   }
   const promptWithProfile = withProfileContext(prompt);
+  const providerName = suggestionModelSelect.value === "claude" ? "Claude" : "Codex";
+  const autoApply = options.autoApply === true;
 
   setSuggestionBusy(true);
   suggestionState = null;
   suggestionDiff.hidden = true;
-  suggestionStatus.textContent = `Running ${suggestionModelSelect.value === "claude" ? "Claude" : "Codex"} on a temporary copy...`;
+  suggestionStatus.textContent = `${providerName} is thinking through the edit...`;
 
   try {
     const result = await window.localOverleaf.runSuggestion(
@@ -2715,17 +2866,23 @@ async function runSuggestionMode() {
     };
 
     if (!hunks.length) {
-      suggestionStatus.textContent = "No manuscript changes were suggested.";
+      suggestionStatus.textContent = `${providerName} did not find a change to make.`;
       suggestionDiff.hidden = true;
-      return;
+      return false;
     }
 
-    suggestionStatus.textContent = `${hunks.length} suggested hunk${hunks.length === 1 ? "" : "s"} ready for review.`;
+    suggestionStatus.textContent = `${providerName} suggested ${hunks.length} change${hunks.length === 1 ? "" : "s"}.`;
     suggestionDiff.hidden = false;
     renderSuggestionHunk();
+    if (autoApply) {
+      applyAllSuggestionHunks();
+      suggestionStatus.textContent = `${providerName} implemented ${hunks.length} change${hunks.length === 1 ? "" : "s"}.`;
+    }
+    return true;
   } catch (error) {
     suggestionStatus.textContent = formatError(error);
     suggestionDiff.hidden = true;
+    return false;
   } finally {
     setSuggestionBusy(false);
   }
@@ -3315,7 +3472,12 @@ function renderFileNode(node, depth) {
     details.style.setProperty("--depth-indent", depthIndent);
 
     const summary = document.createElement("summary");
-    summary.innerHTML = `<span class="folder-name">${escapeHtml(node.name)}</span>`;
+    summary.innerHTML = `
+      <span class="file-folder-icon" aria-hidden="true">
+        <img src="${MATERIAL_ICON_BASE}/${folderIconName(node)}" alt="">
+      </span>
+      <span class="folder-name">${escapeHtml(node.name)}</span>
+    `;
     attachFileContextMenu(summary, node);
     details.appendChild(summary);
 
@@ -3333,7 +3495,7 @@ function renderFileNode(node, depth) {
   button.style.setProperty("--depth-indent", depthIndent);
   button.classList.toggle("active", Boolean(activeFile && activeFile.relativePath === node.relativePath));
   button.innerHTML = `
-    <span class="file-icon file-icon-${fileIconClass(node)}" aria-hidden="true"></span>
+    ${fileIconMarkup(node)}
     <span class="file-name">${escapeHtml(node.name)}</span>
   `;
   button.addEventListener("click", () => selectProjectFile(node));
@@ -3341,14 +3503,27 @@ function renderFileNode(node, depth) {
   return button;
 }
 
-function fileIconClass(node) {
-  const name = node.name.toLowerCase();
-  if (node.image) return "image";
-  if (name.endsWith(".tex") || name.endsWith(".cls") || name.endsWith(".bst")) return "tex";
-  if (name.endsWith(".bib")) return "bib";
-  if (name.endsWith(".md") || name.endsWith(".txt")) return "md";
-  if (name.endsWith(".pdf")) return "pdf";
-  return "generic";
+function fileIconMarkup(node) {
+  return `
+    <span class="file-icon file-icon-svg" aria-hidden="true">
+      <img src="${MATERIAL_ICON_BASE}/${fileIconName(node)}" alt="">
+    </span>
+  `;
+}
+
+function fileIconName(node) {
+  const name = String(node.name || "").toLowerCase();
+  const namedIcon = FILE_ICON_NAMES.get(name);
+  if (namedIcon) return namedIcon;
+  if (name.endsWith(".tar.gz")) return "zip.svg";
+  const extension = name.includes(".") ? name.slice(name.lastIndexOf(".")) : "";
+  if (node.image) return "image.svg";
+  return FILE_ICON_EXTENSIONS.get(extension) || "file.svg";
+}
+
+function folderIconName(node) {
+  const name = String(node.name || "").toLowerCase();
+  return FOLDER_ICON_NAMES.get(name) || "folder.svg";
 }
 
 async function selectProjectFile(node) {
@@ -3773,7 +3948,15 @@ async function fixCompileLogWithCodex() {
   setSuggestionPanelOpen(true);
   suggestionModelSelect.value = "codex";
   suggestionPromptInput.value = compileLogFixPrompt(logText);
-  await runSuggestionMode();
+  compileLog.textContent = "Codex is thinking about the compile errors...";
+  const implemented = await runSuggestionMode({ autoApply: true });
+  if (implemented) {
+    compileLog.textContent = "Codex implemented a compile fix. Compile again to verify it.";
+    setCompileState("Codex applied a fix", "ok");
+  } else {
+    compileLog.textContent = "Codex did not implement a compile fix. Check the AI suggestions panel for details.";
+    setCompileState("Codex fix unavailable", "error");
+  }
 }
 
 function compileLogFixPrompt(logText) {
@@ -5027,6 +5210,7 @@ function setupTerminalResize() {
   };
 
   terminalResizeHandle.addEventListener("pointerdown", (event) => {
+    if (!terminalSessions.length) createTerminalSession("shell");
     dragStartY = event.clientY;
     dragStartHeight = sourcePane.classList.contains("terminal-collapsed") ? MIN_TERMINAL_HEIGHT : getTerminalHeight();
     terminalResizeHandle.setPointerCapture(event.pointerId);

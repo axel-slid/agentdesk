@@ -196,6 +196,10 @@ function projectLibraryRoot() {
   return path.join(app.getPath("documents"), "AgentDesk");
 }
 
+function templatePreviewRootPath() {
+  return path.join(app.getPath("userData"), "template-previews");
+}
+
 function makeProjectId(texPath) {
   return crypto.createHash("sha1").update(path.resolve(texPath)).digest("hex").slice(0, 14);
 }
@@ -229,6 +233,12 @@ function normalizeExternalUrl(rawUrl) {
     throw new Error(`Unsupported link protocol: ${url.protocol || "unknown"}`);
   }
   return url.toString();
+}
+
+function formatMainError(error) {
+  if (!error) return "Unknown error.";
+  if (typeof error === "string") return error;
+  return error.message || JSON.stringify(error, null, 2);
 }
 
 async function openExternalLink(_event, rawUrl) {
@@ -364,26 +374,20 @@ async function addProjectFromPath(_event, payload = {}) {
 }
 
 async function createBlankProject() {
-  const result = await dialog.showSaveDialog(mainWindow, {
-    title: "Create Blank LaTeX Project",
-    buttonLabel: "Create Project",
-    defaultPath: path.join(app.getPath("documents"), "Untitled LaTeX Project", "main.tex"),
-    filters: [
-      { name: "LaTeX files", extensions: ["tex"] }
-    ]
-  });
+  const projectName = "Untitled LaTeX Project";
+  const destination = await uniqueDirectory(projectLibraryRoot(), projectName);
+  const texPath = path.join(destination, "main.tex");
 
-  if (result.canceled || !result.filePath) {
-    return { project: null, ...(await listProjects()) };
-  }
+  await fsp.mkdir(destination, { recursive: true });
+  await fsp.writeFile(texPath, blankProjectTemplate(projectName), "utf8");
 
-  const texPath = path.resolve(result.filePath.endsWith(".tex") ? result.filePath : `${result.filePath}.tex`);
-  await fsp.mkdir(path.dirname(texPath), { recursive: true });
-  if (!fs.existsSync(texPath)) {
-    await fsp.writeFile(texPath, blankProjectTemplate(path.basename(texPath, ".tex")), "utf8");
-  }
+  const project = await registerProjectRecord(texPath, projectName);
+  await compileProjectIfPossible(project.id);
 
-  return registerProject(texPath, titleCase(path.basename(path.dirname(texPath)).replace(/[-_]+/g, " ")));
+  return {
+    project: decorateProject(project),
+    ...(await listProjects())
+  };
 }
 
 async function addTexProject() {
@@ -1076,6 +1080,7 @@ const BUILT_IN_TEMPLATES = [
 ];
 
 function publicBuiltInTemplate(template) {
+  const entry = template.entry || "main.tex";
   return {
     id: template.id,
     name: template.name,
@@ -1083,6 +1088,8 @@ function publicBuiltInTemplate(template) {
     sourceName: template.sourceName,
     sourceUrl: template.sourceUrl,
     kind: "online",
+    entry,
+    previewText: String((template.files && template.files[entry]) || Object.values(template.files || {})[0] || "").slice(0, 12000),
     fileCount: Object.keys(template.files || {}).length
   };
 }
@@ -1102,6 +1109,15 @@ async function writeCustomTemplates(templates) {
 }
 
 function decorateCustomTemplate(template) {
+  let previewText = "";
+  if (template.texPath && fs.existsSync(template.texPath)) {
+    try {
+      previewText = fs.readFileSync(template.texPath, "utf8").slice(0, 12000);
+    } catch (error) {
+      previewText = "";
+    }
+  }
+
   return {
     id: template.id,
     name: template.name,
@@ -1110,6 +1126,7 @@ function decorateCustomTemplate(template) {
     sourceUrl: "",
     kind: "custom",
     texName: template.texPath ? path.basename(template.texPath) : "main.tex",
+    previewText,
     rootPath: template.rootPath,
     createdAt: template.createdAt,
     updatedAt: template.updatedAt
@@ -1203,7 +1220,12 @@ async function createProjectFromTemplate(_event, templateId) {
   if (builtIn) {
     const destination = await uniqueDirectory(projectLibraryRoot(), builtIn.name);
     await writeTemplateFiles(destination, builtIn.files);
-    return registerProject(path.join(destination, builtIn.entry || "main.tex"), builtIn.name);
+    const result = await registerProject(path.join(destination, builtIn.entry || "main.tex"), builtIn.name);
+    await compileProjectIfPossible(result.project && result.project.id);
+    return {
+      ...result,
+      ...(await listProjects())
+    };
   }
 
   const templates = await readCustomTemplates();
@@ -1224,7 +1246,61 @@ async function createProjectFromTemplate(_event, templateId) {
   if (!entryPath) entryPath = await findProjectEntryFile(destination);
   if (!entryPath) throw new Error("Template copy did not contain a .tex or .txt file.");
 
-  return registerProject(entryPath, template.name);
+  const result = await registerProject(entryPath, template.name);
+  await compileProjectIfPossible(result.project && result.project.id);
+  return {
+    ...result,
+    ...(await listProjects())
+  };
+}
+
+async function templatePreviewPdf(_event, templateId) {
+  const id = String(templateId || "");
+  const builtIn = BUILT_IN_TEMPLATES.find((template) => template.id === id);
+  const previewRoot = templatePreviewRootPath();
+  await fsp.mkdir(previewRoot, { recursive: true });
+
+  let workDir = "";
+  let entryPath = "";
+  if (builtIn) {
+    workDir = path.join(previewRoot, builtIn.id);
+    await fsp.rm(workDir, { recursive: true, force: true });
+    await writeTemplateFiles(workDir, builtIn.files);
+    entryPath = path.join(workDir, builtIn.entry || "main.tex");
+  } else {
+    const templates = await readCustomTemplates();
+    const template = templates.find((item) => item.id === id);
+    if (!template) throw new Error("Template not found.");
+    workDir = path.join(previewRoot, template.id);
+    await fsp.rm(workDir, { recursive: true, force: true });
+    await copyTemplateDirectory(template.rootPath, workDir);
+    entryPath = await findProjectEntryFile(workDir);
+  }
+
+  if (!entryPath || path.extname(entryPath).toLowerCase() !== ".tex") {
+    throw new Error("Template preview requires a .tex entry file.");
+  }
+
+  const project = makeProject(entryPath, builtIn ? builtIn.name : "Template Preview");
+  await runTectonic(project);
+  const pdfPath = pdfPathFor(project);
+  const pdf = await fsp.readFile(pdfPath);
+  return pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
+}
+
+async function compileProjectIfPossible(projectId) {
+  if (!projectId) return { ok: false, output: "" };
+
+  try {
+    const project = await getProject(projectId);
+    if (path.extname(project.texPath).toLowerCase() !== ".tex") {
+      return { ok: false, output: "Entry file is not TeX." };
+    }
+    const output = await runTectonic(project);
+    return { ok: fs.existsSync(pdfPathFor(project)), output };
+  } catch (error) {
+    return { ok: false, output: formatMainError(error) };
+  }
 }
 
 async function writeTemplateFiles(destination, files) {
@@ -2097,6 +2173,7 @@ function parseUnifiedDiff(diff) {
 
 async function readPdf(_event, projectId) {
   const project = await getProject(projectId);
+  await ensureProjectPdf(project);
   const pdfPath = pdfPathFor(project);
   const pdf = await fsp.readFile(pdfPath);
   return pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
@@ -2104,11 +2181,13 @@ async function readPdf(_event, projectId) {
 
 async function openPdf(_event, projectId) {
   const project = await getProject(projectId);
+  await ensureProjectPdf(project);
   return shell.openPath(pdfPathFor(project));
 }
 
 async function downloadPdf(_event, projectId) {
   const project = await getProject(projectId);
+  await ensureProjectPdf(project);
   const sourcePath = pdfPathFor(project);
   if (!fs.existsSync(sourcePath)) throw new Error("No compiled PDF exists yet. Compile the project first.");
 
@@ -2126,6 +2205,19 @@ async function downloadPdf(_event, projectId) {
   const destination = result.filePath.endsWith(".pdf") ? result.filePath : `${result.filePath}.pdf`;
   await fsp.copyFile(sourcePath, destination);
   return { filePath: destination };
+}
+
+async function ensureProjectPdf(project) {
+  const pdfPath = pdfPathFor(project);
+  if (fs.existsSync(pdfPath)) return;
+  if (path.extname(project.texPath).toLowerCase() !== ".tex") {
+    throw new Error("No compiled PDF exists yet. Compile the project first.");
+  }
+
+  await runTectonic(project);
+  if (!fs.existsSync(pdfPath)) {
+    throw new Error(`Compile finished but ${path.basename(pdfPath)} was not found.`);
+  }
 }
 
 async function readAgents(_event, projectId) {
@@ -2164,6 +2256,7 @@ ipcMain.handle("list-projects", listProjects);
 ipcMain.handle("add-project", addProject);
 ipcMain.handle("add-project-from-path", addProjectFromPath);
 ipcMain.handle("list-templates", listTemplates);
+ipcMain.handle("template-preview-pdf", templatePreviewPdf);
 ipcMain.handle("import-template", importTemplate);
 ipcMain.handle("remove-template", removeTemplate);
 ipcMain.handle("create-project-from-template", createProjectFromTemplate);
