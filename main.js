@@ -332,6 +332,7 @@ function decorateProject(project) {
   const rootPath = projectRootFor(project);
   const pdfExists = fs.existsSync(pdfPath);
   const previewImageUrl = pdfExists ? freshPreviewUrl(projectPreviewPngPath(project.id), pdfPath) : "";
+  const detectedTitle = texExists ? detectTexTitle(project.texPath) : "";
   let modifiedAt = project.updatedAt;
 
   if (texExists) {
@@ -348,6 +349,7 @@ function decorateProject(project) {
     folderName: path.basename(rootPath),
     rootPath,
     rootUrl: `${pathToFileURL(rootPath).href}/`,
+    displayName: detectedTitle || project.name,
     pdfPath,
     pdfName: path.basename(pdfPath),
     texExists,
@@ -355,6 +357,47 @@ function decorateProject(project) {
     previewImageUrl,
     modifiedAt
   };
+}
+
+function detectTexTitle(texPath) {
+  try {
+    const tex = fs.readFileSync(texPath, "utf8").slice(0, 12000);
+    const title = extractTexCommandBody(tex, "title");
+    return cleanTexTitle(title);
+  } catch (error) {
+    return "";
+  }
+}
+
+function extractTexCommandBody(tex, command) {
+  const pattern = new RegExp(`\\\\${command}\\s*\\{`);
+  const match = pattern.exec(tex);
+  if (!match) return "";
+
+  let depth = 1;
+  let cursor = match.index + match[0].length;
+  const start = cursor;
+  while (cursor < tex.length) {
+    const char = tex[cursor];
+    const previous = tex[cursor - 1];
+    if (char === "{" && previous !== "\\") depth += 1;
+    if (char === "}" && previous !== "\\") depth -= 1;
+    if (depth === 0) return tex.slice(start, cursor);
+    cursor += 1;
+  }
+
+  return "";
+}
+
+function cleanTexTitle(value) {
+  return String(value || "")
+    .replace(/%.*$/gm, "")
+    .replace(/\\[a-zA-Z]+\*?(?:\[[^\]]*\])?\{([^{}]*)\}/g, "$1")
+    .replace(/\\[a-zA-Z]+\*?/g, "")
+    .replace(/[{}]/g, "")
+    .replace(/\\([#$%&_{}])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function listProjects() {
@@ -1518,7 +1561,17 @@ function relativeProjectPath(project, absolutePath) {
 }
 
 function isTextFile(filePath) {
-  return [".tex", ".bib", ".bst", ".cls", ".sty", ".txt", ".md", ".log", ".csv", ".json"].includes(path.extname(filePath).toLowerCase());
+  const name = path.basename(filePath).toLowerCase();
+  const extension = path.extname(filePath).toLowerCase();
+  if (["dockerfile", "makefile", "rakefile", "gemfile", "requirements.txt"].includes(name)) return true;
+  return [
+    ".tex", ".ltx", ".bib", ".bst", ".cls", ".sty", ".txt", ".md", ".markdown", ".log",
+    ".csv", ".tsv", ".json", ".jsonl", ".yaml", ".yml", ".toml", ".ini", ".cfg",
+    ".py", ".r", ".jl", ".m", ".js", ".jsx", ".ts", ".tsx", ".css", ".scss", ".html",
+    ".htm", ".xml", ".sql", ".sh", ".bash", ".zsh", ".fish", ".c", ".cc", ".cpp",
+    ".h", ".hpp", ".java", ".go", ".rs", ".swift", ".kt", ".kts", ".rb", ".php",
+    ".pl", ".lua", ".dockerfile", ".rst"
+  ].includes(extension);
 }
 
 function isImageFile(filePath) {
@@ -1622,7 +1675,7 @@ function resolveExecutable(name) {
   }) || name;
 }
 
-function terminalPreset(kind, cwd) {
+function terminalPreset(kind, cwd, options = {}) {
   if (kind === "codex") {
     return {
       title: "Codex",
@@ -1641,12 +1694,38 @@ function terminalPreset(kind, cwd) {
     };
   }
 
+  if (kind === "ssh") {
+    const remote = normalizeRemoteOptions(options.remote);
+    if (!remote.host) throw new Error("Set an SSH host in Settings > Remote before opening an SSH terminal.");
+    const remoteCommand = remote.path
+      ? `cd ${shellQuote(remote.path)} && exec ${remote.shell || "$SHELL"} -l`
+      : "";
+    return {
+      title: "SSH",
+      command: resolveExecutable("ssh"),
+      args: remoteCommand ? [remote.host, "-t", remoteCommand] : [remote.host],
+      commandLabel: remote.path ? `ssh ${remote.host} (${remote.path})` : `ssh ${remote.host}`
+    };
+  }
+
   return {
     title: "Shell",
     command: process.env.SHELL || "/bin/zsh",
     args: ["-l"],
     commandLabel: path.basename(process.env.SHELL || "/bin/zsh")
   };
+}
+
+function normalizeRemoteOptions(remote = {}) {
+  return {
+    host: String(remote.host || "").trim(),
+    path: String(remote.path || "").trim(),
+    shell: String(remote.shell || "").trim()
+  };
+}
+
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
 function terminalEnv(cwd) {
@@ -1680,7 +1759,7 @@ function ensurePtyHelperExecutable() {
 async function createTerminal(_event, payload = {}) {
   const project = payload.projectId ? await getProject(payload.projectId) : null;
   const cwd = project ? projectRootFor(project) : repoRoot;
-  const preset = terminalPreset(payload.kind || "shell", cwd);
+  const preset = terminalPreset(payload.kind || "shell", cwd, payload);
   const id = crypto.randomUUID();
   ensurePtyHelperExecutable();
   const ptyProcess = pty.spawn(preset.command, preset.args, {
@@ -1785,7 +1864,7 @@ async function chooseProjectFiles(_event, projectId) {
     buttonLabel: "Add Files",
     properties: ["openFile", "multiSelections"],
     filters: [
-      { name: "Project assets", extensions: ["tex", "bib", "bst", "cls", "sty", "png", "jpg", "jpeg", "gif", "webp", "svg", "pdf", "csv", "txt", "md"] },
+      { name: "Project assets", extensions: ["tex", "ltx", "bib", "bst", "cls", "sty", "png", "jpg", "jpeg", "gif", "webp", "svg", "pdf", "csv", "tsv", "txt", "md", "json", "yaml", "yml", "py", "js", "ts", "tsx", "jsx", "css", "html", "xml", "sh"] },
       { name: "All files", extensions: ["*"] }
     ]
   });
@@ -1833,6 +1912,26 @@ async function projectFileAction(_event, payload = {}) {
   const action = String(payload.action || "");
   const options = payload.options || {};
   const filePath = safeProjectPath(project, relativePath);
+  if (action === "create-file" || action === "create-folder") {
+    const targetName = sanitizeFileName(options.name);
+    if (!targetName) throw new Error("Enter a valid name.");
+    const parentPath = relativePath ? safeProjectPath(project, relativePath) : projectRootFor(project);
+    const parentStat = fs.existsSync(parentPath) ? await fsp.stat(parentPath) : null;
+    const targetDir = parentStat && parentStat.isDirectory() ? parentPath : path.dirname(parentPath);
+    const destination = safeProjectPath(project, path.relative(projectRootFor(project), path.join(targetDir, targetName)));
+    if (fs.existsSync(destination)) throw new Error(`A file named ${targetName} already exists.`);
+
+    if (action === "create-folder") await fsp.mkdir(destination, { recursive: false });
+    else await fsp.writeFile(destination, defaultContentForNewFile(targetName), "utf8");
+
+    await touchProject(project.id);
+    return {
+      project: decorateProject(project),
+      file: fileDescriptor(project, destination),
+      files: await walkProjectFiles(project)
+    };
+  }
+
   const stat = await fsp.stat(filePath);
 
   if (action === "copy-path") {
@@ -1926,6 +2025,16 @@ async function projectFileAction(_event, payload = {}) {
   }
 
   throw new Error(`Unknown file action: ${action}`);
+}
+
+function defaultContentForNewFile(name) {
+  const extension = path.extname(name).toLowerCase();
+  if (extension === ".tex") {
+    return "\\documentclass{article}\n\\begin{document}\n\n\\end{document}\n";
+  }
+  if (extension === ".md") return "# Notes\n";
+  if (extension === ".py") return "";
+  return "";
 }
 
 async function uniqueSiblingPath(filePath) {

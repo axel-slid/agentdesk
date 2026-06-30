@@ -27,7 +27,7 @@ contextBridge.exposeInMainWorld("localOverleaf", {
   openExternalLink: (url) => ipcRenderer.invoke("open-external-link", url),
   readAgents: (projectId) => ipcRenderer.invoke("read-agents", projectId),
   saveAgents: (projectId, text) => ipcRenderer.invoke("save-agents", { projectId, text }),
-  createTerminal: (projectId, kind) => ipcRenderer.invoke("terminal-create", { projectId, kind }),
+  createTerminal: (projectId, kind, options = {}) => ipcRenderer.invoke("terminal-create", { projectId, kind, ...options }),
   writeTerminal: (id, data) => ipcRenderer.send("terminal-write", { id, data }),
   resizeTerminal: (id, cols, rows) => ipcRenderer.send("terminal-resize", { id, cols, rows }),
   killTerminal: (id) => ipcRenderer.invoke("terminal-kill", id),

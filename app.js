@@ -8,6 +8,8 @@ const projectGridButton = document.getElementById("projectGridButton");
 const projectRowsButton = document.getElementById("projectRowsButton");
 const addProjectButton = document.getElementById("addProjectButton");
 const templatesButton = document.getElementById("templatesButton");
+const remoteWorkspaceButton = document.getElementById("remoteWorkspaceButton");
+const helpButton = document.getElementById("helpButton");
 const newProjectPanel = document.getElementById("newProjectPanel");
 const closeNewProjectButton = document.getElementById("closeNewProjectButton");
 const projectDropZone = document.getElementById("projectDropZone");
@@ -27,9 +29,16 @@ const sourceRailButton = document.getElementById("sourceRailButton");
 const topRefreshFilesButton = document.getElementById("topRefreshFilesButton");
 const railRefreshFilesButton = document.getElementById("railRefreshFilesButton");
 const fileTree = document.getElementById("fileTree");
+const fileOutline = document.getElementById("fileOutline");
+const fileOutlineBody = document.getElementById("fileOutlineBody");
+const fileOutlineToggle = document.getElementById("fileOutlineToggle");
 const filePreview = document.getElementById("filePreview");
+const newFileButton = document.getElementById("newFileButton");
+const newFolderButton = document.getElementById("newFolderButton");
+const uploadFilesButton = document.getElementById("uploadFilesButton");
 const latexSource = document.getElementById("latexSource");
 const visualEditor = document.getElementById("visualEditor");
+const mediaViewer = document.getElementById("mediaViewer");
 const sourceMinimap = document.getElementById("sourceMinimap");
 const sourceMinimapLines = sourceMinimap && sourceMinimap.querySelector(".source-minimap-lines");
 const sourceMinimapViewport = sourceMinimap && sourceMinimap.querySelector(".source-minimap-viewport");
@@ -37,6 +46,8 @@ const textTabs = document.getElementById("textTabs");
 const workspace = document.getElementById("workspace");
 const sourcePane = document.querySelector(".source-pane");
 const splitter = document.getElementById("splitter");
+const previewRail = document.getElementById("previewRail");
+const previewRailButton = document.getElementById("previewRailButton");
 const sourceStats = document.getElementById("sourceStats");
 const saveState = document.getElementById("saveState");
 const compileState = document.getElementById("compileState");
@@ -52,10 +63,18 @@ const saveButton = document.getElementById("saveButton");
 const compileButton = document.getElementById("compileButton");
 const openPdfButton = document.getElementById("openPdfButton");
 const downloadPdfButton = document.getElementById("downloadPdfButton");
+const historyButton = document.getElementById("historyButton");
+const historyPanel = document.getElementById("historyPanel");
+const closeHistoryButton = document.getElementById("closeHistoryButton");
+const historyPanelBody = document.getElementById("historyPanelBody");
+const pdfPageIndicator = document.getElementById("pdfPageIndicator");
 const autoCompileToggle = document.getElementById("autoCompileToggle");
 const autoSaveToggle = document.getElementById("autoSaveToggle");
 const sourceModeButton = document.getElementById("sourceModeButton");
 const visualModeButton = document.getElementById("visualModeButton");
+const vimModeIndicator = document.getElementById("vimModeIndicator");
+const undoButton = document.getElementById("undoButton");
+const redoButton = document.getElementById("redoButton");
 const editorTitle = document.getElementById("editorTitle");
 const activeDocumentTitle = document.getElementById("activeDocumentTitle");
 const topSaveStatusButton = document.getElementById("topSaveStatusButton");
@@ -84,6 +103,15 @@ const settingsPdfGuardRange = document.getElementById("settingsPdfGuardRange");
 const settingsPdfGuardValue = document.getElementById("settingsPdfGuardValue");
 const settingsVimModeToggle = document.getElementById("settingsVimModeToggle");
 const settingsRelativeLineNumbersToggle = document.getElementById("settingsRelativeLineNumbersToggle");
+const settingsMinimapToggle = document.getElementById("settingsMinimapToggle");
+const settingsSpellCheckToggle = document.getElementById("settingsSpellCheckToggle");
+const settingsAgentChoice = document.getElementById("settingsAgentChoice");
+const remoteHostInput = document.getElementById("remoteHostInput");
+const remotePathInput = document.getElementById("remotePathInput");
+const saveRemoteButton = document.getElementById("saveRemoteButton");
+const openRemoteTerminalButton = document.getElementById("openRemoteTerminalButton");
+const remoteStatus = document.getElementById("remoteStatus");
+const latexSnippetButtons = Array.from(document.querySelectorAll("[data-latex-snippet]"));
 const pdfZoomOutButton = document.getElementById("pdfZoomOutButton");
 const pdfZoomInButton = document.getElementById("pdfZoomInButton");
 const pdfZoomLabel = document.getElementById("pdfZoomLabel");
@@ -94,9 +122,14 @@ const terminalEmpty = document.getElementById("terminalEmpty");
 const terminalResizeHandle = document.getElementById("terminalResizeHandle");
 const terminalCollapsedButton = document.getElementById("terminalCollapsedButton");
 const terminalNewButton = document.getElementById("terminalNewButton");
+const terminalRemoteButton = document.getElementById("terminalRemoteButton");
 const terminalShellButton = document.getElementById("terminalShellButton");
 const terminalCodexButton = document.getElementById("terminalCodexButton");
 const terminalClaudeButton = document.getElementById("terminalClaudeButton");
+const terminalSplitButton = document.getElementById("terminalSplitButton");
+const terminalKillButton = document.getElementById("terminalKillButton");
+const terminalMaximizeButton = document.getElementById("terminalMaximizeButton");
+const terminalClosePanelButton = document.getElementById("terminalClosePanelButton");
 const selectionCodexPopover = document.getElementById("selectionCodexPopover");
 const selectionCodexPrompt = document.getElementById("selectionCodexPrompt");
 const selectionCodexSendButton = document.getElementById("selectionCodexSendButton");
@@ -110,10 +143,10 @@ const profileEmailInput = document.getElementById("profileEmailInput");
 const profileWorkInput = document.getElementById("profileWorkInput");
 const profileBioInput = document.getElementById("profileBioInput");
 const profileAiContextInput = document.getElementById("profileAiContextInput");
-const profileStatus = document.getElementById("profileStatus");
 
 const DEFAULT_ACCENT = "#f97316";
 const PROFILE_STORAGE_KEY = "latexStudioAiProfile";
+const REMOTE_STORAGE_KEY = "latexStudioRemoteWorkspace";
 const CLOSE_ICON_SVG = `
   <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M18 6 6 18M6 6l12 12"></path>
@@ -155,14 +188,32 @@ const FILE_ICON_EXTENSIONS = new Map([
   [".yaml", "yaml.svg"],
   [".yml", "yaml.svg"],
   [".json", "json.svg"],
+  [".jsonl", "json.svg"],
   [".js", "javascript.svg"],
   [".jsx", "react.svg"],
   [".ts", "typescript.svg"],
   [".tsx", "react_ts.svg"],
   [".css", "css.svg"],
+  [".scss", "sass.svg"],
   [".html", "html.svg"],
   [".xml", "xml.svg"],
   [".py", "python.svg"],
+  [".r", "r.svg"],
+  [".rs", "rust.svg"],
+  [".go", "go.svg"],
+  [".java", "java.svg"],
+  [".c", "c.svg"],
+  [".cc", "cpp.svg"],
+  [".cpp", "cpp.svg"],
+  [".h", "cheader.svg"],
+  [".hpp", "cppheader.svg"],
+  [".rb", "ruby.svg"],
+  [".php", "php.svg"],
+  [".lua", "lua.svg"],
+  [".toml", "toml.svg"],
+  [".ini", "settings.svg"],
+  [".cfg", "settings.svg"],
+  [".sql", "database.svg"],
   [".sh", "console.svg"],
   [".bash", "console.svg"],
   [".zsh", "console.svg"],
@@ -189,6 +240,12 @@ const FOLDER_ICON_NAMES = new Map([
   ["tex", "folder-docs.svg"],
   ["docs", "folder-docs.svg"]
 ]);
+const LATEX_SNIPPETS = {
+  figure: "\\begin{figure}[h]\n  \\centering\n  \\includegraphics[width=0.8\\linewidth]{figures/example.png}\n  \\caption{Caption text.}\n  \\label{fig:example}\n\\end{figure}",
+  equation: "\\begin{equation}\n  y = mx + b\n\\end{equation}",
+  table: "\\begin{table}[h]\n  \\centering\n  \\begin{tabular}{ll}\n    \\hline\n    A & B \\\\\n    \\hline\n  \\end{tabular}\n  \\caption{Caption text.}\n  \\label{tab:example}\n\\end{table}",
+  citation: "Recent work~\\cite{key} shows..."
+};
 const THEME_VARIABLES = [
   "--bg",
   "--glass",
@@ -226,12 +283,17 @@ const THEME_VARIABLES = [
 ];
 const HIGH_CONTRAST_PRESETS = new Set([
   "github-light",
+  "light-cyan-hc",
+  "light-rose-hc",
+  "light-amber-hc",
   "abyss",
   "tomorrow-night-blue",
   "pastel-graphite-hc",
   "lavender-contrast-hc",
   "mint-contrast-hc",
-  "rose-contrast-hc"
+  "rose-contrast-hc",
+  "pastel-cobalt-hc",
+  "dusk-contrast-hc"
 ]);
 const THEME_PRESETS = {
   custom: null,
@@ -512,6 +574,99 @@ const THEME_PRESETS = {
       "--cm-string": "#0a3069",
       "--cm-number": "#953800",
       "--pdf-bg": "#b7bec8",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "light-cyan-hc": {
+    theme: "light",
+    accent: "#007a8a",
+    background: "linear-gradient(135deg, #f8feff, #e7fbff 68%, #d7f3f8)",
+    colors: {
+      "--bg": "#f8feff",
+      "--glass": "rgba(255, 255, 255, 0.96)",
+      "--glass-strong": "rgba(255, 255, 255, 0.99)",
+      "--panel": "rgba(255, 255, 255, 0.98)",
+      "--page": "#ffffff",
+      "--text": "#031f26",
+      "--muted": "#214a55",
+      "--border": "rgba(3, 31, 38, 0.5)",
+      "--border-strong": "rgba(3, 31, 38, 0.82)",
+      "--red": "#b42318",
+      "--green": "#067647",
+      "--blue": "#007a8a",
+      "--blue-dark": "#005e68",
+      "--cm-bg": "#ffffff",
+      "--cm-gutter": "#e7fbff",
+      "--cm-text": "#031f26",
+      "--cm-keyword": "#8a145f",
+      "--cm-variable": "#005e68",
+      "--cm-atom": "#067647",
+      "--cm-comment": "#475467",
+      "--cm-string": "#8f4a00",
+      "--cm-number": "#6f2dbd",
+      "--pdf-bg": "#b8dfe8",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "light-rose-hc": {
+    theme: "light",
+    accent: "#be123c",
+    background: "linear-gradient(135deg, #fff8fb, #ffe8ef 68%, #fbd0dc)",
+    colors: {
+      "--bg": "#fff8fb",
+      "--glass": "rgba(255, 255, 255, 0.96)",
+      "--glass-strong": "rgba(255, 255, 255, 0.99)",
+      "--panel": "rgba(255, 255, 255, 0.98)",
+      "--page": "#ffffff",
+      "--text": "#2b0614",
+      "--muted": "#5f2639",
+      "--border": "rgba(43, 6, 20, 0.52)",
+      "--border-strong": "rgba(43, 6, 20, 0.84)",
+      "--red": "#be123c",
+      "--green": "#047857",
+      "--blue": "#2563eb",
+      "--blue-dark": "#1d4ed8",
+      "--cm-bg": "#ffffff",
+      "--cm-gutter": "#ffe8ef",
+      "--cm-text": "#2b0614",
+      "--cm-keyword": "#be123c",
+      "--cm-variable": "#1d4ed8",
+      "--cm-atom": "#047857",
+      "--cm-comment": "#667085",
+      "--cm-string": "#92400e",
+      "--cm-number": "#7c3aed",
+      "--pdf-bg": "#e9beca",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "light-amber-hc": {
+    theme: "light",
+    accent: "#b45309",
+    background: "linear-gradient(135deg, #fffdf6, #fff1c6 68%, #f4d97e)",
+    colors: {
+      "--bg": "#fffdf6",
+      "--glass": "rgba(255, 255, 255, 0.96)",
+      "--glass-strong": "rgba(255, 255, 255, 0.99)",
+      "--panel": "rgba(255, 255, 255, 0.98)",
+      "--page": "#ffffff",
+      "--text": "#251605",
+      "--muted": "#5f3d11",
+      "--border": "rgba(37, 22, 5, 0.52)",
+      "--border-strong": "rgba(37, 22, 5, 0.86)",
+      "--red": "#b42318",
+      "--green": "#166534",
+      "--blue": "#075985",
+      "--blue-dark": "#0c4a6e",
+      "--cm-bg": "#ffffff",
+      "--cm-gutter": "#fff1c6",
+      "--cm-text": "#251605",
+      "--cm-keyword": "#9333ea",
+      "--cm-variable": "#075985",
+      "--cm-atom": "#166534",
+      "--cm-comment": "#6b5f47",
+      "--cm-string": "#92400e",
+      "--cm-number": "#c2410c",
+      "--pdf-bg": "#e7cf84",
       "--pdf-paper": "#ffffff"
     }
   },
@@ -1002,6 +1157,68 @@ const THEME_PRESETS = {
       "--pdf-bg": "#10070c",
       "--pdf-paper": "#ffffff"
     }
+  },
+  "pastel-cobalt-hc": {
+    theme: "dark",
+    accent: "#9bd5ff",
+    background: "linear-gradient(135deg, #061328, #102a4d 70%, #020814)",
+    colors: {
+      "--bg": "#020814",
+      "--glass": "rgba(6, 19, 40, 0.94)",
+      "--glass-strong": "rgba(16, 42, 77, 0.98)",
+      "--panel": "rgba(6, 19, 40, 0.98)",
+      "--page": "#f7fbff",
+      "--text": "#f7fbff",
+      "--muted": "#d4e8ff",
+      "--border": "rgba(155, 213, 255, 0.62)",
+      "--border-strong": "rgba(229, 244, 255, 0.94)",
+      "--red": "#ffb2c1",
+      "--green": "#b8f7d4",
+      "--blue": "#9bd5ff",
+      "--blue-dark": "#70bbf2",
+      "--cm-bg": "#061328",
+      "--cm-gutter": "#102a4d",
+      "--cm-text": "#f7fbff",
+      "--cm-keyword": "#ddb8ff",
+      "--cm-variable": "#9bd5ff",
+      "--cm-atom": "#a7f3d0",
+      "--cm-comment": "#9fb8d6",
+      "--cm-string": "#fff0a3",
+      "--cm-number": "#ffccb0",
+      "--pdf-bg": "#020814",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "dusk-contrast-hc": {
+    theme: "dark",
+    accent: "#f0b8ff",
+    background: "linear-gradient(135deg, #17091e, #2d1838 70%, #08030c)",
+    colors: {
+      "--bg": "#08030c",
+      "--glass": "rgba(23, 9, 30, 0.94)",
+      "--glass-strong": "rgba(45, 24, 56, 0.98)",
+      "--panel": "rgba(23, 9, 30, 0.98)",
+      "--page": "#fff9ff",
+      "--text": "#fff9ff",
+      "--muted": "#efd8f7",
+      "--border": "rgba(240, 184, 255, 0.64)",
+      "--border-strong": "rgba(255, 232, 255, 0.94)",
+      "--red": "#ffabc2",
+      "--green": "#c5f4c9",
+      "--blue": "#b9d4ff",
+      "--blue-dark": "#8ab8ff",
+      "--cm-bg": "#17091e",
+      "--cm-gutter": "#2d1838",
+      "--cm-text": "#fff9ff",
+      "--cm-keyword": "#ffb5e7",
+      "--cm-variable": "#b9d4ff",
+      "--cm-atom": "#b8f7e3",
+      "--cm-comment": "#c6a4d0",
+      "--cm-string": "#ffeda8",
+      "--cm-number": "#ffc0a8",
+      "--pdf-bg": "#08030c",
+      "--pdf-paper": "#ffffff"
+    }
   }
 };
 const DEFAULT_FILE_WIDTH = 240;
@@ -1011,6 +1228,7 @@ const FILE_COLLAPSE_THRESHOLD = 165;
 const DEFAULT_EDITOR_WIDTH = 520;
 const MIN_EDITOR_WIDTH = 320;
 const SOURCE_COLLAPSE_THRESHOLD = 235;
+const PDF_COLLAPSE_THRESHOLD = 260;
 const DEFAULT_PDF_MIN_WIDTH = 540;
 const DEFAULT_PDF_ZOOM = 1;
 const MIN_PDF_ZOOM = 0.7;
@@ -1053,8 +1271,13 @@ let renderedPdfZoom = DEFAULT_PDF_ZOOM;
 let pdfZoom = DEFAULT_PDF_ZOOM;
 let pdfDarkMode = false;
 let pdfRenderMode = "adaptive";
+let minimapVisible = true;
+let spellCheckEnabled = false;
+let selectionAgentChoice = "codex";
+let remoteWorkspace = { host: "", path: "" };
 let projectViewMode = "grid";
 let vimModeEnabled = false;
+let vimModeState = "off";
 let relativeLineNumbersEnabled = false;
 let terminalSessions = [];
 let activeTerminalId = null;
@@ -1067,8 +1290,12 @@ let commandPaletteItems = [];
 let commandPaletteActiveIndex = 0;
 let copiedProjectItem = null;
 let draggedTextTabPath = "";
+let activeMediaFile = null;
+let historyPanelOpen = false;
 let sourceMinimapFrame = 0;
 let sourceMinimapDragging = false;
+let findHighlightMarks = [];
+let lastFindQuery = "";
 let aiProfile = {};
 let selectionCodexText = "";
 let selectionCodexTimer = null;
@@ -1093,7 +1320,6 @@ function setupSourceEditor() {
     lineWrapping: true,
     indentUnit: 2,
     tabSize: 2,
-    scrollbarStyle: "null",
     viewportMargin: 80
   });
   applyEditorKeyMap();
@@ -1113,11 +1339,17 @@ function setupSourceEditor() {
   });
   editor.on("cursorActivity", () => {
     updateRelativeLineNumbers();
+    updateVimModeIndicator();
     scheduleSelectionCodexPopover();
   });
   editor.on("viewportChange", updateRelativeLineNumbers);
+  editor.on("vim-mode-change", (event) => {
+    vimModeState = String((event && event.mode) || "normal").toLowerCase();
+    updateVimModeIndicator();
+  });
   setupSourceMinimap();
   scheduleSourceMinimapUpdate();
+  updateVimModeIndicator();
 }
 
 function setupSettings() {
@@ -1134,6 +1366,7 @@ function setupSettings() {
   const compileLogHeight = clampNumber(Number(localStorage.getItem("latexStudioCompileLogHeight")), MIN_COMPILE_LOG_HEIGHT, MAX_COMPILE_LOG_HEIGHT, DEFAULT_COMPILE_LOG_HEIGHT);
   const compileLogCollapsed = localStorage.getItem("latexStudioCompileLogCollapsed") === "true";
   const sourceCollapsed = localStorage.getItem("latexStudioSourceCollapsed") === "true";
+  const pdfCollapsed = localStorage.getItem("latexStudioPdfCollapsed") === "true";
   pdfZoom = clampNumber(Number(localStorage.getItem("latexStudioPdfZoom")), MIN_PDF_ZOOM, MAX_PDF_ZOOM, DEFAULT_PDF_ZOOM);
   pdfRenderMode = normalizePdfRenderMode(
     localStorage.getItem("latexStudioPdfRenderMode")
@@ -1142,19 +1375,30 @@ function setupSettings() {
   projectViewMode = localStorage.getItem("latexStudioProjectView") === "rows" ? "rows" : "grid";
   vimModeEnabled = localStorage.getItem("latexStudioVimMode") === "true";
   relativeLineNumbersEnabled = localStorage.getItem("latexStudioRelativeLineNumbers") === "true";
+  minimapVisible = localStorage.getItem("latexStudioMinimapVisible") !== "false";
+  spellCheckEnabled = localStorage.getItem("latexStudioSpellCheck") === "true";
+  selectionAgentChoice = normalizeAgentChoice(localStorage.getItem("latexStudioSelectionAgent"));
+  remoteWorkspace = readRemoteWorkspace();
   aiProfile = readAiProfile();
 
   applyTheme(savedTheme, savedAccent, { presetId: savedPreset });
   syncSurfaceThemesToAppTheme(savedTheme, { persist: false });
   applyLayoutSettings({ showSidebar, pdfMinWidth, fileWidth });
   applySourceLayout({ collapsed: sourceCollapsed });
+  applyPdfPaneLayout({ collapsed: pdfCollapsed });
   applyTerminalLayout({ height: terminalHeight, collapsed: terminalCollapsed });
   applyCompileLogLayout({ height: compileLogHeight, collapsed: compileLogCollapsed });
   autoSaveToggle.checked = autoSaveEnabled;
   settingsVimModeToggle.checked = vimModeEnabled;
   settingsRelativeLineNumbersToggle.checked = relativeLineNumbersEnabled;
+  settingsMinimapToggle.checked = minimapVisible;
+  settingsSpellCheckToggle.checked = spellCheckEnabled;
+  settingsAgentChoice.value = selectionAgentChoice;
   updatePdfRenderModeButtons();
   populateProfileForm();
+  populateRemoteForm();
+  applyMinimapVisibility();
+  applySpellCheckSetting();
   updateSaveButtonVisibility();
   updateProjectViewButtons();
   updatePdfZoomLabel();
@@ -1201,9 +1445,23 @@ function setupSettings() {
   });
 
   settingsRelativeLineNumbersToggle.addEventListener("change", () => {
-    relativeLineNumbersEnabled = settingsRelativeLineNumbersToggle.checked;
-    localStorage.setItem("latexStudioRelativeLineNumbers", String(relativeLineNumbersEnabled));
-    applyRelativeLineNumberSetting();
+    setRelativeLineNumbers(settingsRelativeLineNumbersToggle.checked);
+  });
+
+  settingsMinimapToggle.addEventListener("change", () => {
+    setMinimapVisible(settingsMinimapToggle.checked);
+  });
+
+  settingsSpellCheckToggle.addEventListener("change", () => {
+    spellCheckEnabled = settingsSpellCheckToggle.checked;
+    localStorage.setItem("latexStudioSpellCheck", String(spellCheckEnabled));
+    applySpellCheckSetting();
+  });
+
+  settingsAgentChoice.addEventListener("change", () => {
+    selectionAgentChoice = normalizeAgentChoice(settingsAgentChoice.value);
+    settingsAgentChoice.value = selectionAgentChoice;
+    localStorage.setItem("latexStudioSelectionAgent", selectionAgentChoice);
   });
 
   autoSaveToggle.addEventListener("change", () => {
@@ -1229,6 +1487,11 @@ function setupSettings() {
   });
   reloadAgentsButton.addEventListener("click", loadAgentsFile);
   saveAgentsButton.addEventListener("click", saveAgentsFile);
+  saveRemoteButton.addEventListener("click", saveRemoteWorkspace);
+  openRemoteTerminalButton.addEventListener("click", () => {
+    saveRemoteWorkspace();
+    createTerminalSession("ssh");
+  });
   agentsEditor.addEventListener("input", () => {
     if (!activeProject) return;
     agentsStatus.textContent = "Unsaved AGENTS.md changes.";
@@ -1356,6 +1619,26 @@ function readAiProfile() {
   }
 }
 
+function readRemoteWorkspace() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(REMOTE_STORAGE_KEY) || "{}");
+    return normalizeRemoteWorkspace(parsed);
+  } catch (error) {
+    return { host: "", path: "" };
+  }
+}
+
+function normalizeRemoteWorkspace(value) {
+  return {
+    host: String(value && value.host ? value.host : "").trim(),
+    path: String(value && value.path ? value.path : "").trim()
+  };
+}
+
+function normalizeAgentChoice(value) {
+  return ["codex", "claude", "shell"].includes(value) ? value : "codex";
+}
+
 function normalizeAiProfile(profile) {
   return {
     name: String(profile.name || "").trim(),
@@ -1374,6 +1657,23 @@ function populateProfileForm() {
   profileAiContextInput.value = aiProfile.aiContext || "";
 }
 
+function populateRemoteForm() {
+  remoteHostInput.value = remoteWorkspace.host || "";
+  remotePathInput.value = remoteWorkspace.path || "";
+}
+
+function saveRemoteWorkspace() {
+  remoteWorkspace = normalizeRemoteWorkspace({
+    host: remoteHostInput.value,
+    path: remotePathInput.value
+  });
+  localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
+  remoteStatus.textContent = remoteWorkspace.host
+    ? `Saved SSH target ${remoteWorkspace.host}${remoteWorkspace.path ? `:${remoteWorkspace.path}` : ""}.`
+    : "Remote target cleared.";
+  setStatusClass(remoteStatus, remoteWorkspace.host ? "ok" : undefined);
+}
+
 function saveProfileFromForm() {
   aiProfile = normalizeAiProfile({
     name: profileNameInput.value,
@@ -1383,8 +1683,6 @@ function saveProfileFromForm() {
     aiContext: profileAiContextInput.value
   });
   localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(aiProfile));
-  profileStatus.textContent = "Profile saved locally and included with AI requests.";
-  setStatusClass(profileStatus, "ok");
   updateProjectHeroGreeting();
 }
 
@@ -1427,6 +1725,26 @@ function applyLayoutSettings({ showSidebar, pdfMinWidth, fileWidth = getFileSide
   workspace.style.setProperty("--file-width", `${fileWidth}px`);
 }
 
+function applyMinimapVisibility() {
+  if (!sourceMinimap) return;
+  sourceMinimap.hidden = !minimapVisible || !visualEditor.hidden || Boolean(mediaViewer && !mediaViewer.hidden);
+  if (sourceMinimap.hidden) workspace.classList.add("minimap-hidden");
+  else workspace.classList.remove("minimap-hidden");
+  scheduleSourceMinimapUpdate();
+}
+
+function setMinimapVisible(visible) {
+  minimapVisible = Boolean(visible);
+  settingsMinimapToggle.checked = minimapVisible;
+  localStorage.setItem("latexStudioMinimapVisible", String(minimapVisible));
+  applyMinimapVisibility();
+}
+
+function applySpellCheckSetting() {
+  latexSource.spellcheck = spellCheckEnabled;
+  if (editor && editor.getInputField()) editor.getInputField().spellcheck = spellCheckEnabled;
+}
+
 function setFileSidebarVisible(show) {
   applyLayoutSettings({ showSidebar: show, pdfMinWidth: getPdfMinimumWidth(), fileWidth: getFileSidebarWidth() });
   localStorage.setItem("latexStudioShowSidebar", String(show));
@@ -1457,6 +1775,22 @@ function setSourceCollapsed(collapsed, { persist = true } = {}) {
   applySourceLayout({ collapsed });
   if (persist) localStorage.setItem("latexStudioSourceCollapsed", String(collapsed));
   renderPdf({ showLoading: false });
+}
+
+function applyPdfPaneLayout({ collapsed = workspace.classList.contains("pdf-hidden") } = {}) {
+  workspace.classList.toggle("pdf-hidden", collapsed);
+  previewRail.hidden = !collapsed;
+  if (!collapsed) {
+    requestAnimationFrame(() => {
+      renderPdf({ showLoading: false });
+      updatePdfPageIndicator();
+    });
+  }
+}
+
+function setPdfCollapsed(collapsed, { persist = true } = {}) {
+  applyPdfPaneLayout({ collapsed });
+  if (persist) localStorage.setItem("latexStudioPdfCollapsed", String(collapsed));
 }
 
 function getFileSidebarWidth() {
@@ -1535,9 +1869,11 @@ function applyEditorKeyMap() {
 
 function setVimMode(enabled) {
   vimModeEnabled = Boolean(enabled);
+  vimModeState = vimModeEnabled ? "normal" : "off";
   localStorage.setItem("latexStudioVimMode", String(vimModeEnabled));
   settingsVimModeToggle.checked = vimModeEnabled;
   applyEditorKeyMap();
+  updateVimModeIndicator();
   compileLog.textContent = `Vim shortcuts ${vimModeEnabled ? "enabled" : "disabled"}.`;
 }
 
@@ -1558,14 +1894,21 @@ function applyRelativeLineNumberSetting() {
   editor.refresh();
 }
 
+function setRelativeLineNumbers(enabled) {
+  relativeLineNumbersEnabled = Boolean(enabled);
+  settingsRelativeLineNumbersToggle.checked = relativeLineNumbersEnabled;
+  localStorage.setItem("latexStudioRelativeLineNumbers", String(relativeLineNumbersEnabled));
+  applyRelativeLineNumberSetting();
+}
+
 function updateRelativeLineNumbers() {
   if (!editor) return;
+  editor.operation(() => {
+    for (let line = 0; line < editor.lineCount(); line += 1) {
+      editor.setGutterMarker(line, "relative-line-gutter", null);
+    }
+  });
   if (!relativeLineNumbersEnabled) {
-    editor.operation(() => {
-      for (let line = 0; line < editor.lineCount(); line += 1) {
-        editor.setGutterMarker(line, "relative-line-gutter", null);
-      }
-    });
     return;
   }
 
@@ -1585,6 +1928,20 @@ function updateRelativeLineNumbers() {
   });
 }
 
+function updateVimModeIndicator() {
+  if (!vimModeIndicator) return;
+  const state = vimModeEnabled ? (vimModeState || "normal") : "off";
+  const label = state === "insert"
+    ? "Insert"
+    : state === "visual"
+      ? "Visual"
+      : state === "off"
+        ? "Vim off"
+        : "Normal";
+  vimModeIndicator.textContent = label;
+  vimModeIndicator.dataset.vimState = state;
+}
+
 function resolvedTerminalTheme() {
   return document.body.dataset.theme === "dark" ? "dark" : "light";
 }
@@ -1594,6 +1951,13 @@ function resolvedCompileLogTheme() {
 }
 
 function updateActiveDocumentTitle() {
+  if (activeMediaFile) {
+    const mediaTitle = (activeFile && activeFile.name) || "Image preview";
+    activeDocumentTitle.textContent = mediaTitle;
+    activeDocumentTitle.title = mediaTitle;
+    return;
+  }
+
   const metaTitle = activeProject ? extractVisualMeta(getSourceText()).title : "";
   const fallback = (activeProject && activeProject.name)
     || (activeFile && activeFile.name)
@@ -1608,13 +1972,29 @@ function updateEditorFileTitle() {
   editorTitle.textContent = (activeFile && activeFile.name) || (activeProject && activeProject.texName) || "main.tex";
 }
 
+function activeFileExtension() {
+  const name = String((activeFile && activeFile.name) || "").toLowerCase();
+  return name.includes(".") ? name.slice(name.lastIndexOf(".")) : "";
+}
+
+function isMarkdownFile(file = activeFile) {
+  const name = String((file && file.name) || "").toLowerCase();
+  return name.endsWith(".md") || name.endsWith(".markdown");
+}
+
+function applyEditorModeForFile(file = activeFile) {
+  if (!editor) return;
+  const extension = String((file && file.name) || "").toLowerCase();
+  editor.setOption("mode", /\.(tex|ltx|sty|cls|bib|bst)$/.test(extension) ? "stex" : null);
+}
+
 function currentTextTab() {
   return openTextTabs.find((tab) => tab.relativePath === activeTextTabPath) || null;
 }
 
 function syncActiveTextTabFromEditor() {
   const tab = currentTextTab();
-  if (!tab || !editor) return;
+  if (!tab || !editor || tab.kind === "image") return;
   tab.text = getSourceText();
   tab.savedText = savedText;
   tab.dirty = tab.text !== tab.savedText;
@@ -1623,20 +2003,24 @@ function syncActiveTextTabFromEditor() {
 function resetTextTabs() {
   openTextTabs = [];
   activeTextTabPath = "";
+  activeMediaFile = null;
   renderTextTabs();
 }
 
-function setActiveLoadedTextFile(file, text) {
+function setActiveLoadedTextFile(file, text, { preview = false } = {}) {
   const relativePath = file.relativePath;
   let tab = openTextTabs.find((item) => item.relativePath === relativePath);
   if (!tab) {
+    clearReplaceablePreviewTab(relativePath);
     tab = {
       relativePath,
       name: file.name,
       file,
       text,
       savedText: text,
-      dirty: false
+      dirty: false,
+      preview: Boolean(preview),
+      kind: "text"
     };
     openTextTabs.push(tab);
   } else {
@@ -1645,13 +2029,19 @@ function setActiveLoadedTextFile(file, text) {
     tab.text = text;
     tab.savedText = text;
     tab.dirty = false;
+    tab.kind = "text";
+    if (!preview) tab.preview = false;
   }
 
   activeTextTabPath = relativePath;
   activeFile = file;
+  activeMediaFile = null;
   savedText = text;
+  applyEditorModeForFile(file);
+  mediaViewer.hidden = true;
   renderTextTabs();
   renderFileTree();
+  updateFileOutline();
 }
 
 function updateActiveTextTabAfterSave(file, text) {
@@ -1664,16 +2054,20 @@ function updateActiveTextTabAfterSave(file, text) {
   tab.text = text;
   tab.savedText = text;
   tab.dirty = false;
+  tab.preview = false;
+  tab.kind = "text";
   renderTextTabs();
   renderFileTree();
+  updateFileOutline();
 }
 
 function updateActiveTextTabDirtyState() {
   const tab = currentTextTab();
-  if (!tab) return;
+  if (!tab || tab.kind === "image") return;
   tab.text = getSourceText();
   tab.dirty = tab.text !== tab.savedText;
   renderTextTabs();
+  updateFileOutline();
 }
 
 function switchTextTab(relativePath) {
@@ -1684,16 +2078,24 @@ function switchTextTab(relativePath) {
   syncActiveTextTabFromEditor();
   activeTextTabPath = tab.relativePath;
   activeFile = tab.file;
-  savedText = tab.savedText;
+  activeMediaFile = tab.kind === "image" ? tab.file : null;
+  savedText = tab.kind === "text" ? tab.savedText : "";
 
   isLoading = true;
   try {
-    editor.setValue(tab.text);
+    if (tab.kind === "image") {
+      showMediaTab(tab);
+    } else {
+      mediaViewer.hidden = true;
+      applyEditorModeForFile(tab.file);
+      editor.setValue(tab.text);
+      setMode(visualEditor.hidden ? "source" : "visual");
+    }
     updateEditorFileTitle();
     updateActiveDocumentTitle();
     updateStats();
     scheduleSourceMinimapUpdate();
-    renderVisualEditor();
+    if (tab.kind !== "image") renderVisualEditor();
     renderFileTree();
     setSaveState(tab.dirty ? "Unsaved changes" : "Saved", tab.dirty ? undefined : "ok");
     renderTextTabs();
@@ -1725,9 +2127,11 @@ function closeTextTab(relativePath) {
 
     activeTextTabPath = "";
     activeFile = null;
+    activeMediaFile = null;
     savedText = "";
     isLoading = true;
     editor.setValue("");
+    mediaViewer.hidden = true;
     isLoading = false;
     updateEditorFileTitle();
     updateActiveDocumentTitle();
@@ -1755,9 +2159,11 @@ function removeTextTabsUnderPath(relativePath) {
     } else {
       activeTextTabPath = "";
       activeFile = null;
+      activeMediaFile = null;
       savedText = "";
       isLoading = true;
       editor.setValue("");
+      mediaViewer.hidden = true;
       isLoading = false;
       updateEditorFileTitle();
       updateActiveDocumentTitle();
@@ -1777,6 +2183,7 @@ function renderTextTabs() {
     const button = document.createElement("button");
     button.className = "text-tab";
     button.classList.toggle("active", tab.relativePath === activeTextTabPath);
+    button.classList.toggle("preview", Boolean(tab.preview));
     button.type = "button";
     button.draggable = true;
     button.title = tab.relativePath;
@@ -1787,6 +2194,7 @@ function renderTextTabs() {
       <span class="text-tab-close" role="button" aria-label="Close ${escapeHtml(tab.name)}">${CLOSE_ICON_SVG}</span>
     `;
     button.addEventListener("click", () => switchTextTab(tab.relativePath));
+    button.addEventListener("dblclick", () => pinTextTab(tab.relativePath));
     button.addEventListener("dragstart", (event) => {
       syncActiveTextTabFromEditor();
       draggedTextTabPath = tab.relativePath;
@@ -1826,6 +2234,20 @@ function renderTextTabs() {
     });
     textTabs.appendChild(button);
   });
+}
+
+function clearReplaceablePreviewTab(nextRelativePath) {
+  const index = openTextTabs.findIndex((tab) => tab.preview && !tab.dirty && tab.relativePath !== nextRelativePath);
+  if (index === -1) return;
+  const [tab] = openTextTabs.splice(index, 1);
+  if (tab.relativePath === activeTextTabPath) activeTextTabPath = "";
+}
+
+function pinTextTab(relativePath) {
+  const tab = openTextTabs.find((item) => item.relativePath === relativePath);
+  if (!tab) return;
+  tab.preview = false;
+  renderTextTabs();
 }
 
 function clearTextTabDropIndicators() {
@@ -1882,6 +2304,23 @@ function wireEvents() {
   commandPaletteInput.addEventListener("keydown", handleCommandPaletteKeydown);
   fileRailButton.addEventListener("click", () => setFileSidebarVisible(true));
   sourceRailButton.addEventListener("click", () => setSourceCollapsed(false));
+  previewRailButton.addEventListener("click", () => setPdfCollapsed(false));
+  undoButton.addEventListener("click", () => editor.undo());
+  redoButton.addEventListener("click", () => editor.redo());
+  newFileButton.addEventListener("click", () => createProjectFile("file"));
+  newFolderButton.addEventListener("click", () => createProjectFile("folder"));
+  uploadFilesButton.addEventListener("click", chooseProjectFiles);
+  remoteWorkspaceButton.addEventListener("click", () => {
+    openSettings();
+    setSettingsPanel("remote");
+  });
+  helpButton.addEventListener("click", () => {
+    openSettings();
+    setSettingsPanel("documentation");
+  });
+  fileOutlineToggle.addEventListener("click", () => {
+    fileOutline.classList.toggle("collapsed");
+  });
   selectionCodexSendButton.addEventListener("click", sendSelectionToCodex);
   selectionCodexPrompt.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
@@ -1911,20 +2350,33 @@ function wireEvents() {
   compileButton.addEventListener("click", () => compileManuscript({ manual: true }));
   openPdfButton.addEventListener("click", openPdf);
   downloadPdfButton.addEventListener("click", downloadPdf);
+  historyButton.addEventListener("click", toggleHistoryPanel);
+  closeHistoryButton.addEventListener("click", () => setHistoryPanelOpen(false));
   pdfZoomOutButton.addEventListener("click", () => changePdfZoom(-0.1));
   pdfZoomInButton.addEventListener("click", () => changePdfZoom(0.1));
   pdfViewer.addEventListener("wheel", handlePdfWheelZoom, { passive: false });
+  pdfViewer.addEventListener("scroll", updatePdfPageIndicator, { passive: true });
   pdfViewer.addEventListener("gesturestart", handlePdfGestureStart);
   pdfViewer.addEventListener("gesturechange", handlePdfGestureChange);
   pdfViewer.addEventListener("gestureend", handlePdfGestureEnd);
   terminalNewButton.addEventListener("click", () => createTerminalSession("shell"));
+  terminalRemoteButton.addEventListener("click", () => createTerminalSession("ssh"));
   terminalShellButton.addEventListener("click", () => createTerminalSession("shell"));
   terminalCodexButton.addEventListener("click", () => createTerminalSession("codex"));
   terminalClaudeButton.addEventListener("click", () => createTerminalSession("claude"));
+  terminalSplitButton.addEventListener("click", splitActiveTerminal);
+  terminalKillButton.addEventListener("click", () => {
+    if (activeTerminalId) closeTerminalSession(activeTerminalId);
+  });
+  terminalMaximizeButton.addEventListener("click", toggleTerminalMaximized);
+  terminalClosePanelButton.addEventListener("click", () => setTerminalCollapsed(true));
   terminalCollapsedButton.addEventListener("click", () => setTerminalCollapsed(false));
   compileLogCollapsedButton.addEventListener("click", () => setCompileLogCollapsed(false));
   sourceModeButton.addEventListener("click", () => setMode("source"));
   visualModeButton.addEventListener("click", () => setMode("visual"));
+  latexSnippetButtons.forEach((button) => {
+    button.addEventListener("click", () => insertLatexSnippet(button.dataset.latexSnippet));
+  });
   setupFileSplitter();
   setupSplitter();
   setupTerminalResize();
@@ -1985,6 +2437,7 @@ function wireEvents() {
       if (command === "find") openFind();
       if (command === "find-next") findNextMatch(false);
       if (command === "find-previous") findNextMatch(true);
+      if (command === "history") toggleHistoryPanel();
     });
   }
 }
@@ -2455,7 +2908,7 @@ function buildCommandPaletteItems(rawQuery) {
       })
       .map((project) => ({
         id: `project:${project.id}`,
-        label: project.name,
+        label: project.displayName || project.name,
         detail: `${project.texName} · ${project.folderName}`,
         hint: "open",
         action: () => {
@@ -2484,8 +2937,12 @@ function commandPaletteCommands() {
     { id: "compile", label: "/compile", detail: "Compile the active PDF", hint: "Cmd+Enter", action: () => { closeCommandPalette(); compileManuscript({ manual: true }); } },
     { id: "save", label: "/save", detail: "Save the active TeX file", hint: "Cmd+S", action: () => { closeCommandPalette(); saveManuscript(); } },
     { id: "vim", label: "/vim", detail: `${vimModeEnabled ? "Disable" : "Enable"} Vim shortcuts`, hint: "toggle", action: () => { closeCommandPalette(); toggleVimMode(); } },
+    { id: "minimap", label: "/minimap", detail: `${minimapVisible ? "Hide" : "Show"} the editor minimap`, hint: "toggle", action: () => { closeCommandPalette(); setMinimapVisible(!minimapVisible); } },
+    { id: "relative", label: "/relative", detail: `${relativeLineNumbersEnabled ? "Disable" : "Enable"} relative line numbers`, hint: "toggle", action: () => { closeCommandPalette(); setRelativeLineNumbers(!relativeLineNumbersEnabled); } },
     { id: "visual", label: "/visual", detail: "Switch to visual mode", hint: "view", action: () => { closeCommandPalette(); setMode("visual"); } },
     { id: "code", label: "/code", detail: "Switch to code mode", hint: "view", action: () => { closeCommandPalette(); setMode("source"); } },
+    { id: "history", label: "/history", detail: "Open project history", hint: "panel", action: () => { closeCommandPalette(); setHistoryPanelOpen(true); } },
+    { id: "remote", label: "/remote", detail: "Open SSH remote settings", hint: "ssh", action: () => { closeCommandPalette({ keepBackdrop: true }); openSettings(); setSettingsPanel("remote"); } },
     { id: "terminal", label: "/terminal", detail: "Toggle terminal", hint: "panel", action: () => { closeCommandPalette(); setTerminalCollapsed(!sourcePane.classList.contains("terminal-collapsed")); } },
     { id: "files", label: "/files", detail: "Toggle file sidebar", hint: "sidebar", action: () => { closeCommandPalette(); setFileSidebarVisible(workspace.classList.contains("files-hidden")); } }
   ];
@@ -2535,8 +2992,11 @@ function setSettingsPanel(section) {
     appearance: "Appearance",
     profile: "Profile",
     workspace: "Workspace",
+    remote: "Remote",
+    latex: "LaTeX Handbook",
     agents: "AGENTS.md",
-    shortcuts: "Keyboard"
+    shortcuts: "Keyboard",
+    documentation: "Documentation"
   }[nextSection] || "Settings";
 
   settingsDrawer.dataset.activeSection = nextSection;
@@ -2611,12 +3071,16 @@ function openFind() {
     projectSearch.select();
     return;
   }
+  if (activeMediaFile) return;
 
   closeSettings();
   setMode("source");
   requestAnimationFrame(() => {
     editor.focus();
-    editor.execCommand("findPersistent");
+    const query = window.prompt("Find in current file", lastFindQuery);
+    if (query === null) return;
+    highlightFindMatches(query);
+    findNextTextMatch(query, false);
   });
 }
 
@@ -2626,12 +3090,50 @@ function findNextMatch(reverse = false) {
     projectSearch.select();
     return;
   }
+  if (activeMediaFile) return;
 
   setMode("source");
   requestAnimationFrame(() => {
     editor.focus();
-    editor.execCommand(reverse ? "findPersistentPrev" : "findPersistentNext");
+    if (!lastFindQuery) openFind();
+    else findNextTextMatch(lastFindQuery, reverse);
   });
+}
+
+function clearFindHighlights() {
+  findHighlightMarks.forEach((mark) => mark.clear());
+  findHighlightMarks = [];
+}
+
+function highlightFindMatches(query) {
+  clearFindHighlights();
+  lastFindQuery = String(query || "");
+  if (!lastFindQuery) return;
+
+  const cursor = editor.getSearchCursor(lastFindQuery, { line: 0, ch: 0 }, { caseFold: true });
+  while (cursor.findNext()) {
+    findHighlightMarks.push(editor.markText(cursor.from(), cursor.to(), { className: "cm-searching-all" }));
+  }
+}
+
+function findNextTextMatch(query, reverse = false) {
+  if (!query) return;
+  lastFindQuery = query;
+  const cursorPosition = editor.getCursor();
+  const start = reverse
+    ? { line: cursorPosition.line, ch: Math.max(0, cursorPosition.ch - 1) }
+    : { line: cursorPosition.line, ch: cursorPosition.ch + 1 };
+  let cursor = editor.getSearchCursor(query, start, { caseFold: true });
+  let found = reverse ? cursor.findPrevious() : cursor.findNext();
+
+  if (!found) {
+    cursor = editor.getSearchCursor(query, reverse ? CodeMirror.Pos(editor.lastLine()) : CodeMirror.Pos(editor.firstLine(), 0), { caseFold: true });
+    found = reverse ? cursor.findPrevious() : cursor.findNext();
+  }
+
+  if (!found) return;
+  editor.setSelection(cursor.from(), cursor.to());
+  editor.scrollIntoView(cursor.from(), 96);
 }
 
 function changePdfZoom(delta) {
@@ -2653,7 +3155,13 @@ function schedulePdfZoomRender(delay = 220) {
 }
 
 function handlePdfWheelZoom(event) {
-  if (!event.ctrlKey && !event.shiftKey) return;
+  if (event.shiftKey && !event.metaKey && !event.ctrlKey) {
+    event.preventDefault();
+    pdfViewer.scrollLeft += event.deltaY || event.deltaX;
+    return;
+  }
+
+  if (!event.ctrlKey && !event.metaKey) return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -2763,12 +3271,21 @@ function setupTerminalPanel() {
 async function createTerminalSession(kind = "shell") {
   if (!window.localOverleaf || !window.Terminal || !window.FitAddon) return;
 
-  const requestedKind = ["shell", "codex", "claude"].includes(kind) ? kind : "shell";
+  const requestedKind = ["shell", "codex", "claude", "ssh"].includes(kind) ? kind : "shell";
+  if (requestedKind === "ssh" && !remoteWorkspace.host) {
+    openSettings();
+    setSettingsPanel("remote");
+    remoteStatus.textContent = "Add an SSH host first.";
+    setStatusClass(remoteStatus, "error");
+    return null;
+  }
   terminalEmpty.hidden = true;
   setTerminalControlsDisabled(true);
 
   try {
-    const descriptor = await window.localOverleaf.createTerminal(activeProject && activeProject.id, requestedKind);
+    const descriptor = await window.localOverleaf.createTerminal(activeProject && activeProject.id, requestedKind, {
+      remote: remoteWorkspace
+    });
     const sessionIndex = nextTerminalIndex(requestedKind);
     const terminalNode = document.createElement("div");
     terminalNode.className = "terminal-instance";
@@ -2900,6 +3417,31 @@ function splitTerminals(firstId, secondId) {
   scheduleTerminalFit();
 }
 
+function splitActiveTerminal() {
+  if (!activeTerminalId) return;
+  const firstId = activeTerminalId;
+  const other = terminalSessions.find((session) => session.id !== activeTerminalId && !session.exited);
+  if (other) {
+    splitTerminals(firstId, other.id);
+    return;
+  }
+  createTerminalSession("shell").then((session) => {
+    if (session) splitTerminals(firstId, session.id);
+  });
+}
+
+function toggleTerminalMaximized() {
+  const maximized = sourcePane.classList.toggle("terminal-maximized");
+  if (maximized) {
+    setTerminalCollapsed(false);
+    setTerminalHeight(Math.max(MIN_TERMINAL_HEIGHT, sourcePane.getBoundingClientRect().height - 90), { persist: false });
+  } else {
+    const height = clampNumber(Number(localStorage.getItem("latexStudioTerminalHeight")), MIN_TERMINAL_HEIGHT, MAX_TERMINAL_HEIGHT, DEFAULT_TERMINAL_HEIGHT);
+    setTerminalHeight(height);
+  }
+  scheduleTerminalFit();
+}
+
 function updateTerminalVisibility() {
   const visibleIds = new Set(splitTerminalIds.length ? splitTerminalIds : [activeTerminalId].filter(Boolean));
   terminalBody.classList.toggle("terminal-split", visibleIds.size > 1);
@@ -2980,7 +3522,7 @@ function terminalTheme() {
   return {
     background: themeColor("--terminal-bg", dark ? "#111827" : "#ffffff"),
     foreground: themeColor("--terminal-text", dark ? "#e5edf7" : "#1f2937"),
-    cursor: themeColor("--accent", DEFAULT_ACCENT),
+    cursor: dark ? "#ffffff" : themeColor("--accent", DEFAULT_ACCENT),
     selectionBackground: themeColor("--terminal-selection", `rgba(${accentRgb}, 0.2)`),
     black: dark ? themeColor("--bg", "#111827") : themeColor("--cm-text", "#1f2937"),
     red: themeColor("--red", "#ef4444"),
@@ -3009,9 +3551,11 @@ function themeColor(name, fallback) {
 
 function setTerminalControlsDisabled(value) {
   terminalNewButton.disabled = value;
+  terminalRemoteButton.disabled = value;
   terminalShellButton.disabled = value;
   terminalCodexButton.disabled = value;
   terminalClaudeButton.disabled = value;
+  terminalSplitButton.disabled = value;
 }
 
 function scheduleSelectionCodexPopover() {
@@ -3076,26 +3620,90 @@ async function sendSelectionToCodex() {
 
   hideSelectionCodexPopover();
   selectionCodexPrompt.value = "";
-  const session = await ensureCodexTerminalSession();
+  const agentKind = normalizeAgentChoice(selectionAgentChoice);
+  const session = await ensureAgentTerminalSession(agentKind);
   if (!session) return;
 
   await wait(250);
   const pastedMessage = message.replace(/\r\n?/g, "\n");
   window.localOverleaf.writeTerminal(session.id, `\x1b[200~${pastedMessage}\x1b[201~\r`);
-  compileLog.textContent = "Sent selected text to Codex.";
+  compileLog.textContent = `Sent selected text to ${agentKind === "claude" ? "Claude" : agentKind === "shell" ? "Shell" : "Codex"}.`;
 }
 
 async function ensureCodexTerminalSession() {
-  let session = terminalSessions.find((item) => item.kind === "codex" && !item.exited);
+  return ensureAgentTerminalSession("codex");
+}
+
+async function ensureAgentTerminalSession(kind = "codex") {
+  const agentKind = normalizeAgentChoice(kind);
+  let session = terminalSessions.find((item) => item.kind === agentKind && !item.exited);
   setTerminalCollapsed(false);
   if (session) {
     activateTerminal(session.id);
     return session;
   }
 
-  session = await createTerminalSession("codex");
+  session = await createTerminalSession(agentKind);
   if (session) activateTerminal(session.id);
   return session;
+}
+
+function toggleHistoryPanel() {
+  setHistoryPanelOpen(!historyPanelOpen);
+}
+
+function setHistoryPanelOpen(open) {
+  historyPanelOpen = Boolean(open);
+  historyPanel.hidden = !historyPanelOpen;
+  previewPane.classList.toggle("history-open", historyPanelOpen);
+  if (historyPanelOpen) renderHistoryPanel();
+}
+
+function renderHistoryPanel() {
+  if (!historyPanelBody) return;
+  const fileName = (activeFile && activeFile.name) || (activeProject && activeProject.texName) || "document";
+  const rows = [
+    { title: "Current session", detail: `${openTextTabs.length} open tab${openTextTabs.length === 1 ? "" : "s"}` },
+    { title: "Last loaded", detail: activeProject ? relativeTime(activeProject.modifiedAt) : "No project" },
+    { title: "Working file", detail: fileName }
+  ];
+  historyPanelBody.innerHTML = rows.map((row) => `
+    <article class="history-entry">
+      <strong>${escapeHtml(row.title)}</strong>
+      <span>${escapeHtml(row.detail)}</span>
+    </article>
+  `).join("");
+}
+
+function updatePdfPageIndicator() {
+  if (!pdfPageIndicator) return;
+  const pages = Array.from(pdfViewer.querySelectorAll(".pdf-page"));
+  if (!pages.length || !renderedPdfPageCount) {
+    pdfPageIndicator.textContent = "Page 0 / 0";
+    return;
+  }
+
+  const viewerRect = pdfViewer.getBoundingClientRect();
+  const midY = viewerRect.top + viewerRect.height * 0.36;
+  const nearest = pages.reduce((best, page) => {
+    const rect = page.getBoundingClientRect();
+    const distance = Math.abs(rect.top + rect.height / 2 - midY);
+    return !best || distance < best.distance ? { page, distance } : best;
+  }, null);
+  const pageNumber = nearest && nearest.page ? Number(nearest.page.dataset.page) || 1 : 1;
+  pdfPageIndicator.textContent = `Page ${pageNumber} / ${renderedPdfPageCount}`;
+}
+
+function insertLatexSnippet(snippetId) {
+  const snippet = LATEX_SNIPPETS[snippetId];
+  if (!snippet) return;
+  closeSettings();
+  setMode("source");
+  requestAnimationFrame(() => {
+    editor.focus();
+    editor.replaceSelection(snippet, "end");
+    handleSourceChanged({ renderVisual: false });
+  });
 }
 
 function wait(ms) {
@@ -3119,7 +3727,7 @@ function renderProjectGrid() {
   updateProjectViewButtons();
   const query = projectSearch.value.trim().toLowerCase();
   const visibleProjects = projects.filter((project) => {
-    const haystack = `${project.name} ${project.texName} ${project.folderName} ${project.texPath}`.toLowerCase();
+    const haystack = `${project.displayName || ""} ${project.name} ${project.texName} ${project.folderName} ${project.texPath}`.toLowerCase();
     return haystack.includes(query);
   });
 
@@ -3140,7 +3748,7 @@ function renderProjectGrid() {
         <span class="project-preview-message">${project.pdfExists ? "Rendering preview" : "No PDF yet"}</span>
       </span>
       <span class="project-card-copy">
-        <span class="project-name">${escapeHtml(project.name)}</span>
+        <span class="project-name">${escapeHtml(project.displayName || project.name)}</span>
         <span class="project-file">${escapeHtml(project.texName)} · ${escapeHtml(project.folderName)}</span>
         <span class="project-meta">Edited ${escapeHtml(relativeTime(project.modifiedAt))}</span>
       </span>
@@ -3487,6 +4095,7 @@ async function loadManuscript(projectId = activeProject && activeProject.id) {
     resetTextTabs();
     setActiveLoadedTextFile(data.file, data.tex);
     editor.setValue(data.tex);
+    setMode("source");
     updateEditorFileTitle();
     pdfTitle.textContent = activeProject.pdfName || "main.pdf";
     pdfMeta.textContent = "Loading pages...";
@@ -3510,13 +4119,15 @@ async function loadManuscript(projectId = activeProject && activeProject.id) {
   }
 }
 
-async function loadProjectFile(relativePath, { confirmUnsaved = true } = {}) {
+async function loadProjectFile(relativePath, { confirmUnsaved = true, preview = true } = {}) {
   if (!activeProject || !relativePath) return;
 
   syncActiveTextTabFromEditor();
   const existingTab = openTextTabs.find((tab) => tab.relativePath === relativePath);
   if (existingTab) {
+    if (!preview) existingTab.preview = false;
     switchTextTab(relativePath);
+    renderTextTabs();
     return;
   }
 
@@ -3527,8 +4138,9 @@ async function loadProjectFile(relativePath, { confirmUnsaved = true } = {}) {
   try {
     const data = await window.localOverleaf.load(activeProject.id, relativePath);
     activeProject = data.project;
-    setActiveLoadedTextFile(data.file, data.tex);
+    setActiveLoadedTextFile(data.file, data.tex, { preview });
     editor.setValue(data.tex);
+    setMode(visualEditor.hidden ? "source" : "visual");
     updateEditorFileTitle();
     updateActiveDocumentTitle();
     updateStats();
@@ -3572,6 +4184,7 @@ function renderFileTree() {
   }
 
   projectFiles.forEach((node) => fileTree.appendChild(renderFileNode(node, 0)));
+  updateFileOutline();
 }
 
 function renderFileNode(node, depth) {
@@ -3610,7 +4223,11 @@ function renderFileNode(node, depth) {
     ${fileIconMarkup(node)}
     <span class="file-name">${escapeHtml(node.name)}</span>
   `;
-  button.addEventListener("click", () => selectProjectFile(node));
+  button.addEventListener("click", () => selectProjectFile(node, { preview: true }));
+  button.addEventListener("dblclick", (event) => {
+    event.preventDefault();
+    selectProjectFile(node, { preview: false });
+  });
   attachFileContextMenu(button, node);
   return button;
 }
@@ -3638,15 +4255,15 @@ function folderIconName(node) {
   return FOLDER_ICON_NAMES.get(name) || "folder.svg";
 }
 
-async function selectProjectFile(node) {
+async function selectProjectFile(node, { preview = true } = {}) {
   if (node.editable) {
     filePreview.hidden = true;
-    await loadProjectFile(node.relativePath);
+    await loadProjectFile(node.relativePath, { preview });
     return;
   }
 
   if (node.image) {
-    showImagePreview(node);
+    openMediaFile(node, { preview });
     return;
   }
 
@@ -3665,6 +4282,140 @@ function showImagePreview(node) {
     <img src="${escapeHtml(node.fileUrl)}" alt="${escapeHtml(node.name)}">
     <code>${escapeHtml(node.relativePath)}</code>
   `;
+}
+
+function openMediaFile(node, { preview = true } = {}) {
+  if (!node || !node.relativePath) return;
+  syncActiveTextTabFromEditor();
+  let tab = openTextTabs.find((item) => item.relativePath === node.relativePath);
+  if (!tab) {
+    clearReplaceablePreviewTab(node.relativePath);
+    tab = {
+      relativePath: node.relativePath,
+      name: node.name,
+      file: node,
+      text: "",
+      savedText: "",
+      dirty: false,
+      preview: Boolean(preview),
+      kind: "image"
+    };
+    openTextTabs.push(tab);
+  } else if (!preview) {
+    tab.preview = false;
+  }
+
+  activeTextTabPath = tab.relativePath;
+  activeFile = node;
+  activeMediaFile = node;
+  savedText = "";
+  showMediaTab(tab);
+  updateEditorFileTitle();
+  updateActiveDocumentTitle();
+  renderTextTabs();
+  renderFileTree();
+  updateFileOutline();
+  filePreview.hidden = true;
+}
+
+function showMediaTab(tab) {
+  editor.getWrapperElement().hidden = true;
+  visualEditor.hidden = true;
+  mediaViewer.hidden = false;
+  mediaViewer.innerHTML = `
+    <figure class="media-preview">
+      <img src="${escapeHtml(tab.file.fileUrl)}" alt="${escapeHtml(tab.name)}">
+      <figcaption>${escapeHtml(tab.relativePath)}</figcaption>
+    </figure>
+  `;
+  applyMinimapVisibility();
+}
+
+async function createProjectFile(kind) {
+  if (!activeProject) return;
+  const folderNode = currentFileFolderTarget();
+  const label = kind === "folder" ? "New folder name" : "New file name";
+  const fallback = kind === "folder" ? "new-folder" : "untitled.tex";
+  const name = window.prompt(label, fallback);
+  if (name === null || !name.trim()) return;
+
+  try {
+    const result = await window.localOverleaf.projectFileAction(activeProject.id, folderNode, kind === "folder" ? "create-folder" : "create-file", { name });
+    applyFileActionResult(result);
+    if (kind === "file" && result.file && result.file.editable) {
+      await loadProjectFile(result.file.relativePath, { preview: false });
+    }
+    compileLog.textContent = `${kind === "folder" ? "Created folder" : "Created file"} ${name.trim()}.`;
+  } catch (error) {
+    compileLog.textContent = formatError(error);
+  }
+}
+
+function currentFileFolderTarget() {
+  if (!activeFile || !activeFile.relativePath) return "";
+  const parts = activeFile.relativePath.split("/");
+  parts.pop();
+  return parts.join("/");
+}
+
+function updateFileOutline() {
+  if (!fileOutline || !fileOutlineBody) return;
+  const tab = currentTextTab();
+  if (!tab || tab.kind !== "text") {
+    fileOutline.hidden = true;
+    fileOutlineBody.innerHTML = "";
+    return;
+  }
+
+  const items = buildFileOutlineItems(tab.text || getSourceText());
+  if (!items.length) {
+    fileOutline.hidden = true;
+    fileOutlineBody.innerHTML = "";
+    return;
+  }
+
+  fileOutline.hidden = false;
+  fileOutlineBody.innerHTML = "";
+  items.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `file-outline-item level-${item.level}`;
+    button.textContent = item.label;
+    button.addEventListener("click", () => jumpToSourceLine(item.line));
+    fileOutlineBody.appendChild(button);
+  });
+}
+
+function buildFileOutlineItems(text) {
+  const items = [];
+  String(text || "").split("\n").forEach((line, index) => {
+    const markdown = line.match(/^(#{1,6})\s+(.+)$/);
+    if (markdown) {
+      items.push({ label: markdown[2].trim(), level: markdown[1].length, line: index });
+      return;
+    }
+
+    const section = line.match(/\\(chapter|section|subsection|subsubsection)\*?\{([^}]+)\}/);
+    if (section) {
+      const level = { chapter: 1, section: 1, subsection: 2, subsubsection: 3 }[section[1]] || 1;
+      items.push({ label: latexToVisual(section[2]), level, line: index });
+      return;
+    }
+
+    const figure = line.match(/\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}/);
+    if (figure) items.push({ label: `Figure: ${figure[1]}`, level: 2, line: index });
+    if (/\\begin\{equation\}/.test(line)) items.push({ label: "Equation", level: 2, line: index });
+  });
+  return items.slice(0, 80);
+}
+
+function jumpToSourceLine(line) {
+  setMode("source");
+  requestAnimationFrame(() => {
+    editor.focus();
+    editor.setCursor({ line, ch: 0 });
+    editor.scrollIntoView({ line, ch: 0 }, 96);
+  });
 }
 
 function attachFileContextMenu(target, node) {
@@ -3856,12 +4607,16 @@ async function fileToImportPayload(file) {
 
 async function reloadFromDisk() {
   if (!activeProject) return false;
-  if (getSourceText() !== savedText) {
+  if (!activeMediaFile && getSourceText() !== savedText) {
     const confirmed = window.confirm("Reload from disk and discard unsaved editor changes?");
     if (!confirmed) return false;
   }
 
-  await loadProjectFile(activeFile ? activeFile.relativePath : "", { confirmUnsaved: false });
+  if (activeFile && activeFile.image) {
+    openMediaFile(activeFile, { preview: false });
+  } else {
+    await loadProjectFile(activeFile ? activeFile.relativePath : "", { confirmUnsaved: false, preview: false });
+  }
   return true;
 }
 
@@ -3886,6 +4641,10 @@ async function refreshActiveProject() {
 
 async function saveManuscript({ auto = false } = {}) {
   if (!activeProject) return;
+  if (activeMediaFile) {
+    if (!auto) compileLog.textContent = "Image tabs do not need saving.";
+    return;
+  }
   if (auto && getSourceText() === savedText) return;
 
   setBusy(true);
@@ -3913,6 +4672,10 @@ async function saveManuscript({ auto = false } = {}) {
 
 async function compileManuscript({ manual = false } = {}) {
   if (!activeProject) return;
+  if (activeMediaFile) {
+    compileLog.textContent = "Switch to a text file before compiling.";
+    return;
+  }
 
   clearTimeout(autoCompileTimer);
   clearTimeout(autoSaveTimer);
@@ -4009,7 +4772,7 @@ async function loadAgentsFile() {
     if (token !== agentsLoadToken) return;
     agentsPathLabel.textContent = result.path || "AGENTS.md";
     agentsEditor.value = result.text || "";
-    agentsStatus.textContent = result.exists ? "AGENTS.md loaded." : "AGENTS.md will be created when saved.";
+    agentsStatus.textContent = result.exists ? "AGENTS.md loaded." : "No AGENTS.md in this project.";
   } catch (error) {
     if (token !== agentsLoadToken) return;
     agentsStatus.textContent = formatError(error);
@@ -4052,6 +4815,7 @@ function handleSourceChanged({ renderVisual = false } = {}) {
   scheduleSourceMinimapUpdate();
   updateActiveDocumentTitle();
   updateActiveTextTabDirtyState();
+  updateFileOutline();
   setSaveState(getSourceText() === savedText ? "Saved" : "Unsaved changes");
   if (renderVisual) renderVisualEditor();
   scheduleAutoSave();
@@ -4207,12 +4971,21 @@ function scheduleAutoCompile(message) {
 }
 
 function setMode(mode) {
+  if (activeMediaFile) {
+    editor.getWrapperElement().hidden = true;
+    visualEditor.hidden = true;
+    mediaViewer.hidden = false;
+    applyMinimapVisibility();
+    return;
+  }
+
   const visual = mode === "visual";
   sourceModeButton.classList.toggle("active", !visual);
   visualModeButton.classList.toggle("active", visual);
   editor.getWrapperElement().hidden = visual;
-  if (sourceMinimap) sourceMinimap.hidden = visual;
+  mediaViewer.hidden = true;
   visualEditor.hidden = !visual;
+  applyMinimapVisibility();
   updateEditorFileTitle();
 
   if (visual) renderVisualEditor();
@@ -4224,6 +4997,11 @@ function setMode(mode) {
 
 function renderVisualEditor() {
   const tex = getSourceText();
+  if (isMarkdownFile()) {
+    renderMarkdownPreview(tex);
+    return;
+  }
+
   visualItems = extractVisualItems(tex);
   visualBlocks = visualItems.filter((item) => item.type === "paragraph");
   visualEditor.innerHTML = "";
@@ -4268,6 +5046,75 @@ function renderVisualEditor() {
   });
 
   visualEditor.appendChild(page);
+}
+
+function renderMarkdownPreview(markdown) {
+  visualEditor.innerHTML = "";
+  const article = document.createElement("article");
+  article.className = "markdown-preview";
+  article.innerHTML = markdownToHtml(markdown);
+  visualEditor.appendChild(article);
+}
+
+function markdownToHtml(markdown) {
+  const lines = String(markdown || "").split("\n");
+  const html = [];
+  let inCode = false;
+  let listOpen = false;
+
+  const closeList = () => {
+    if (listOpen) {
+      html.push("</ul>");
+      listOpen = false;
+    }
+  };
+
+  lines.forEach((line) => {
+    if (line.trim().startsWith("```")) {
+      closeList();
+      html.push(inCode ? "</code></pre>" : "<pre><code>");
+      inCode = !inCode;
+      return;
+    }
+
+    if (inCode) {
+      html.push(escapeHtml(line));
+      return;
+    }
+
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      closeList();
+      const level = Math.min(heading[1].length, 6);
+      html.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`);
+      return;
+    }
+
+    const list = line.match(/^\s*[-*]\s+(.+)$/);
+    if (list) {
+      if (!listOpen) {
+        html.push("<ul>");
+        listOpen = true;
+      }
+      html.push(`<li>${inlineMarkdown(list[1])}</li>`);
+      return;
+    }
+
+    closeList();
+    if (!line.trim()) return;
+    html.push(`<p>${inlineMarkdown(line)}</p>`);
+  });
+
+  closeList();
+  if (inCode) html.push("</code></pre>");
+  return html.join("\n");
+}
+
+function inlineMarkdown(value) {
+  return escapeHtml(value)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>");
 }
 
 function renderVisualParagraph(block) {
@@ -4772,6 +5619,7 @@ async function renderPdf({ showLoading = true } = {}) {
       pdfViewer.scrollTop = scrollTop;
     }
     if (pdfZoom !== zoomForRender) applyPdfLiveZoom();
+    updatePdfPageIndicator();
   } catch (error) {
     if (token !== pdfRenderToken) return;
     pdfViewer.innerHTML = '<div class="pdf-loading pdf-error">Could not render PDF. Compile once if this project has no PDF yet.</div>';
@@ -5380,7 +6228,15 @@ function setupSplitter() {
     }
 
     const minLeft = MIN_EDITOR_WIDTH;
-    const minRight = Math.min(760, Math.max(getPdfMinimumWidth(), bounds.width * 0.4));
+    const rightWidth = bounds.width - fileWidth - nextWidth - splitter.offsetWidth;
+    if (rightWidth < PDF_COLLAPSE_THRESHOLD) {
+      setPdfCollapsed(true);
+      stopDragging(event);
+      return;
+    }
+
+    if (workspace.classList.contains("pdf-hidden")) setPdfCollapsed(false);
+    const minRight = Math.min(760, Math.max(getPdfMinimumWidth(), bounds.width * 0.28));
     const maxLeft = Math.max(minLeft, bounds.width - fileWidth - minRight - splitter.offsetWidth);
     const clamped = Math.min(maxLeft, Math.max(minLeft, nextWidth));
     workspace.style.setProperty("--editor-width", `${clamped}px`);
@@ -5403,7 +6259,7 @@ function setupSplitter() {
     const fileWidth = workspace.classList.contains("files-hidden")
       ? fileRail.getBoundingClientRect().width
       : filePane.getBoundingClientRect().width + fileSplitter.offsetWidth;
-    const minRight = Math.min(760, Math.max(getPdfMinimumWidth(), bounds.width * 0.4));
+    const minRight = Math.min(760, Math.max(getPdfMinimumWidth(), bounds.width * 0.28));
     const maxLeft = Math.max(MIN_EDITOR_WIDTH, bounds.width - fileWidth - minRight - splitter.offsetWidth);
     const currentWidth = sourcePane.getBoundingClientRect().width;
     const delta = event.key === "ArrowLeft" ? -32 : 32;
@@ -5412,6 +6268,11 @@ function setupSplitter() {
       setSourceCollapsed(true);
       return;
     }
+    if (bounds.width - fileWidth - nextWidth - splitter.offsetWidth < PDF_COLLAPSE_THRESHOLD) {
+      setPdfCollapsed(true);
+      return;
+    }
+    if (workspace.classList.contains("pdf-hidden")) setPdfCollapsed(false);
     workspace.style.setProperty("--editor-width", `${Math.min(maxLeft, Math.max(MIN_EDITOR_WIDTH, nextWidth))}px`);
     renderPdf({ showLoading: false });
   });
@@ -5422,6 +6283,10 @@ function updateLogState() {
 }
 
 function updateStats() {
+  if (activeMediaFile) {
+    sourceStats.textContent = "image preview";
+    return;
+  }
   const text = getSourceText();
   const lines = text ? text.split("\n").length : 0;
   const words = (text.match(/\b[\w'-]+\b/g) || []).length;
