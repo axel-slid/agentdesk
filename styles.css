@@ -1813,7 +1813,7 @@ button:disabled {
 
 .source-minimap-line {
   align-items: center;
-  color: color-mix(in srgb, var(--cm-text) 66%, transparent);
+  color: var(--cm-text);
   display: block;
   font-family: var(--mono);
   font-size: 3.5px;
@@ -1821,7 +1821,7 @@ button:disabled {
   letter-spacing: 0;
   line-height: 3px;
   min-width: 0;
-  opacity: 0.96;
+  opacity: 1;
   overflow: hidden;
   text-rendering: optimizeSpeed;
   white-space: pre;
@@ -1832,24 +1832,44 @@ button:disabled {
 }
 
 .source-minimap-line.comment {
-  color: var(--cm-comment);
-  opacity: 0.42;
+  opacity: 1;
 }
 
 .source-minimap-line.command {
-  color: var(--cm-keyword);
-  opacity: 0.76;
+  opacity: 1;
 }
 
 .source-minimap-line.heading {
-  color: var(--accent);
   font-weight: 700;
-  opacity: 0.86;
+  opacity: 1;
 }
 
 .source-minimap-line.figure {
+  opacity: 1;
+}
+
+.source-minimap-token.text {
+  color: var(--cm-text);
+}
+
+.source-minimap-token.keyword {
+  color: var(--cm-keyword);
+}
+
+.source-minimap-token.variable {
+  color: var(--cm-variable);
+}
+
+.source-minimap-token.atom {
   color: var(--cm-atom);
-  opacity: 0.72;
+}
+
+.source-minimap-token.comment {
+  color: var(--cm-comment);
+}
+
+.source-minimap-token.number {
+  color: var(--cm-number);
 }
 
 .source-minimap-viewport {
@@ -1907,22 +1927,22 @@ button:disabled {
   align-items: center;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 0 8px 8px 0;
+  border-radius: 999px;
   box-shadow: none;
   color: var(--muted);
   display: none;
   font-size: 12px;
   font-weight: 700;
-  height: 108px;
+  height: 24px;
   justify-content: center;
-  left: 0;
-  letter-spacing: 0.04em;
-  padding: 0;
+  left: 50%;
+  letter-spacing: 0;
+  padding: 0 12px;
   position: absolute;
-  top: -78px;
-  transform: rotate(180deg);
-  width: 34px;
-  writing-mode: vertical-rl;
+  top: 5px;
+  transform: translateX(-50%);
+  width: auto;
+  writing-mode: horizontal-tb;
   z-index: 12;
 }
 
@@ -2331,6 +2351,15 @@ button:disabled {
   font-family: var(--mono);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.CodeMirror-cursor {
+  border-left-color: var(--cm-text) !important;
+}
+
+.cm-fat-cursor .CodeMirror-cursor {
+  background: var(--cm-text) !important;
+  border-left-color: var(--cm-text) !important;
 }
 
 .CodeMirror-gutters {
@@ -3148,6 +3177,15 @@ body[data-theme="dark"] .CodeMirror {
   background: var(--cm-bg);
   caret-color: #ffffff;
   color: var(--cm-text);
+}
+
+body[data-theme="dark"] .CodeMirror-cursor {
+  border-left-color: #ffffff !important;
+}
+
+body[data-theme="dark"] .cm-fat-cursor .CodeMirror-cursor {
+  background: #ffffff !important;
+  border-left-color: #ffffff !important;
 }
 
 body[data-theme="dark"] .CodeMirror-gutters {

@@ -3165,10 +3165,58 @@ function updateSourceMinimap() {
   sourceMinimapLines.innerHTML = lines.map((line) => {
     const trimmed = line.trim();
     const kind = sourceMinimapLineKind(trimmed);
-    const previewText = escapeHtml(line.replace(/\t/g, "  ").slice(0, 150) || " ");
-    return `<span class="source-minimap-line ${kind}">${previewText}</span>`;
+    const previewText = renderSourceMinimapSyntax(line.replace(/\t/g, "  ").slice(0, 150));
+    return `<span class="source-minimap-line ${kind}">${previewText || "&nbsp;"}</span>`;
   }).join("");
   updateSourceMinimapViewport();
+}
+
+function renderSourceMinimapSyntax(line) {
+  if (!line) return "";
+
+  const commentIndex = findLatexCommentIndex(line);
+  const code = commentIndex === -1 ? line : line.slice(0, commentIndex);
+  const comment = commentIndex === -1 ? "" : line.slice(commentIndex);
+  const tokenPattern = /(\\[a-zA-Z@]+\*?|\\.|\{|\}|\[|\]|\b\d+(?:\.\d+)?\b|[$^_&#~]|--)/g;
+  let html = "";
+  let cursor = 0;
+  let match;
+
+  while ((match = tokenPattern.exec(code)) !== null) {
+    if (match.index > cursor) {
+      html += `<span class="source-minimap-token text">${escapeHtml(code.slice(cursor, match.index))}</span>`;
+    }
+    const token = match[0];
+    html += `<span class="source-minimap-token ${sourceMinimapTokenKind(token)}">${escapeHtml(token)}</span>`;
+    cursor = match.index + token.length;
+  }
+
+  if (cursor < code.length) {
+    html += `<span class="source-minimap-token text">${escapeHtml(code.slice(cursor))}</span>`;
+  }
+  if (comment) {
+    html += `<span class="source-minimap-token comment">${escapeHtml(comment)}</span>`;
+  }
+  return html;
+}
+
+function findLatexCommentIndex(line) {
+  for (let index = 0; index < line.length; index += 1) {
+    if (line[index] !== "%") continue;
+    let slashCount = 0;
+    for (let cursor = index - 1; cursor >= 0 && line[cursor] === "\\"; cursor -= 1) {
+      slashCount += 1;
+    }
+    if (slashCount % 2 === 0) return index;
+  }
+  return -1;
+}
+
+function sourceMinimapTokenKind(token) {
+  if (token.startsWith("\\")) return "keyword";
+  if (token === "{" || token === "}" || token === "[" || token === "]") return "variable";
+  if (/^\d/.test(token)) return "number";
+  return "atom";
 }
 
 function sourceMinimapLineKind(line) {
