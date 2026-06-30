@@ -2787,8 +2787,9 @@ async function compileManuscript(_event, payload) {
   if (!isTextFile(filePath)) throw new Error("Only text project files can be saved from the editor.");
   await fsp.writeFile(filePath, payload.tex, "utf8");
 
-  const output = await runTectonic(project);
-  const pdfPath = pdfPathFor(project);
+  const compileProject = { ...project, texPath: filePath };
+  const output = await runTectonic(compileProject);
+  const pdfPath = pdfPathFor(compileProject);
   if (!fs.existsSync(pdfPath)) {
     throw new Error(`${output}\n\nCompile finished but ${path.basename(pdfPath)} was not found.`);
   }
@@ -2800,7 +2801,9 @@ async function compileManuscript(_event, payload) {
     file: fileDescriptor(project, filePath),
     output,
     pdfPath,
-    pdfUrl: pdfUrl(project)
+    pdfUrl: pdfUrl(compileProject),
+    compiledPdfRelativePath: relativeProjectPath(project, pdfPath),
+    compiledPdfName: path.basename(pdfPath)
   };
 }
 

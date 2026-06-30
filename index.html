@@ -73,6 +73,10 @@
           <span aria-hidden="true">&larr;</span>
           <span>Projects</span>
         </button>
+        <div id="sshConnectionBadge" class="ssh-connection-badge" data-state="disconnected" hidden>
+          <span class="ssh-connection-dot" aria-hidden="true"></span>
+          <span id="sshConnectionLabel">SSH disconnected</span>
+        </div>
         <div class="top-document-title-wrap">
           <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
           <button id="editTitleButton" class="title-edit-button" type="button" aria-label="Edit document title" title="Edit title">
@@ -667,6 +671,10 @@
             <label class="setting-row">
               <span>Dark mode</span>
               <input id="settingsThemeToggle" type="checkbox">
+            </label>
+            <label class="setting-column">
+              <span>Transparent opacity <strong id="settingsTransparentOpacityValue">18%</strong></span>
+              <input id="settingsTransparentOpacityRange" type="range" min="6" max="70" step="1" value="18">
             </label>
             <label class="setting-row">
               <span>Accent color</span>

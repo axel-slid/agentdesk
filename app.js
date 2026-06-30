@@ -16,6 +16,8 @@ const projectDropZone = document.getElementById("projectDropZone");
 const projectImportButtons = Array.from(document.querySelectorAll("[data-project-kind]"));
 const refreshProjectsButton = document.getElementById("refreshProjectsButton");
 const backToProjectsButton = document.getElementById("backToProjectsButton");
+const sshConnectionBadge = document.getElementById("sshConnectionBadge");
+const sshConnectionLabel = document.getElementById("sshConnectionLabel");
 const commandPalette = document.getElementById("commandPalette");
 const commandPaletteInput = document.getElementById("commandPaletteInput");
 const commandPaletteList = document.getElementById("commandPaletteList");
@@ -119,6 +121,8 @@ const settingsNavButtons = Array.from(document.querySelectorAll(".settings-nav-b
 const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
 const settingsThemePreset = document.getElementById("settingsThemePreset");
 const settingsThemeToggle = document.getElementById("settingsThemeToggle");
+const settingsTransparentOpacityRange = document.getElementById("settingsTransparentOpacityRange");
+const settingsTransparentOpacityValue = document.getElementById("settingsTransparentOpacityValue");
 const settingsAccentPicker = document.getElementById("settingsAccentPicker");
 const settingsFileSidebarToggle = document.getElementById("settingsFileSidebarToggle");
 const settingsPdfRenderModeButtons = Array.from(document.querySelectorAll("[data-pdf-render-mode]"));
@@ -181,6 +185,8 @@ const DEFAULT_GITHUB_REMOTE = "https://github.com/axel-slid/agentdesk-latex-docu
 const PROFILE_STORAGE_KEY = "latexStudioAiProfile";
 const REMOTE_STORAGE_KEY = "latexStudioRemoteWorkspace";
 const DEFAULT_GITHUB_STORAGE_KEY = "latexStudioDefaultGithubRemote";
+const TRANSPARENT_OPACITY_STORAGE_KEY = "latexStudioTransparentOpacity";
+const DEFAULT_TRANSPARENT_OPACITY = 18;
 const CLOSE_ICON_SVG = `
   <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M18 6 6 18M6 6l12 12"></path>
@@ -2235,6 +2241,7 @@ function setupSettings() {
   const preset = THEME_PRESETS[savedPreset];
   const savedTheme = (preset && preset.theme) || localStorage.getItem("latexStudioTheme") || "light";
   const savedAccent = (preset && preset.accent) || normalizeHexColor(localStorage.getItem("latexStudioAccent")) || DEFAULT_ACCENT;
+  const transparentOpacity = transparentOpacityValue(localStorage.getItem(TRANSPARENT_OPACITY_STORAGE_KEY));
   const showSidebar = localStorage.getItem("latexStudioShowSidebar") === "true";
   const pdfMinWidth = clampNumber(Number(localStorage.getItem("latexStudioPdfMinWidth")), 480, 760, DEFAULT_PDF_MIN_WIDTH);
   const fileWidth = clampNumber(Number(localStorage.getItem("latexStudioFileWidth")), MIN_FILE_WIDTH, MAX_FILE_WIDTH, DEFAULT_FILE_WIDTH);
@@ -2266,6 +2273,7 @@ function setupSettings() {
   aiProfile = readAiProfile();
 
   applyTheme(savedTheme, savedAccent, { presetId: savedPreset });
+  applyTransparentOpacity(transparentOpacity, { persist: false });
   syncSurfaceThemesToAppTheme(savedTheme, { persist: false });
   applyLayoutSettings({ showSidebar, pdfMinWidth, fileWidth });
   setFileOutlineHeight(fileOutlineHeight, { persist: false });
@@ -2288,6 +2296,7 @@ function setupSettings() {
   populateRemoteForm();
   populateDefaultGithubForm();
   populateProjectSettingsForm();
+  setSshConnectionState("disconnected");
   applyMinimapVisibility();
   applySpellCheckSetting();
   updateSaveButtonVisibility();
@@ -2297,6 +2306,7 @@ function setupSettings() {
 
   settingsThemePreset.addEventListener("change", () => {
     applyThemePreset(settingsThemePreset.value);
+    renderPdf({ showLoading: false, preserveView: true });
   });
 
   settingsThemeToggle.addEventListener("change", () => {
@@ -2307,7 +2317,15 @@ function setupSettings() {
     localStorage.setItem("latexStudioThemePreset", "custom");
     localStorage.setItem("latexStudioTheme", nextTheme);
     localStorage.setItem("latexStudioAccent", accent);
+    renderPdf({ showLoading: false, preserveView: true });
   });
+
+  if (settingsTransparentOpacityRange) {
+    settingsTransparentOpacityRange.addEventListener("input", () => {
+      applyTransparentOpacity(settingsTransparentOpacityRange.value);
+      renderPdf({ showLoading: false, preserveView: true });
+    });
+  }
 
   settingsAccentPicker.addEventListener("input", () => {
     const accent = normalizeHexColor(settingsAccentPicker.value) || DEFAULT_ACCENT;
@@ -2462,6 +2480,35 @@ function applyTheme(theme, accent, { presetId = "custom" } = {}) {
   updateVimModeIndicator();
 }
 
+function transparentOpacityValue(value) {
+  return clampNumber(Number(value), 6, 70, DEFAULT_TRANSPARENT_OPACITY);
+}
+
+function applyTransparentOpacity(value, { persist = true } = {}) {
+  const chrome = transparentOpacityValue(value);
+  const dialog = Math.min(84, chrome + 14);
+  const card = Math.min(80, chrome + 12);
+  const editorAlpha = Math.max(0, chrome - 6);
+  const gutter = Math.max(0, chrome - 10);
+  const divider = Math.min(72, chrome + 4);
+  const entries = [
+    ["--transparent-chrome-alpha", `${chrome}%`],
+    ["--transparent-dialog-alpha", `${dialog}%`],
+    ["--transparent-card-alpha", `${card}%`],
+    ["--transparent-editor-alpha", `${editorAlpha}%`],
+    ["--transparent-gutter-alpha", `${gutter}%`],
+    ["--transparent-divider-alpha", `${divider}%`]
+  ];
+
+  entries.forEach(([name, nextValue]) => {
+    document.documentElement.style.setProperty(name, nextValue);
+    document.body.style.setProperty(name, nextValue);
+  });
+  if (settingsTransparentOpacityRange) settingsTransparentOpacityRange.value = String(chrome);
+  if (settingsTransparentOpacityValue) settingsTransparentOpacityValue.textContent = `${chrome}%`;
+  if (persist) localStorage.setItem(TRANSPARENT_OPACITY_STORAGE_KEY, String(chrome));
+}
+
 function syncSurfaceThemesToAppTheme(theme, { persist = true } = {}) {
   const mode = theme === "dark" ? "dark" : "light";
   pdfDarkMode = mode === "dark";
@@ -2562,6 +2609,20 @@ function remoteWorkspaceLabel(remote = remoteWorkspace) {
   const normalized = normalizeRemoteWorkspace(remote);
   const target = normalized.user ? `${normalized.user}@${normalized.host}` : normalized.host;
   return normalized.path ? `${target}:${normalized.path}` : target;
+}
+
+function setSshConnectionState(state = "disconnected", message = "") {
+  if (!sshConnectionBadge || !sshConnectionLabel) return;
+  const connected = state === "connected";
+  const connecting = state === "connecting";
+  const visible = connected || connecting || Boolean(message);
+  sshConnectionBadge.hidden = !visible;
+  sshConnectionBadge.dataset.state = state;
+  sshConnectionLabel.textContent = message || (connected
+    ? `SSH ${remoteWorkspaceLabel(remoteWorkspace)}`
+    : connecting
+      ? "SSH connecting..."
+      : "SSH disconnected");
 }
 
 function isRemoteProject() {
@@ -2741,10 +2802,15 @@ async function connectSshProject() {
     sshProjectStatus.textContent = "Authenticating SSH connection...";
     setStatusClass(sshProjectStatus);
   }
+  setSshConnectionState("connecting", `SSH connecting to ${remoteWorkspaceLabel(pendingRemote)}`);
   if (connectSshProjectButton) connectSshProjectButton.disabled = true;
 
   try {
     await runSshAuthentication(pendingRemote);
+    if (sshProjectStatus) {
+      sshProjectStatus.textContent = "SSH authentication succeeded. Verifying remote path...";
+      setStatusClass(sshProjectStatus);
+    }
     const verification = await window.localOverleaf.verifySshConnection(pendingRemote);
     remoteWorkspace = normalizeRemoteWorkspace({
       ...pendingRemote,
@@ -2752,6 +2818,7 @@ async function connectSshProject() {
     });
     localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
     populateRemoteForm();
+    setSshConnectionState("connected");
     if (sshProjectStatus) {
       sshProjectStatus.textContent = `Connected to ${remoteWorkspaceLabel(remoteWorkspace)}.`;
       setStatusClass(sshProjectStatus, "ok");
@@ -2759,13 +2826,24 @@ async function connectSshProject() {
     closeSshProjectPanel({ value: remoteWorkspace });
     if (shouldStartTerminal) await openVerifiedRemoteWorkspace();
   } catch (error) {
+    setSshConnectionState("error", "SSH connection failed");
     if (sshProjectStatus) {
-      sshProjectStatus.textContent = formatError(error);
+      sshProjectStatus.textContent = formatSshConnectionError(error, pendingRemote);
       setStatusClass(sshProjectStatus, "error");
     }
   } finally {
     if (connectSshProjectButton) connectSshProjectButton.disabled = false;
   }
+}
+
+function formatSshConnectionError(error, remote = {}) {
+  const message = formatError(error);
+  const remotePath = String(remote.path || "").trim();
+  const looksRelativeLinuxPath = remotePath && !remotePath.startsWith("/") && !remotePath.startsWith("~") && remotePath.includes("/");
+  if (/Remote path is not a directory/i.test(message) && looksRelativeLinuxPath) {
+    return `${message}\nTip: Linux paths like /mnt/shared/... need the leading slash.`;
+  }
+  return message;
 }
 
 async function runSshAuthentication(remote) {
@@ -2825,6 +2903,7 @@ function cleanupSshAuthSession() {
 }
 
 async function openVerifiedRemoteWorkspace() {
+  setSshConnectionState("connected");
   activeProject = {
     id: `remote:${remoteWorkspaceLabel(remoteWorkspace)}`,
     name: `SSH ${remoteWorkspace.host}`,
@@ -5037,7 +5116,11 @@ function setupTerminalPanel() {
     if (sshAuthSession && sshAuthSession.id === id) {
       sshAuthSession.exited = true;
       sshAuthSession.term.writeln("");
-      sshAuthSession.term.writeln(`\x1b[38;5;244m[ssh auth exited: ${signal || code || 0}]\x1b[0m`);
+      if (Number(code) === 0 && !signal) {
+        sshAuthSession.term.writeln("\x1b[38;5;70m[ssh authentication complete]\x1b[0m");
+      } else {
+        sshAuthSession.term.writeln(`\x1b[38;5;203m[ssh authentication failed: ${signal || code || "unknown"}]\x1b[0m`);
+      }
       if (sshAuthSession.resolve) sshAuthSession.resolve({ code, signal });
       return;
     }
@@ -6019,6 +6102,7 @@ function projectPathFromFile(file) {
 async function openProject(projectId) {
   resetTextTabs();
   selectedPdfRelativePath = "";
+  setSshConnectionState("disconnected");
   const project = projects.find((item) => item.id === projectId);
   activeProject = project || { id: projectId, name: "Project", texName: "main.tex" };
   showEditorShell();
@@ -6191,13 +6275,9 @@ function activePdfName() {
 
 function updatePdfTitleFromSelection() {
   if (!pdfTitle || !activeProject) return;
-  const pdfs = projectPdfFiles();
-  if (selectedPdfRelativePath && !pdfs.some((node) => node.relativePath === selectedPdfRelativePath)) {
-    selectedPdfRelativePath = "";
-  }
   pdfTitle.textContent = activePdfName();
-  pdfTitle.title = pdfs.length > 1 ? "Choose PDF" : activePdfName();
-  pdfTitle.classList.toggle("clickable", pdfs.length > 1);
+  pdfTitle.title = isRemoteProject() ? activePdfName() : "Choose PDF";
+  pdfTitle.classList.toggle("clickable", !isRemoteProject());
 }
 
 function togglePdfFileMenu(event) {
@@ -6212,7 +6292,14 @@ function togglePdfFileMenu(event) {
 
 function renderPdfFileMenu() {
   const pdfs = projectPdfFiles();
-  if (!pdfFileMenu || !pdfs.length) return;
+  if (!pdfFileMenu || !activeProject || isRemoteProject()) return;
+  const menuPdfs = [...pdfs];
+  if (selectedPdfRelativePath && !menuPdfs.some((node) => node.relativePath === selectedPdfRelativePath)) {
+    menuPdfs.unshift({
+      name: activePdfName(),
+      relativePath: selectedPdfRelativePath
+    });
+  }
   pdfFileMenu.innerHTML = "";
   const defaultButton = document.createElement("button");
   defaultButton.type = "button";
@@ -6221,7 +6308,7 @@ function renderPdfFileMenu() {
   defaultButton.textContent = (activeProject && activeProject.pdfName) || "Compiled PDF";
   defaultButton.addEventListener("click", () => selectPdfFile(""));
   pdfFileMenu.appendChild(defaultButton);
-  pdfs.forEach((node) => {
+  menuPdfs.forEach((node) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "pdf-file-option";
@@ -6247,7 +6334,7 @@ function renderFileNode(node, depth) {
   if (node.kind === "folder") {
     const details = document.createElement("details");
     details.className = "file-folder";
-    details.open = depth < 2 || node.name === "figures";
+    details.open = false;
     details.style.setProperty("--depth-indent", depthIndent);
 
     const summary = document.createElement("summary");
@@ -6885,17 +6972,19 @@ async function compileManuscript({ manual = false } = {}) {
   isCompiling = true;
   setSaveState("Saving...");
   setCompileState(manual ? "Compiling..." : "Auto compiling...");
-  compileLog.textContent = `Running tectonic ${activeProject.texName || "main.tex"}...`;
+  compileLog.textContent = `Running tectonic ${(activeFile && activeFile.name) || activeProject.texName || "main.tex"}...`;
 
   try {
     const tex = getSourceText();
     const result = await window.localOverleaf.compile(activeProject.id, activeFile && activeFile.relativePath, tex);
     activeProject = result.project || activeProject;
     activeFile = result.file || activeFile;
+    if (result.compiledPdfRelativePath) selectedPdfRelativePath = result.compiledPdfRelativePath;
     savedText = tex;
     updateActiveTextTabAfterSave(activeFile, tex);
     updateEditorFileTitle();
     updateActiveDocumentTitle();
+    updatePdfTitleFromSelection();
     await setPdf({ preserveView: true });
     setSaveState(`Saved ${timeStamp()}`, "ok");
     setCompileState(`${manual ? "Compiled" : "Auto compiled"} ${timeStamp()}`, "ok");

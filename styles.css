@@ -8356,7 +8356,7 @@ body.transparent-theme .log-panel,
 body.transparent-theme .log-header,
 body.transparent-theme .file-outline,
 body.transparent-theme .pdf-sidebar {
-  background: color-mix(in srgb, var(--panel) 18%, transparent) !important;
+  background: color-mix(in srgb, var(--panel) var(--transparent-chrome-alpha, 18%), transparent) !important;
   backdrop-filter: blur(18px) saturate(128%) !important;
 }
 
@@ -8366,7 +8366,7 @@ body.transparent-theme .new-project-panel,
 body.transparent-theme .ssh-project-panel,
 body.transparent-theme .history-panel,
 body.transparent-theme .command-palette {
-  background: color-mix(in srgb, var(--panel) 32%, transparent) !important;
+  background: color-mix(in srgb, var(--panel) var(--transparent-dialog-alpha, 32%), transparent) !important;
   backdrop-filter: blur(22px) saturate(138%) !important;
 }
 
@@ -8384,11 +8384,11 @@ body.transparent-theme .terminal-tab.active,
 body.transparent-theme input,
 body.transparent-theme select,
 body.transparent-theme textarea {
-  background: color-mix(in srgb, var(--glass) 30%, transparent) !important;
+  background: color-mix(in srgb, var(--glass) var(--transparent-card-alpha, 30%), transparent) !important;
 }
 
 body.transparent-theme .CodeMirror {
-  background: color-mix(in srgb, var(--cm-bg) 12%, transparent) !important;
+  background: color-mix(in srgb, var(--cm-bg) var(--transparent-editor-alpha, 12%), transparent) !important;
 }
 
 body.transparent-theme .CodeMirror-gutters,
@@ -8399,14 +8399,14 @@ body.transparent-theme .terminal-instance .xterm,
 body.transparent-theme .terminal-instance .xterm-screen,
 body.transparent-theme .terminal-instance .xterm-viewport,
 body.transparent-theme #compileLog {
-  background: color-mix(in srgb, var(--cm-bg) 8%, transparent) !important;
+  background: color-mix(in srgb, var(--cm-bg) var(--transparent-gutter-alpha, 8%), transparent) !important;
 }
 
 body.transparent-theme .splitter,
 body.transparent-theme .file-splitter,
 body.transparent-theme .terminal-resize-handle,
 body.transparent-theme .compile-log-resize-handle {
-  background: color-mix(in srgb, var(--border) 22%, transparent) !important;
+  background: color-mix(in srgb, var(--border) var(--transparent-divider-alpha, 22%), transparent) !important;
 }
 
 body.transparent-theme .pdf-viewer,
@@ -8483,4 +8483,141 @@ body.transparent-theme .CodeMirror-code {
 .workspace:not(.minimap-hidden) .CodeMirror-scrollbar-filler,
 .workspace:not(.minimap-hidden) .CodeMirror-gutter-filler {
   display: none !important;
+}
+
+.hero-actions .hero-action,
+.hero-actions .settingsButton {
+  border-radius: 9px !important;
+}
+
+.hero-actions .hero-action:hover,
+.hero-actions .hero-action.active,
+.hero-actions .settingsButton:hover,
+.hero-actions .settingsButton.active {
+  border-radius: 9px !important;
+}
+
+.project-card-copy {
+  min-width: 0 !important;
+  padding-right: 96px !important;
+}
+
+.project-grid.rows-view .project-card-copy {
+  padding-right: 96px !important;
+}
+
+.project-card-title-row {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.project-name {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: ellipsis !important;
+}
+
+.project-favorite-button {
+  right: 52px !important;
+  z-index: 5 !important;
+}
+
+.project-remove-button {
+  right: 12px !important;
+  z-index: 5 !important;
+}
+
+.file-header-actions .icon-button::after {
+  background: color-mix(in srgb, var(--panel) 94%, var(--page)) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text) !important;
+  text-shadow: none !important;
+  z-index: 1000 !important;
+}
+
+body[data-theme="dark"] .file-header-actions .icon-button::after {
+  background: color-mix(in srgb, var(--panel) 94%, #000) !important;
+  color: var(--text) !important;
+}
+
+.ssh-connection-badge {
+  align-items: center;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  flex: 0 1 auto;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 7px;
+  height: 30px;
+  line-height: 1;
+  max-width: min(300px, 24vw);
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.ssh-connection-badge[hidden] {
+  display: none !important;
+}
+
+.ssh-connection-badge span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ssh-connection-dot {
+  background: var(--muted);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 8px;
+  width: 8px;
+}
+
+.ssh-connection-badge[data-state="connecting"] .ssh-connection-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
+}
+
+.ssh-connection-badge[data-state="connected"] .ssh-connection-dot {
+  background: var(--green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent);
+}
+
+.ssh-connection-badge[data-state="error"] {
+  color: var(--red);
+}
+
+.ssh-connection-badge[data-state="error"] .ssh-connection-dot {
+  background: var(--red);
+}
+
+.pdf-loading {
+  background: color-mix(in srgb, var(--panel) 92%, var(--page)) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text) !important;
+  overflow-wrap: anywhere;
+}
+
+body[data-theme="dark"] .pdf-loading {
+  background: color-mix(in srgb, var(--panel) 94%, #000) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text) !important;
+}
+
+.pdf-loading.pdf-error {
+  color: var(--red) !important;
+}
+
+#compileLog {
+  overflow-wrap: anywhere !important;
+  white-space: pre-wrap !important;
+  word-break: break-word;
 }
