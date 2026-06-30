@@ -2266,6 +2266,839 @@ button:disabled {
   color: var(--cm-number);
 }
 
+/* Final precedence pass for current UI behavior. */
+.workspace {
+  grid-template-columns: var(--file-width) 8px minmax(320px, var(--editor-width)) 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.files-hidden {
+  grid-template-columns: 42px minmax(320px, var(--editor-width)) 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.source-hidden {
+  grid-template-columns: var(--file-width) 8px 42px 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.pdf-hidden {
+  grid-template-columns: var(--file-width) 8px minmax(320px, var(--editor-width)) 42px;
+}
+
+.workspace.files-hidden.pdf-hidden {
+  grid-template-columns: 42px minmax(320px, var(--editor-width)) 42px;
+}
+
+.workspace.source-hidden.pdf-hidden {
+  grid-template-columns: var(--file-width) 8px 42px 42px;
+}
+
+.workspace.files-hidden.source-hidden.pdf-hidden {
+  grid-template-columns: 42px 42px 42px;
+}
+
+.splitter,
+.file-splitter {
+  min-width: 8px;
+  z-index: 8;
+}
+
+.splitter::after,
+.file-splitter::after {
+  content: "";
+  cursor: col-resize;
+  inset: 0 -5px;
+  position: absolute;
+}
+
+#terminalSplitButton {
+  display: none !important;
+}
+
+.terminal-tabs {
+  justify-content: flex-start !important;
+}
+
+.project-back-button {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border-radius: 7px;
+  padding: 0 9px;
+}
+
+.hero-actions .hero-action,
+.hero-actions .settingsButton,
+.pdf-action-segment,
+.pdf-action-button,
+.pdf-controls,
+.pdf-controls button,
+#undoButton,
+#redoButton {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.hero-actions .hero-action,
+.hero-actions .settingsButton {
+  border-radius: 0 !important;
+  padding: 0 2px 5px;
+  position: relative;
+}
+
+.hero-actions .hero-action::after,
+.hero-actions .settingsButton::after,
+.pdf-action-button::after,
+#undoButton::after,
+#redoButton::after {
+  background: var(--accent);
+  border-radius: 999px;
+  bottom: 1px;
+  content: "";
+  height: 2px;
+  left: 14%;
+  opacity: 0;
+  position: absolute;
+  right: 14%;
+  transform: scaleX(0.45);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.hero-actions .hero-action:hover::after,
+.hero-actions .settingsButton:hover::after,
+.pdf-action-button:hover::after,
+#undoButton:hover::after,
+#redoButton:hover::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.pdf-action-button,
+.pdf-controls button {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  position: relative;
+}
+
+.pdf-action-button:hover,
+.pdf-controls button:hover,
+#undoButton:hover,
+#redoButton:hover {
+  background: transparent !important;
+  color: var(--text);
+}
+
+.source-pane.terminal-maximized {
+  grid-template-rows: 52px auto 0 minmax(260px, 1fr);
+}
+
+.source-pane.terminal-maximized .editor-stack,
+.source-pane.terminal-maximized .text-tabs,
+.preview-pane.log-maximized .pdf-viewer {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.source-pane.terminal-maximized .terminal-panel {
+  min-height: 260px;
+}
+
+.preview-pane.log-maximized {
+  grid-template-rows: 52px 0 minmax(220px, 1fr);
+}
+
+.file-pane {
+  --file-outline-height: 220px;
+}
+
+.file-outline {
+  background: color-mix(in srgb, var(--panel) 92%, var(--bg));
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-rows: 5px 32px minmax(0, 1fr);
+  height: var(--file-outline-height);
+  min-height: 34px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.file-outline[hidden] {
+  display: none !important;
+}
+
+.file-outline.collapsed {
+  grid-template-rows: 34px;
+  height: 34px;
+}
+
+.file-outline.collapsed .file-outline-resize-handle,
+.file-outline.collapsed .file-outline-body {
+  display: none;
+}
+
+.file-outline-resize-handle {
+  background: color-mix(in srgb, var(--border) 62%, transparent);
+  cursor: row-resize;
+  min-height: 5px;
+  position: relative;
+}
+
+.file-outline-resize-handle::before {
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+  border-radius: 999px;
+  content: "";
+  height: 2px;
+  left: 50%;
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  width: 42px;
+}
+
+.file-outline-title,
+.file-outline button.file-outline-title {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text);
+  display: flex;
+  font-size: 13px;
+  font-weight: 650;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px;
+}
+
+.file-outline-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 0 8px;
+}
+
+.file-outline .file-outline-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--text);
+  display: flex;
+  font-size: 13px;
+  font-weight: 500;
+  height: 24px;
+  line-height: 24px;
+  overflow: hidden;
+  padding: 0 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.template-preview {
+  aspect-ratio: 8.5 / 11;
+  height: 240px;
+  justify-self: center;
+  padding: 8px;
+  width: min(172px, 100%);
+}
+
+.template-preview img,
+.template-preview canvas {
+  height: 100% !important;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  width: auto !important;
+}
+
+.source-minimap-token.number {
+  color: var(--cm-text);
+}
+
+.source-mode-actions .mode-button.active,
+.vim-mode-indicator {
+  color: #10131a;
+  font-weight: 760;
+  text-shadow: none;
+}
+
+.vim-mode-indicator[hidden] {
+  display: none !important;
+}
+
+body.transparent-theme,
+body.transparent-theme .app,
+body.transparent-theme .project-screen,
+body.transparent-theme .editor-screen {
+  background: transparent !important;
+}
+
+body.transparent-theme .topbar,
+body.transparent-theme .file-rail,
+body.transparent-theme .source-rail,
+body.transparent-theme .preview-rail,
+body.transparent-theme .file-pane,
+body.transparent-theme .source-pane,
+body.transparent-theme .preview-pane,
+body.transparent-theme .pane-header,
+body.transparent-theme .text-tabs,
+body.transparent-theme .terminal-panel,
+body.transparent-theme .log-panel,
+body.transparent-theme .file-outline,
+body.transparent-theme .settings-panel,
+body.transparent-theme .templates-panel,
+body.transparent-theme .new-project-panel {
+  background: color-mix(in srgb, var(--panel) 52%, transparent) !important;
+  backdrop-filter: blur(26px) saturate(150%);
+}
+
+body.transparent-theme .CodeMirror {
+  background: color-mix(in srgb, var(--cm-bg) 48%, transparent) !important;
+}
+
+body.transparent-theme .CodeMirror-scroll,
+body.transparent-theme .CodeMirror-sizer,
+body.transparent-theme .editor-stack {
+  background: transparent !important;
+}
+
+body.transparent-theme .CodeMirror-gutters,
+body.transparent-theme .source-minimap-lines,
+body.transparent-theme .terminal-body,
+body.transparent-theme #compileLog {
+  background: color-mix(in srgb, var(--cm-bg) 38%, transparent) !important;
+}
+
+.project-shell {
+  -webkit-app-region: drag;
+}
+
+.project-shell button,
+.project-shell input,
+.project-card,
+.templates-panel,
+.new-project-panel,
+.settings-drawer {
+  -webkit-app-region: no-drag;
+}
+
+/* Current interaction polish */
+.workspace {
+  grid-template-columns: var(--file-width) 8px minmax(320px, var(--editor-width)) 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.files-hidden {
+  grid-template-columns: 42px minmax(320px, var(--editor-width)) 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.source-hidden {
+  grid-template-columns: var(--file-width) 8px 42px 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.pdf-hidden {
+  grid-template-columns: var(--file-width) 8px minmax(320px, var(--editor-width)) 42px;
+}
+
+.workspace.files-hidden.source-hidden {
+  grid-template-columns: 42px 42px 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.files-hidden.pdf-hidden {
+  grid-template-columns: 42px minmax(320px, var(--editor-width)) 42px;
+}
+
+.workspace.source-hidden.pdf-hidden {
+  grid-template-columns: var(--file-width) 8px 42px 42px;
+}
+
+.workspace.files-hidden.source-hidden.pdf-hidden {
+  grid-template-columns: 42px 42px 42px;
+}
+
+.splitter,
+.file-splitter {
+  min-width: 8px;
+  z-index: 8;
+}
+
+.splitter::after,
+.file-splitter::after {
+  content: "";
+  cursor: col-resize;
+  inset: 0 -5px;
+  position: absolute;
+}
+
+.source-pane.terminal-maximized {
+  grid-template-rows: 52px auto 0 minmax(260px, 1fr);
+}
+
+.source-pane.terminal-maximized .editor-stack,
+.source-pane.terminal-maximized .text-tabs {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.source-pane.terminal-maximized .terminal-panel {
+  min-height: 260px;
+}
+
+.preview-pane.log-maximized {
+  grid-template-rows: 52px 0 minmax(220px, 1fr);
+}
+
+.preview-pane.log-maximized .pdf-viewer {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.project-back-button {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border-radius: 7px;
+  padding: 0 9px;
+}
+
+.project-back-button:hover {
+  background: color-mix(in srgb, var(--text) 13%, transparent);
+}
+
+.hero-actions .hero-action,
+.hero-actions .settingsButton {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--text);
+  padding: 0 2px 5px;
+  position: relative;
+}
+
+.hero-actions .hero-action::after,
+.hero-actions .settingsButton::after {
+  background: var(--accent);
+  border-radius: 999px;
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 12%;
+  opacity: 0;
+  position: absolute;
+  right: 12%;
+  transform: scaleX(0.45);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.hero-actions .hero-action:hover,
+.hero-actions .settingsButton:hover {
+  background: transparent !important;
+  color: var(--text);
+}
+
+.hero-actions .hero-action:hover::after,
+.hero-actions .settingsButton:hover::after,
+.hero-actions .hero-action.active::after,
+.hero-actions .settingsButton.active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.hero-actions .icon-only-action {
+  height: 34px;
+  width: 34px;
+}
+
+.pdf-action-segment,
+.pdf-action-button,
+.pdf-controls,
+.pdf-controls button,
+#undoButton,
+#redoButton {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.pdf-action-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  padding: 0 8px;
+  position: relative;
+}
+
+.pdf-action-button::after,
+#undoButton::after,
+#redoButton::after {
+  background: var(--accent);
+  border-radius: 999px;
+  bottom: 2px;
+  content: "";
+  height: 2px;
+  left: 16%;
+  opacity: 0;
+  position: absolute;
+  right: 16%;
+  transform: scaleX(0.4);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.pdf-action-button:hover,
+#undoButton:hover,
+#redoButton:hover,
+.pdf-controls button:hover {
+  background: transparent !important;
+  color: var(--text);
+}
+
+.pdf-action-button:hover::after,
+#undoButton:hover::after,
+#redoButton:hover::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.pdf-action-button .icon,
+.pdf-controls .icon {
+  height: 15px;
+  width: 15px;
+}
+
+#undoButton,
+#redoButton {
+  color: var(--muted);
+  position: relative;
+}
+
+#terminalSplitButton {
+  display: none !important;
+}
+
+.terminal-tabs {
+  justify-content: flex-start !important;
+}
+
+.file-rail-actions .file-footer-icon {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.file-rail-actions .file-footer-icon .settings-icon {
+  height: 21px;
+  width: 21px;
+}
+
+.file-rail-actions .file-footer-icon .help-icon {
+  height: 20px;
+  width: 20px;
+}
+
+.file-pane {
+  --file-outline-height: 220px;
+}
+
+.file-outline {
+  background: color-mix(in srgb, var(--panel) 92%, var(--bg));
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-rows: 5px 32px minmax(0, 1fr);
+  height: var(--file-outline-height);
+  min-height: 34px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.file-outline[hidden] {
+  display: none !important;
+}
+
+.file-outline.collapsed {
+  grid-template-rows: 34px;
+  height: 34px;
+}
+
+.file-outline.collapsed .file-outline-resize-handle,
+.file-outline.collapsed .file-outline-body {
+  display: none;
+}
+
+.file-outline-resize-handle {
+  background: color-mix(in srgb, var(--border) 62%, transparent);
+  cursor: row-resize;
+  min-height: 5px;
+  position: relative;
+}
+
+.file-outline-resize-handle::before {
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+  border-radius: 999px;
+  content: "";
+  height: 2px;
+  left: 50%;
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  width: 42px;
+}
+
+.file-outline-title,
+.file-outline button.file-outline-title {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text);
+  display: flex;
+  font-size: 13px;
+  font-weight: 650;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px;
+}
+
+.file-outline-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 0 8px;
+}
+
+.file-outline .file-outline-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--text);
+  display: flex;
+  font-size: 13px;
+  font-weight: 500;
+  height: 24px;
+  line-height: 24px;
+  overflow: hidden;
+  padding: 0 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.file-outline .file-outline-item.level-2 {
+  padding-left: 18px;
+}
+
+.file-outline .file-outline-item.level-3 {
+  padding-left: 26px;
+}
+
+.file-outline .file-outline-item:hover {
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  color: var(--text);
+}
+
+.template-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.template-card {
+  align-content: start;
+  gap: 12px;
+}
+
+.template-preview {
+  aspect-ratio: 8.5 / 11;
+  height: 240px;
+  justify-self: center;
+  padding: 8px;
+  width: min(172px, 100%);
+}
+
+.template-preview img,
+.template-preview canvas {
+  height: 100% !important;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  width: auto !important;
+}
+
+.source-minimap-token.number {
+  color: var(--cm-text);
+}
+
+.source-minimap-viewport {
+  min-height: 14px;
+}
+
+.source-mode-actions .mode-button.active {
+  color: #10131a;
+  font-weight: 760;
+  text-shadow: none;
+}
+
+.vim-mode-indicator {
+  color: #10131a;
+  font-weight: 760;
+  text-shadow: none;
+}
+
+.vim-mode-indicator[hidden] {
+  display: none !important;
+}
+
+.vim-mode-indicator[data-vim-state="normal"] {
+  background: color-mix(in srgb, var(--accent) 72%, #ffffff);
+  border-color: color-mix(in srgb, var(--accent) 72%, #ffffff);
+  color: #10131a;
+}
+
+.vim-mode-indicator[data-vim-state="insert"] {
+  background: color-mix(in srgb, var(--green) 72%, #ffffff);
+  border-color: color-mix(in srgb, var(--green) 72%, #ffffff);
+  color: #10131a;
+}
+
+.vim-mode-indicator[data-vim-state="visual"] {
+  background: color-mix(in srgb, var(--blue) 72%, #ffffff);
+  border-color: color-mix(in srgb, var(--blue) 72%, #ffffff);
+  color: #10131a;
+}
+
+.cm-spell-issue {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-thickness: 1.4px;
+  text-underline-offset: 3px;
+}
+
+.cm-spell-spelling {
+  text-decoration-color: var(--red);
+}
+
+.cm-spell-grammar {
+  text-decoration-color: var(--blue);
+}
+
+.spell-context-menu {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+  color: var(--text);
+  display: grid;
+  gap: 2px;
+  min-width: 178px;
+  padding: 6px;
+  position: fixed;
+  z-index: 90;
+}
+
+.spell-context-title {
+  color: var(--muted);
+  font-size: 11px;
+  padding: 5px 8px 3px;
+}
+
+.spell-context-menu button {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: none;
+  color: var(--text);
+  font-size: 12px;
+  height: 28px;
+  justify-content: flex-start;
+  padding: 0 9px;
+  text-align: left;
+}
+
+.spell-context-menu button:hover {
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+}
+
+body.transparent-theme {
+  background: transparent !important;
+}
+
+body.transparent-theme .app,
+body.transparent-theme .project-screen,
+body.transparent-theme .editor-screen {
+  background: transparent !important;
+}
+
+body.transparent-theme .topbar,
+body.transparent-theme .file-rail,
+body.transparent-theme .source-rail,
+body.transparent-theme .preview-rail,
+body.transparent-theme .file-pane,
+body.transparent-theme .source-pane,
+body.transparent-theme .preview-pane,
+body.transparent-theme .pane-header,
+body.transparent-theme .text-tabs,
+body.transparent-theme .terminal-panel,
+body.transparent-theme .log-panel,
+body.transparent-theme .file-outline,
+body.transparent-theme .settings-panel,
+body.transparent-theme .templates-panel,
+body.transparent-theme .new-project-panel {
+  background: color-mix(in srgb, var(--panel) 52%, transparent) !important;
+  backdrop-filter: blur(26px) saturate(150%);
+}
+
+body.transparent-theme .editor-stack,
+body.transparent-theme .CodeMirror,
+body.transparent-theme .CodeMirror-scroll,
+body.transparent-theme .CodeMirror-sizer {
+  background: transparent !important;
+}
+
+body.transparent-theme .CodeMirror {
+  background: color-mix(in srgb, var(--cm-bg) 48%, transparent) !important;
+}
+
+body.transparent-theme .CodeMirror-gutters,
+body.transparent-theme .source-minimap-lines,
+body.transparent-theme .terminal-body,
+body.transparent-theme #compileLog {
+  background: color-mix(in srgb, var(--cm-bg) 38%, transparent) !important;
+}
+
+body.transparent-theme .project-hero {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+body.transparent-theme .pdf-page {
+  background: transparent;
+}
+
+body.transparent-theme .pdf-page canvas {
+  background: var(--pdf-paper);
+}
+
+.project-shell {
+  -webkit-app-region: drag;
+}
+
+.project-shell button,
+.project-shell input,
+.project-card,
+.templates-panel,
+.new-project-panel,
+.settings-drawer {
+  -webkit-app-region: no-drag;
+}
+
+body[data-contrast="high"] .file-pane,
+body[data-contrast="high"] .file-outline,
+body[data-contrast="high"] .file-splitter {
+  border-color: var(--border-strong) !important;
+}
+
+body[data-contrast="high"] .file-outline {
+  border-top-width: 2px;
+}
+
 .source-minimap-viewport {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 48%, transparent);
@@ -5053,4 +5886,320 @@ body.transparent-theme .pdf-page {
 
 .source-minimap-token.number {
   color: var(--cm-number);
+}
+/* End precedence pass for current UI behavior. */
+.workspace {
+  grid-template-columns: var(--file-width) 8px minmax(320px, var(--editor-width)) 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.files-hidden {
+  grid-template-columns: 42px minmax(320px, var(--editor-width)) 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.source-hidden {
+  grid-template-columns: var(--file-width) 8px 42px 8px minmax(var(--pdf-min-width), 1fr);
+}
+
+.workspace.pdf-hidden {
+  grid-template-columns: var(--file-width) 8px minmax(320px, var(--editor-width)) 42px;
+}
+
+.workspace.files-hidden.pdf-hidden {
+  grid-template-columns: 42px minmax(320px, var(--editor-width)) 42px;
+}
+
+.workspace.source-hidden.pdf-hidden {
+  grid-template-columns: var(--file-width) 8px 42px 42px;
+}
+
+.workspace.files-hidden.source-hidden.pdf-hidden {
+  grid-template-columns: 42px 42px 42px;
+}
+
+.splitter,
+.file-splitter {
+  min-width: 8px;
+  z-index: 8;
+}
+
+.splitter::after,
+.file-splitter::after {
+  content: "";
+  cursor: col-resize;
+  inset: 0 -5px;
+  position: absolute;
+}
+
+#terminalSplitButton {
+  display: none !important;
+}
+
+.terminal-tabs {
+  justify-content: flex-start !important;
+}
+
+.project-back-button {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  border-radius: 7px;
+  padding: 0 9px;
+}
+
+.hero-actions .hero-action,
+.hero-actions .settingsButton,
+.pdf-action-segment,
+.pdf-action-button,
+.pdf-controls,
+.pdf-controls button,
+#undoButton,
+#redoButton {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.hero-actions .hero-action,
+.hero-actions .settingsButton {
+  border-radius: 0 !important;
+  padding: 0 2px 5px;
+  position: relative;
+}
+
+.hero-actions .hero-action::after,
+.hero-actions .settingsButton::after,
+.pdf-action-button::after,
+#undoButton::after,
+#redoButton::after {
+  background: var(--accent);
+  border-radius: 999px;
+  bottom: 1px;
+  content: "";
+  height: 2px;
+  left: 14%;
+  opacity: 0;
+  position: absolute;
+  right: 14%;
+  transform: scaleX(0.45);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.hero-actions .hero-action:hover::after,
+.hero-actions .settingsButton:hover::after,
+.pdf-action-button:hover::after,
+#undoButton:hover::after,
+#redoButton:hover::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.pdf-action-button,
+.pdf-controls button {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  position: relative;
+}
+
+.pdf-action-button:hover,
+.pdf-controls button:hover,
+#undoButton:hover,
+#redoButton:hover {
+  background: transparent !important;
+  color: var(--text);
+}
+
+.source-pane.terminal-maximized {
+  grid-template-rows: 52px auto 0 minmax(260px, 1fr);
+}
+
+.source-pane.terminal-maximized .editor-stack,
+.source-pane.terminal-maximized .text-tabs,
+.preview-pane.log-maximized .pdf-viewer {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.source-pane.terminal-maximized .terminal-panel {
+  min-height: 260px;
+}
+
+.preview-pane.log-maximized {
+  grid-template-rows: 52px 0 minmax(220px, 1fr);
+}
+
+.file-pane {
+  --file-outline-height: 220px;
+}
+
+.file-outline {
+  background: color-mix(in srgb, var(--panel) 92%, var(--bg));
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-rows: 5px 32px minmax(0, 1fr);
+  height: var(--file-outline-height);
+  min-height: 34px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.file-outline[hidden] {
+  display: none !important;
+}
+
+.file-outline.collapsed {
+  grid-template-rows: 34px;
+  height: 34px;
+}
+
+.file-outline.collapsed .file-outline-resize-handle,
+.file-outline.collapsed .file-outline-body {
+  display: none;
+}
+
+.file-outline-resize-handle {
+  background: color-mix(in srgb, var(--border) 62%, transparent);
+  cursor: row-resize;
+  min-height: 5px;
+  position: relative;
+}
+
+.file-outline-resize-handle::before {
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+  border-radius: 999px;
+  content: "";
+  height: 2px;
+  left: 50%;
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  width: 42px;
+}
+
+.file-outline-title,
+.file-outline button.file-outline-title {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text);
+  display: flex;
+  font-size: 13px;
+  font-weight: 650;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px;
+}
+
+.file-outline-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 2px 0 8px;
+}
+
+.file-outline .file-outline-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--text);
+  display: flex;
+  font-size: 13px;
+  font-weight: 500;
+  height: 24px;
+  line-height: 24px;
+  overflow: hidden;
+  padding: 0 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.template-preview {
+  aspect-ratio: 8.5 / 11;
+  height: 240px;
+  justify-self: center;
+  padding: 8px;
+  width: min(172px, 100%);
+}
+
+.template-preview img,
+.template-preview canvas {
+  height: 100% !important;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  width: auto !important;
+}
+
+.source-minimap-token.number {
+  color: var(--cm-text);
+}
+
+.source-mode-actions .mode-button.active,
+.vim-mode-indicator {
+  color: #10131a;
+  font-weight: 760;
+  text-shadow: none;
+}
+
+.vim-mode-indicator[hidden] {
+  display: none !important;
+}
+
+body.transparent-theme,
+body.transparent-theme .app,
+body.transparent-theme .project-screen,
+body.transparent-theme .editor-screen {
+  background: transparent !important;
+}
+
+body.transparent-theme .topbar,
+body.transparent-theme .file-rail,
+body.transparent-theme .source-rail,
+body.transparent-theme .preview-rail,
+body.transparent-theme .file-pane,
+body.transparent-theme .source-pane,
+body.transparent-theme .preview-pane,
+body.transparent-theme .pane-header,
+body.transparent-theme .text-tabs,
+body.transparent-theme .terminal-panel,
+body.transparent-theme .log-panel,
+body.transparent-theme .file-outline,
+body.transparent-theme .settings-panel,
+body.transparent-theme .templates-panel,
+body.transparent-theme .new-project-panel {
+  background: color-mix(in srgb, var(--panel) 52%, transparent) !important;
+  backdrop-filter: blur(26px) saturate(150%);
+}
+
+body.transparent-theme .CodeMirror {
+  background: color-mix(in srgb, var(--cm-bg) 48%, transparent) !important;
+}
+
+body.transparent-theme .CodeMirror-scroll,
+body.transparent-theme .CodeMirror-sizer,
+body.transparent-theme .editor-stack {
+  background: transparent !important;
+}
+
+body.transparent-theme .CodeMirror-gutters,
+body.transparent-theme .source-minimap-lines,
+body.transparent-theme .terminal-body,
+body.transparent-theme #compileLog {
+  background: color-mix(in srgb, var(--cm-bg) 38%, transparent) !important;
+}
+
+.project-shell {
+  -webkit-app-region: drag;
+}
+
+.project-shell button,
+.project-shell input,
+.project-card,
+.templates-panel,
+.new-project-panel,
+.settings-drawer {
+  -webkit-app-region: no-drag;
 }

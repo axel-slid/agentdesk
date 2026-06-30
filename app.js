@@ -28,10 +28,12 @@ const sourceRail = document.getElementById("sourceRail");
 const sourceRailButton = document.getElementById("sourceRailButton");
 const topRefreshFilesButton = document.getElementById("topRefreshFilesButton");
 const railRefreshFilesButton = document.getElementById("railRefreshFilesButton");
+const railHelpButton = document.getElementById("railHelpButton");
 const fileTree = document.getElementById("fileTree");
 const fileOutline = document.getElementById("fileOutline");
 const fileOutlineBody = document.getElementById("fileOutlineBody");
 const fileOutlineToggle = document.getElementById("fileOutlineToggle");
+const fileOutlineResizeHandle = document.getElementById("fileOutlineResizeHandle");
 const filePreview = document.getElementById("filePreview");
 const newFileButton = document.getElementById("newFileButton");
 const newFolderButton = document.getElementById("newFolderButton");
@@ -1361,6 +1363,44 @@ const DEFAULT_COMPILE_LOG_HEIGHT = 170;
 const MIN_COMPILE_LOG_HEIGHT = 118;
 const MAX_COMPILE_LOG_HEIGHT = 430;
 const COMPILE_LOG_COLLAPSE_THRESHOLD = 72;
+const DEFAULT_FILE_OUTLINE_HEIGHT = 220;
+const MIN_FILE_OUTLINE_HEIGHT = 92;
+const MAX_FILE_OUTLINE_HEIGHT = 420;
+const SPELL_SUGGESTIONS = new Map(Object.entries({
+  accomodate: ["accommodate"],
+  acheive: ["achieve"],
+  adress: ["address"],
+  arguement: ["argument"],
+  becuase: ["because"],
+  definately: ["definitely"],
+  enviroment: ["environment"],
+  figuer: ["figure"],
+  goverment: ["government"],
+  occured: ["occurred"],
+  recieve: ["receive"],
+  seperate: ["separate"],
+  teh: ["the"],
+  thier: ["their"],
+  wich: ["which"],
+  wokring: ["working"]
+}));
+const SPELL_IGNORED_WORDS = new Set([
+  "latex",
+  "tex",
+  "bibtex",
+  "codex",
+  "agentdesk",
+  "pdf",
+  "rgb",
+  "vae",
+  "cnf",
+  "sashimi",
+  "neurofibroma",
+  "github",
+  "yaml",
+  "json",
+  "markdown"
+]);
 
 let editor;
 let projects = [];
@@ -1418,6 +1458,12 @@ let lastFindQuery = "";
 let aiProfile = {};
 let selectionCodexText = "";
 let selectionCodexTimer = null;
+let spellIssueMarks = [];
+let spellCheckTimer = null;
+let spellContextMenu = null;
+let historyEvents = [];
+let historyCaptureTimer = null;
+let lastHistoryText = "";
 
 init();
 
@@ -1436,7 +1482,7 @@ function setupSourceEditor() {
     mode: "stex",
     gutters: editorGutters(),
     lineNumbers: true,
-    lineWrapping: true,
+    lineWrapping: false,
     indentUnit: 2,
     tabSize: 2,
     viewportMargin: 80
@@ -1451,6 +1497,7 @@ function setupSourceEditor() {
     }
     handleSourceChanged({ renderVisual: !visualEditor.hidden });
     updateRelativeLineNumbers();
+    scheduleSpellGrammarCheck();
   });
   editor.on("scroll", () => {
     updateSourceMinimapViewport();
@@ -1466,9 +1513,11 @@ function setupSourceEditor() {
     vimModeState = String((event && event.mode) || "normal").toLowerCase();
     updateVimModeIndicator();
   });
+  editor.getWrapperElement().addEventListener("contextmenu", handleEditorContextMenu);
   setupSourceMinimap();
   scheduleSourceMinimapUpdate();
   updateVimModeIndicator();
+  scheduleSpellGrammarCheck();
 }
 
 function setupSettings() {
@@ -1479,6 +1528,8 @@ function setupSettings() {
   const showSidebar = localStorage.getItem("latexStudioShowSidebar") !== "false";
   const pdfMinWidth = clampNumber(Number(localStorage.getItem("latexStudioPdfMinWidth")), 480, 760, DEFAULT_PDF_MIN_WIDTH);
   const fileWidth = clampNumber(Number(localStorage.getItem("latexStudioFileWidth")), MIN_FILE_WIDTH, MAX_FILE_WIDTH, DEFAULT_FILE_WIDTH);
+  const fileOutlineHeight = clampNumber(Number(localStorage.getItem("latexStudioFileOutlineHeight")), MIN_FILE_OUTLINE_HEIGHT, MAX_FILE_OUTLINE_HEIGHT, DEFAULT_FILE_OUTLINE_HEIGHT);
+  const fileOutlineCollapsed = localStorage.getItem("latexStudioFileOutlineCollapsed") === "true";
   const autoSaveEnabled = localStorage.getItem("latexStudioAutoSave") !== "false";
   const terminalHeight = clampNumber(Number(localStorage.getItem("latexStudioTerminalHeight")), MIN_TERMINAL_HEIGHT, MAX_TERMINAL_HEIGHT, DEFAULT_TERMINAL_HEIGHT);
   const terminalCollapsed = localStorage.getItem("latexStudioTerminalCollapsed") === "true";
@@ -1503,6 +1554,8 @@ function setupSettings() {
   applyTheme(savedTheme, savedAccent, { presetId: savedPreset });
   syncSurfaceThemesToAppTheme(savedTheme, { persist: false });
   applyLayoutSettings({ showSidebar, pdfMinWidth, fileWidth });
+  setFileOutlineHeight(fileOutlineHeight, { persist: false });
+  setFileOutlineCollapsed(fileOutlineCollapsed, { persist: false });
   applySourceLayout({ collapsed: sourceCollapsed });
   applyPdfPaneLayout({ collapsed: pdfCollapsed });
   applyTerminalLayout({ height: terminalHeight, collapsed: terminalCollapsed });
@@ -1667,6 +1720,8 @@ function applyTheme(theme, accent, { presetId = "custom" } = {}) {
   sourcePane.dataset.terminalTheme = resolvedTerminalTheme();
   compileLogPanel.dataset.logTheme = resolvedCompileLogTheme();
   refreshTerminalThemes();
+  scheduleSourceMinimapUpdate();
+  updateVimModeIndicator();
 }
 
 function syncSurfaceThemesToAppTheme(theme, { persist = true } = {}) {
@@ -1871,6 +1926,8 @@ function setMinimapVisible(visible) {
 function applySpellCheckSetting() {
   latexSource.spellcheck = spellCheckEnabled;
   if (editor && editor.getInputField()) editor.getInputField().spellcheck = spellCheckEnabled;
+  if (spellCheckEnabled) scheduleSpellGrammarCheck();
+  else clearSpellGrammarMarks();
 }
 
 function setFileSidebarVisible(show) {
@@ -1926,6 +1983,24 @@ function getFileSidebarWidth() {
   return clampNumber(current, MIN_FILE_WIDTH, MAX_FILE_WIDTH, DEFAULT_FILE_WIDTH);
 }
 
+function getFileOutlineHeight() {
+  const current = Number.parseFloat(getComputedStyle(filePane).getPropertyValue("--file-outline-height"));
+  return clampNumber(current, MIN_FILE_OUTLINE_HEIGHT, MAX_FILE_OUTLINE_HEIGHT, DEFAULT_FILE_OUTLINE_HEIGHT);
+}
+
+function setFileOutlineHeight(height, { persist = true } = {}) {
+  const clamped = clampNumber(height, MIN_FILE_OUTLINE_HEIGHT, MAX_FILE_OUTLINE_HEIGHT, DEFAULT_FILE_OUTLINE_HEIGHT);
+  filePane.style.setProperty("--file-outline-height", `${clamped}px`);
+  if (persist) localStorage.setItem("latexStudioFileOutlineHeight", String(Math.round(clamped)));
+}
+
+function setFileOutlineCollapsed(collapsed, { persist = true } = {}) {
+  fileOutline.classList.toggle("collapsed", Boolean(collapsed));
+  const arrow = fileOutlineToggle && fileOutlineToggle.querySelector("span:first-child");
+  if (arrow) arrow.textContent = collapsed ? "▸" : "▾";
+  if (persist) localStorage.setItem("latexStudioFileOutlineCollapsed", String(Boolean(collapsed)));
+}
+
 function getPdfMinimumWidth() {
   return clampNumber(Number(settingsPdfGuardRange.value), 480, 760, DEFAULT_PDF_MIN_WIDTH);
 }
@@ -1950,6 +2025,7 @@ function applyTerminalLayout({ height = getTerminalHeight(), collapsed = sourceP
 
 function setTerminalCollapsed(collapsed) {
   sourcePane.classList.toggle("terminal-collapsed", collapsed);
+  if (collapsed) sourcePane.classList.remove("terminal-maximized");
   localStorage.setItem("latexStudioTerminalCollapsed", String(collapsed));
   if (!collapsed) scheduleTerminalFit();
 }
@@ -1973,7 +2049,13 @@ function applyCompileLogLayout({ height = getCompileLogHeight(), collapsed = com
 function setCompileLogCollapsed(collapsed, { persist = true } = {}) {
   compileLogPanel.classList.toggle("log-collapsed", collapsed);
   previewPane.classList.toggle("log-collapsed", collapsed);
+  if (collapsed) previewPane.classList.remove("log-maximized");
   if (persist) localStorage.setItem("latexStudioCompileLogCollapsed", String(collapsed));
+}
+
+function setCompileLogMaximized(maximized) {
+  previewPane.classList.toggle("log-maximized", Boolean(maximized));
+  if (maximized) setCompileLogCollapsed(false, { persist: false });
 }
 
 function normalizeThemePreset(value) {
@@ -2059,13 +2141,17 @@ function updateRelativeLineNumbers() {
 function updateVimModeIndicator() {
   if (!vimModeIndicator) return;
   const state = vimModeEnabled ? (vimModeState || "normal") : "off";
+  vimModeIndicator.hidden = !vimModeEnabled;
+  if (!vimModeEnabled) {
+    vimModeIndicator.textContent = "";
+    vimModeIndicator.dataset.vimState = "off";
+    return;
+  }
   const label = state === "insert"
     ? "Insert"
     : state === "visual"
       ? "Visual"
-      : state === "off"
-        ? "Vim off"
-        : "Normal";
+      : "Normal";
   vimModeIndicator.textContent = label;
   vimModeIndicator.dataset.vimState = state;
 }
@@ -2170,6 +2256,8 @@ function setActiveLoadedTextFile(file, text, { preview = false } = {}) {
   renderTextTabs();
   renderFileTree();
   updateFileOutline();
+  resetHistoryEvents(text);
+  scheduleSpellGrammarCheck();
 }
 
 function updateActiveTextTabAfterSave(file, text) {
@@ -2187,6 +2275,7 @@ function updateActiveTextTabAfterSave(file, text) {
   renderTextTabs();
   renderFileTree();
   updateFileOutline();
+  recordHistoryEvent("Saved");
 }
 
 function updateActiveTextTabDirtyState() {
@@ -2218,11 +2307,13 @@ function switchTextTab(relativePath) {
       applyEditorModeForFile(tab.file);
       editor.setValue(tab.text);
       setMode(visualEditor.hidden ? "source" : "visual");
+      resetHistoryEvents(tab.text);
     }
     updateEditorFileTitle();
     updateActiveDocumentTitle();
     updateStats();
     scheduleSourceMinimapUpdate();
+    scheduleSpellGrammarCheck();
     if (tab.kind !== "image") renderVisualEditor();
     renderFileTree();
     setSaveState(tab.dirty ? "Unsaved changes" : "Saved", tab.dirty ? undefined : "ok");
@@ -2419,6 +2510,11 @@ function hexToRgb(value) {
   };
 }
 
+function openDocumentationSettings() {
+  openSettings();
+  setSettingsPanel("documentation");
+}
+
 function wireEvents() {
   settingsButtons.forEach((button) => button.addEventListener("click", openSettings));
   closeSettingsButton.addEventListener("click", closeSettings);
@@ -2442,12 +2538,10 @@ function wireEvents() {
     openSettings();
     setSettingsPanel("remote");
   });
-  helpButton.addEventListener("click", () => {
-    openSettings();
-    setSettingsPanel("documentation");
-  });
+  helpButton.addEventListener("click", openDocumentationSettings);
+  if (railHelpButton) railHelpButton.addEventListener("click", openDocumentationSettings);
   fileOutlineToggle.addEventListener("click", () => {
-    fileOutline.classList.toggle("collapsed");
+    setFileOutlineCollapsed(!fileOutline.classList.contains("collapsed"));
   });
   selectionCodexSendButton.addEventListener("click", sendSelectionToCodex);
   selectionCodexPrompt.addEventListener("keydown", (event) => {
@@ -2478,7 +2572,7 @@ function wireEvents() {
   compileButton.addEventListener("click", () => compileManuscript({ manual: true }));
   openPdfButton.addEventListener("click", openPdf);
   downloadPdfButton.addEventListener("click", downloadPdf);
-  historyButton.addEventListener("click", toggleHistoryPanel);
+  historyButton.addEventListener("click", openHistoryWindow);
   closeHistoryButton.addEventListener("click", () => setHistoryPanelOpen(false));
   pdfZoomOutButton.addEventListener("click", () => changePdfZoom(-0.1));
   pdfZoomInButton.addEventListener("click", () => changePdfZoom(0.1));
@@ -2509,6 +2603,7 @@ function wireEvents() {
   setupSplitter();
   setupTerminalResize();
   setupCompileLogResize();
+  setupFileOutlineResize();
   updateLogState();
 
   autoCompileToggle.addEventListener("change", () => {
@@ -2545,6 +2640,7 @@ function wireEvents() {
   window.addEventListener("click", () => {
     closeFileContextMenu();
     closeProjectContextMenu();
+    closeSpellContextMenu();
     if (!selectionCodexPopover.contains(document.activeElement)) hideSelectionCodexPopover();
   });
   window.addEventListener("scroll", () => {
@@ -2565,7 +2661,7 @@ function wireEvents() {
       if (command === "find") openFind();
       if (command === "find-next") findNextMatch(false);
       if (command === "find-previous") findNextMatch(true);
-      if (command === "history") toggleHistoryPanel();
+      if (command === "history") openHistoryWindow();
     });
   }
 }
@@ -3069,7 +3165,7 @@ function commandPaletteCommands() {
     { id: "relative", label: "/relative", detail: `${relativeLineNumbersEnabled ? "Disable" : "Enable"} relative line numbers`, hint: "toggle", action: () => { closeCommandPalette(); setRelativeLineNumbers(!relativeLineNumbersEnabled); } },
     { id: "visual", label: "/visual", detail: "Switch to visual mode", hint: "view", action: () => { closeCommandPalette(); setMode("visual"); } },
     { id: "code", label: "/code", detail: "Switch to code mode", hint: "view", action: () => { closeCommandPalette(); setMode("source"); } },
-    { id: "history", label: "/history", detail: "Open project history", hint: "panel", action: () => { closeCommandPalette(); setHistoryPanelOpen(true); } },
+    { id: "history", label: "/history", detail: "Open project history", hint: "window", action: () => { closeCommandPalette(); openHistoryWindow(); } },
     { id: "remote", label: "/remote", detail: "Open SSH remote settings", hint: "ssh", action: () => { closeCommandPalette({ keepBackdrop: true }); openSettings(); setSettingsPanel("remote"); } },
     { id: "terminal", label: "/terminal", detail: "Toggle terminal", hint: "panel", action: () => { closeCommandPalette(); setTerminalCollapsed(!sourcePane.classList.contains("terminal-collapsed")); } },
     { id: "files", label: "/files", detail: "Toggle file sidebar", hint: "sidebar", action: () => { closeCommandPalette(); setFileSidebarVisible(workspace.classList.contains("files-hidden")); } }
@@ -3264,6 +3360,165 @@ function findNextTextMatch(query, reverse = false) {
   editor.scrollIntoView(cursor.from(), 96);
 }
 
+function scheduleSpellGrammarCheck() {
+  clearTimeout(spellCheckTimer);
+  if (!spellCheckEnabled || !editor || activeMediaFile) {
+    clearSpellGrammarMarks();
+    return;
+  }
+  spellCheckTimer = setTimeout(runSpellGrammarCheck, 260);
+}
+
+function clearSpellGrammarMarks() {
+  spellIssueMarks.forEach((issue) => issue.mark.clear());
+  spellIssueMarks = [];
+  closeSpellContextMenu();
+}
+
+function runSpellGrammarCheck() {
+  clearSpellGrammarMarks();
+  if (!spellCheckEnabled || !editor || activeMediaFile) return;
+
+  const lines = editor.getValue().split("\n");
+  const maxLines = Math.min(lines.length, 1200);
+  for (let lineIndex = 0; lineIndex < maxLines; lineIndex += 1) {
+    const line = lines[lineIndex];
+    markRepeatedWords(line, lineIndex);
+    markKnownTypos(line, lineIndex);
+  }
+}
+
+function markRepeatedWords(line, lineIndex) {
+  const repeatRegex = /\b([A-Za-z][A-Za-z'-]{2,})\s+\1\b/gi;
+  let match;
+  while ((match = repeatRegex.exec(line))) {
+    const duplicateStart = match.index + match[0].toLowerCase().lastIndexOf(match[1].toLowerCase());
+    addSpellIssue({
+      from: { line: lineIndex, ch: duplicateStart },
+      to: { line: lineIndex, ch: duplicateStart + match[1].length },
+      word: match[1],
+      kind: "grammar",
+      message: "Repeated word",
+      suggestions: []
+    });
+  }
+}
+
+function markKnownTypos(line, lineIndex) {
+  const wordRegex = /\b[A-Za-z][A-Za-z'-]{2,}\b/g;
+  let match;
+  while ((match = wordRegex.exec(line))) {
+    const word = match[0];
+    const lower = word.toLowerCase().replace(/^'+|'+$/g, "");
+    if (SPELL_IGNORED_WORDS.has(lower)) continue;
+    if (!SPELL_SUGGESTIONS.has(lower)) continue;
+    if (line[Math.max(0, match.index - 1)] === "\\") continue;
+
+    addSpellIssue({
+      from: { line: lineIndex, ch: match.index },
+      to: { line: lineIndex, ch: match.index + word.length },
+      word,
+      kind: "spelling",
+      message: "Possible spelling issue",
+      suggestions: SPELL_SUGGESTIONS.get(lower).map((suggestion) => matchWordCase(word, suggestion))
+    });
+  }
+}
+
+function addSpellIssue(issue) {
+  const mark = editor.markText(issue.from, issue.to, {
+    className: `cm-spell-issue cm-spell-${issue.kind}`,
+    title: issue.message
+  });
+  spellIssueMarks.push({ ...issue, mark });
+}
+
+function matchWordCase(original, suggestion) {
+  if (original === original.toUpperCase()) return suggestion.toUpperCase();
+  if (original[0] === original[0].toUpperCase()) return `${suggestion[0].toUpperCase()}${suggestion.slice(1)}`;
+  return suggestion;
+}
+
+function handleEditorContextMenu(event) {
+  if (!spellCheckEnabled || !editor) return;
+  const coords = { left: event.clientX, top: event.clientY };
+  const pos = editor.coordsChar(coords, "window");
+  const issue = spellIssueAt(pos);
+  if (!issue) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  showSpellContextMenu(event, issue);
+}
+
+function spellIssueAt(pos) {
+  return spellIssueMarks.find((issue) => {
+    const range = issue.mark.find();
+    if (!range) return false;
+    if (pos.line < range.from.line || pos.line > range.to.line) return false;
+    if (pos.line === range.from.line && pos.ch < range.from.ch) return false;
+    if (pos.line === range.to.line && pos.ch > range.to.ch) return false;
+    return true;
+  });
+}
+
+function showSpellContextMenu(event, issue) {
+  closeSpellContextMenu();
+  const menu = document.createElement("div");
+  menu.className = "spell-context-menu";
+  menu.setAttribute("role", "menu");
+
+  const title = document.createElement("div");
+  title.className = "spell-context-title";
+  title.textContent = issue.message;
+  menu.appendChild(title);
+
+  const suggestions = issue.kind === "grammar"
+    ? [{ label: "Remove duplicate word", value: "" }]
+    : issue.suggestions.map((value) => ({ label: value, value }));
+
+  suggestions.forEach((suggestion) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = suggestion.label;
+    button.addEventListener("click", () => {
+      applySpellSuggestion(issue, suggestion.value);
+      closeSpellContextMenu();
+    });
+    menu.appendChild(button);
+  });
+
+  const ignoreButton = document.createElement("button");
+  ignoreButton.type = "button";
+  ignoreButton.textContent = "Ignore";
+  ignoreButton.addEventListener("click", () => {
+    issue.mark.clear();
+    spellIssueMarks = spellIssueMarks.filter((item) => item !== issue);
+    closeSpellContextMenu();
+  });
+  menu.appendChild(ignoreButton);
+
+  document.body.appendChild(menu);
+  const left = clampNumber(event.clientX, 8, window.innerWidth - menu.offsetWidth - 8, 8);
+  const top = clampNumber(event.clientY, 8, window.innerHeight - menu.offsetHeight - 8, 8);
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+  spellContextMenu = menu;
+}
+
+function applySpellSuggestion(issue, replacement) {
+  const range = issue.mark.find();
+  if (!range) return;
+  const nextText = issue.kind === "grammar" && !replacement ? "" : replacement;
+  editor.replaceRange(nextText, range.from, range.to);
+  scheduleSpellGrammarCheck();
+}
+
+function closeSpellContextMenu() {
+  if (spellContextMenu) spellContextMenu.remove();
+  spellContextMenu = null;
+}
+
 function changePdfZoom(delta) {
   setPdfZoom(Math.round((pdfZoom + delta) * 10) / 10, { render: false, live: true });
   schedulePdfZoomRender(80);
@@ -3445,7 +3700,8 @@ async function createTerminalSession(kind = "shell") {
       term,
       fitAddon,
       node: terminalNode,
-      exited: false
+      exited: false,
+      readyAt: Date.now() + (requestedKind === "codex" ? 1500 : requestedKind === "claude" ? 1200 : 350)
     };
 
     term.onData((data) => window.localOverleaf.writeTerminal(session.id, data));
@@ -3545,17 +3801,22 @@ function splitTerminals(firstId, secondId) {
   scheduleTerminalFit();
 }
 
-function splitActiveTerminal() {
-  if (!activeTerminalId) return;
-  const firstId = activeTerminalId;
-  const other = terminalSessions.find((session) => session.id !== activeTerminalId && !session.exited);
-  if (other) {
-    splitTerminals(firstId, other.id);
-    return;
-  }
-  createTerminalSession("shell").then((session) => {
-    if (session) splitTerminals(firstId, session.id);
-  });
+async function splitActiveTerminal() {
+  const baseId = activeTerminalId;
+  const session = await createTerminalSession("shell");
+  if (!session) return;
+
+  const nextIds = [
+    ...splitTerminalIds,
+    baseId,
+    session.id
+  ].filter(Boolean);
+  splitTerminalIds = Array.from(new Set(nextIds))
+    .filter((id) => terminalSessions.some((item) => item.id === id && !item.exited));
+  activeTerminalId = session.id;
+  updateTerminalVisibility();
+  renderTerminalTabs();
+  scheduleTerminalFit();
 }
 
 function toggleTerminalMaximized() {
@@ -3752,7 +4013,7 @@ async function sendSelectionToCodex() {
   const session = await ensureAgentTerminalSession(agentKind);
   if (!session) return;
 
-  await wait(250);
+  await waitForTerminalReady(session);
   const pastedMessage = message.replace(/\r\n?/g, "\n");
   window.localOverleaf.writeTerminal(session.id, `\x1b[200~${pastedMessage}\x1b[201~\r`);
   compileLog.textContent = `Sent selected text to ${agentKind === "claude" ? "Claude" : agentKind === "shell" ? "Shell" : "Codex"}.`;
@@ -3774,6 +4035,113 @@ async function ensureAgentTerminalSession(kind = "codex") {
   session = await createTerminalSession(agentKind);
   if (session) activateTerminal(session.id);
   return session;
+}
+
+async function waitForTerminalReady(session) {
+  if (!session) return;
+  const remaining = Math.max(0, Number(session.readyAt || 0) - Date.now());
+  if (remaining > 0) await wait(remaining);
+  await wait(120);
+}
+
+function resetHistoryEvents(text = "") {
+  clearTimeout(historyCaptureTimer);
+  lastHistoryText = String(text || "");
+  historyEvents = [makeHistoryEntry("Opened", "Loaded the current document.", lastHistoryText, lastHistoryText)];
+}
+
+function scheduleHistoryCapture(reason = "Edited") {
+  clearTimeout(historyCaptureTimer);
+  historyCaptureTimer = setTimeout(() => recordHistoryEvent(reason), 900);
+}
+
+function recordHistoryEvent(reason = "Edited", { force = false } = {}) {
+  if (!editor || activeMediaFile) return;
+  const currentText = getSourceText();
+  if (!force && currentText === lastHistoryText) return;
+
+  historyEvents.unshift(makeHistoryEntry(reason, summarizeTextChange(lastHistoryText, currentText), lastHistoryText, currentText));
+  historyEvents = historyEvents.slice(0, 40);
+  lastHistoryText = currentText;
+}
+
+function makeHistoryEntry(title, summary, previousText, currentText) {
+  const diff = historyDiffStats(previousText, currentText);
+  return {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    title,
+    summary,
+    fileName: (activeFile && activeFile.name) || (activeProject && activeProject.texName) || "document",
+    time: new Date().toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    }),
+    added: diff.added,
+    removed: diff.removed,
+    text: String(currentText || "").slice(0, 60000)
+  };
+}
+
+function historyDiffStats(previousText, currentText) {
+  const previousLines = String(previousText || "").split("\n");
+  const currentLines = String(currentText || "").split("\n");
+  const previousSet = new Map();
+  previousLines.forEach((line) => previousSet.set(line, (previousSet.get(line) || 0) + 1));
+  let added = 0;
+
+  currentLines.forEach((line) => {
+    const count = previousSet.get(line) || 0;
+    if (count > 0) previousSet.set(line, count - 1);
+    else added += 1;
+  });
+
+  const removed = Array.from(previousSet.values()).reduce((total, count) => total + count, 0);
+  return { added, removed };
+}
+
+function summarizeTextChange(previousText, currentText) {
+  const stats = historyDiffStats(previousText, currentText);
+  if (!stats.added && !stats.removed) return "No visible text changes.";
+  const parts = [];
+  if (stats.added) parts.push(`${stats.added} line${stats.added === 1 ? "" : "s"} added`);
+  if (stats.removed) parts.push(`${stats.removed} line${stats.removed === 1 ? "" : "s"} removed`);
+  return parts.join(", ");
+}
+
+async function openHistoryWindow() {
+  if (!window.localOverleaf || !window.localOverleaf.openHistoryWindow) {
+    setHistoryPanelOpen(true);
+    return;
+  }
+
+  recordHistoryEvent("Current version");
+  const currentText = activeMediaFile ? "" : getSourceText();
+  if (!historyEvents.length) resetHistoryEvents(currentText);
+
+  const payload = {
+    title: activeDocumentTitle.textContent || (activeProject && activeProject.name) || "History",
+    fileName: (activeFile && activeFile.name) || (activeProject && activeProject.texName) || "document",
+    entries: historyEvents,
+    currentText,
+    theme: {
+      mode: document.body.dataset.theme || "light",
+      preset: document.body.dataset.themePreset || "custom",
+      accent: themeColor("--accent", DEFAULT_ACCENT),
+      bg: themeColor("--bg", "#111827"),
+      panel: themeColor("--panel", "#ffffff"),
+      text: themeColor("--text", "#111827"),
+      muted: themeColor("--muted", "#6b7280"),
+      border: themeColor("--border", "rgba(120,120,120,0.3)")
+    }
+  };
+
+  try {
+    await window.localOverleaf.openHistoryWindow(payload);
+  } catch (error) {
+    compileLog.textContent = formatError(error);
+  }
 }
 
 function toggleHistoryPanel() {
@@ -4888,7 +5256,7 @@ async function downloadPdf() {
 async function loadAgentsFile() {
   const token = ++agentsLoadToken;
   if (!activeProject) {
-    agentsPathLabel.textContent = "Open a project to edit AGENTS.md.";
+    agentsPathLabel.textContent = "AGENTS.md";
     agentsEditor.value = "";
     agentsEditor.disabled = true;
     reloadAgentsButton.disabled = true;
@@ -4907,7 +5275,7 @@ async function loadAgentsFile() {
   try {
     const result = await window.localOverleaf.readAgents(activeProject.id);
     if (token !== agentsLoadToken) return;
-    agentsPathLabel.textContent = result.path || "AGENTS.md";
+    agentsPathLabel.textContent = "AGENTS.md";
     agentsEditor.value = result.text || "";
     agentsStatus.textContent = result.exists ? "AGENTS.md loaded." : "No AGENTS.md in this project.";
   } catch (error) {
@@ -4934,7 +5302,7 @@ async function saveAgentsFile() {
 
   try {
     const result = await window.localOverleaf.saveAgents(activeProject.id, agentsEditor.value);
-    agentsPathLabel.textContent = result.path || agentsPathLabel.textContent;
+    agentsPathLabel.textContent = "AGENTS.md";
     agentsStatus.textContent = `Saved AGENTS.md ${timeStamp()}`;
     setStatusClass(agentsStatus, "ok");
   } catch (error) {
@@ -4957,6 +5325,7 @@ function handleSourceChanged({ renderVisual = false } = {}) {
   if (renderVisual) renderVisualEditor();
   scheduleAutoSave();
   scheduleAutoCompile("Waiting for edits to settle...");
+  scheduleHistoryCapture("Edited");
 }
 
 function setupSourceMinimap() {
@@ -5056,7 +5425,7 @@ function findLatexCommentIndex(line) {
 function sourceMinimapTokenKind(token) {
   if (token.startsWith("\\")) return "keyword";
   if (token === "{" || token === "}" || token === "[" || token === "]") return "variable";
-  if (/^\d/.test(token)) return "number";
+  if (/^\d/.test(token)) return "text";
   return "atom";
 }
 
@@ -6244,6 +6613,51 @@ function setupFileSplitter() {
   });
 }
 
+function setupFileOutlineResize() {
+  if (!fileOutlineResizeHandle) return;
+  let dragStartY = 0;
+  let dragStartHeight = 0;
+
+  const stopDragging = (event) => {
+    if (fileOutlineResizeHandle.hasPointerCapture(event.pointerId)) fileOutlineResizeHandle.releasePointerCapture(event.pointerId);
+    document.body.classList.remove("is-resizing-outline");
+    window.removeEventListener("pointermove", resize);
+    window.removeEventListener("pointerup", stopDragging);
+    localStorage.setItem("latexStudioFileOutlineHeight", String(Math.round(getFileOutlineHeight())));
+  };
+
+  const resize = (event) => {
+    const nextHeight = dragStartHeight + dragStartY - event.clientY;
+    if (nextHeight <= MIN_FILE_OUTLINE_HEIGHT * 0.66) {
+      setFileOutlineCollapsed(true);
+      return;
+    }
+    if (fileOutline.classList.contains("collapsed")) setFileOutlineCollapsed(false);
+    setFileOutlineHeight(nextHeight, { persist: false });
+  };
+
+  fileOutlineResizeHandle.addEventListener("pointerdown", (event) => {
+    if (fileOutline.hidden) return;
+    dragStartY = event.clientY;
+    dragStartHeight = fileOutline.classList.contains("collapsed") ? MIN_FILE_OUTLINE_HEIGHT : getFileOutlineHeight();
+    fileOutlineResizeHandle.setPointerCapture(event.pointerId);
+    document.body.classList.add("is-resizing-outline");
+    window.addEventListener("pointermove", resize);
+    window.addEventListener("pointerup", stopDragging);
+  });
+
+  fileOutlineResizeHandle.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    const nextHeight = getFileOutlineHeight() + (event.key === "ArrowUp" ? 20 : -20);
+    if (nextHeight <= MIN_FILE_OUTLINE_HEIGHT * 0.66) setFileOutlineCollapsed(true);
+    else {
+      if (fileOutline.classList.contains("collapsed")) setFileOutlineCollapsed(false);
+      setFileOutlineHeight(nextHeight);
+    }
+  });
+}
+
 function setupTerminalResize() {
   let dragStartY = 0;
   let dragStartHeight = 0;
@@ -6270,7 +6684,9 @@ function setupTerminalResize() {
     }
 
     if (sourcePane.classList.contains("terminal-collapsed")) setTerminalCollapsed(false);
-    setTerminalHeight(clampNumber(nextHeight, MIN_TERMINAL_HEIGHT, maxTerminalHeight(), DEFAULT_TERMINAL_HEIGHT), { persist: false });
+    const maxHeight = maxTerminalHeight();
+    sourcePane.classList.toggle("terminal-maximized", nextHeight >= maxHeight - 10);
+    setTerminalHeight(clampNumber(nextHeight, MIN_TERMINAL_HEIGHT, maxHeight, DEFAULT_TERMINAL_HEIGHT), { persist: false });
   };
 
   terminalResizeHandle.addEventListener("pointerdown", (event) => {
@@ -6290,7 +6706,11 @@ function setupTerminalResize() {
     const delta = event.key === "ArrowUp" ? 24 : -24;
     const nextHeight = getTerminalHeight() + delta;
     if (nextHeight <= TERMINAL_COLLAPSE_THRESHOLD) setTerminalCollapsed(true);
-    else setTerminalHeight(clampNumber(nextHeight, MIN_TERMINAL_HEIGHT, maxTerminalHeight(), DEFAULT_TERMINAL_HEIGHT));
+    else {
+      const maxHeight = maxTerminalHeight();
+      sourcePane.classList.toggle("terminal-maximized", nextHeight >= maxHeight - 10);
+      setTerminalHeight(clampNumber(nextHeight, MIN_TERMINAL_HEIGHT, maxHeight, DEFAULT_TERMINAL_HEIGHT));
+    }
   });
 }
 
@@ -6319,7 +6739,9 @@ function setupCompileLogResize() {
     }
 
     if (compileLogPanel.classList.contains("log-collapsed")) setCompileLogCollapsed(false);
-    setCompileLogHeight(clampNumber(nextHeight, MIN_COMPILE_LOG_HEIGHT, maxCompileLogHeight(), DEFAULT_COMPILE_LOG_HEIGHT), { persist: false });
+    const maxHeight = maxCompileLogHeight();
+    setCompileLogMaximized(nextHeight >= maxHeight - 10);
+    setCompileLogHeight(clampNumber(nextHeight, MIN_COMPILE_LOG_HEIGHT, maxHeight, DEFAULT_COMPILE_LOG_HEIGHT), { persist: false });
   };
 
   compileLogResizeHandle.addEventListener("pointerdown", (event) => {
@@ -6338,7 +6760,11 @@ function setupCompileLogResize() {
     const delta = event.key === "ArrowUp" ? 24 : -24;
     const nextHeight = getCompileLogHeight() + delta;
     if (nextHeight <= COMPILE_LOG_COLLAPSE_THRESHOLD) setCompileLogCollapsed(true);
-    else setCompileLogHeight(clampNumber(nextHeight, MIN_COMPILE_LOG_HEIGHT, maxCompileLogHeight(), DEFAULT_COMPILE_LOG_HEIGHT));
+    else {
+      const maxHeight = maxCompileLogHeight();
+      setCompileLogMaximized(nextHeight >= maxHeight - 10);
+      setCompileLogHeight(clampNumber(nextHeight, MIN_COMPILE_LOG_HEIGHT, maxHeight, DEFAULT_COMPILE_LOG_HEIGHT));
+    }
   });
 }
 

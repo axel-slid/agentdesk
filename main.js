@@ -253,6 +253,263 @@ async function openExternalLink(_event, rawUrl) {
   return { ok: true };
 }
 
+async function openHistoryWindow(_event, payload = {}) {
+  const history = normalizeHistoryPayload(payload);
+  const historyWindow = new BrowserWindow({
+    width: 1080,
+    height: 760,
+    minWidth: 760,
+    minHeight: 520,
+    title: `History - ${history.fileName}`,
+    backgroundColor: history.theme.mode === "dark" ? "#111827" : "#ffffff",
+    parent: mainWindow || undefined,
+    ...(process.platform === "darwin"
+      ? {
+          titleBarStyle: "hiddenInset",
+          trafficLightPosition: { x: 14, y: 13 }
+        }
+      : {}),
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true
+    }
+  });
+
+  await historyWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(historyWindowHtml(history))}`);
+  return { ok: true };
+}
+
+function normalizeHistoryPayload(payload) {
+  const theme = payload && payload.theme ? payload.theme : {};
+  const entries = Array.isArray(payload.entries) ? payload.entries.slice(0, 60) : [];
+  return {
+    title: String(payload.title || "History"),
+    fileName: String(payload.fileName || "document"),
+    currentText: String(payload.currentText || ""),
+    entries: entries.map((entry, index) => ({
+      id: String(entry.id || index),
+      title: String(entry.title || "Edit"),
+      summary: String(entry.summary || ""),
+      fileName: String(entry.fileName || payload.fileName || "document"),
+      time: String(entry.time || ""),
+      added: Number(entry.added || 0),
+      removed: Number(entry.removed || 0),
+      text: String(entry.text || "")
+    })),
+    theme: {
+      mode: theme.mode === "dark" ? "dark" : "light",
+      accent: String(theme.accent || "#f97316"),
+      bg: String(theme.bg || (theme.mode === "dark" ? "#111827" : "#ffffff")),
+      panel: String(theme.panel || (theme.mode === "dark" ? "#1f2937" : "#f8fafc")),
+      text: String(theme.text || (theme.mode === "dark" ? "#f8fafc" : "#111827")),
+      muted: String(theme.muted || "#6b7280"),
+      border: String(theme.border || "rgba(120, 120, 120, 0.28)")
+    }
+  };
+}
+
+function historyWindowHtml(history) {
+  const entries = history.entries.length ? history.entries : [{
+    title: "Current version",
+    summary: "No recorded edits in this session.",
+    time: "",
+    added: 0,
+    removed: 0,
+    text: history.currentText
+  }];
+  const selected = entries[0] || {};
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(`History - ${history.fileName}`)}</title>
+  <style>
+    :root {
+      --accent: ${escapeCss(history.theme.accent)};
+      --bg: ${escapeCss(history.theme.bg)};
+      --panel: ${escapeCss(history.theme.panel)};
+      --text: ${escapeCss(history.theme.text)};
+      --muted: ${escapeCss(history.theme.muted)};
+      --border: ${escapeCss(history.theme.border)};
+      color-scheme: ${history.theme.mode};
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      height: 58px;
+      justify-content: center;
+      padding: 0 22px;
+      -webkit-app-region: drag;
+    }
+    header strong { font-size: 15px; }
+    header span { color: var(--muted); font-size: 12px; }
+    main {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      height: calc(100vh - 58px);
+      min-height: 0;
+    }
+    aside {
+      background: color-mix(in srgb, var(--panel) 88%, var(--bg));
+      border-right: 1px solid var(--border);
+      overflow: auto;
+      padding: 14px;
+    }
+    .entry {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--text);
+      display: grid;
+      font: inherit;
+      gap: 6px;
+      margin-bottom: 8px;
+      padding: 11px;
+      text-align: left;
+      width: 100%;
+    }
+    .entry.active {
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
+    }
+    .entry-title { font-size: 13px; font-weight: 700; }
+    .entry-meta { color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .entry-diff {
+      display: flex;
+      gap: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+    }
+    .entry-diff .add { color: #22c55e; }
+    .entry-diff .remove { color: #ef4444; }
+    .doc {
+      overflow: auto;
+      padding: 30px;
+    }
+    .paper {
+      background: ${history.theme.mode === "dark" ? "#111827" : "#ffffff"};
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.16);
+      margin: 0 auto;
+      max-width: 850px;
+      min-height: calc(100vh - 130px);
+      padding: 34px 42px;
+    }
+    .paper-title {
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+    }
+    .paper-title h1 {
+      font-size: 20px;
+      line-height: 1.2;
+      margin: 0;
+    }
+    .paper-title p {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 4px 0 0;
+    }
+    pre {
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 0;
+      overflow: visible;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>${escapeHtml(history.title)}</strong>
+    <span>${escapeHtml(history.fileName)}</span>
+  </header>
+  <main>
+    <aside>
+      ${entries.map((entry, index) => `
+        <button class="entry${index === 0 ? " active" : ""}" type="button" data-history-index="${index}">
+          <div class="entry-title">${escapeHtml(entry.title)}</div>
+          <div class="entry-meta">${escapeHtml(entry.time || "Current session")} · ${escapeHtml(entry.summary || "")}</div>
+          <div class="entry-diff">
+            <span class="add">+${Number(entry.added || 0)}</span>
+            <span class="remove">-${Number(entry.removed || 0)}</span>
+          </div>
+        </button>
+      `).join("")}
+    </aside>
+    <section class="doc">
+      <article class="paper">
+        <div class="paper-title">
+          <div>
+            <h1 id="revisionTitle">${escapeHtml(selected.title || "Current version")}</h1>
+            <p id="revisionSummary">${escapeHtml(selected.summary || "")}</p>
+          </div>
+          <p id="revisionTime">${escapeHtml(selected.time || "")}</p>
+        </div>
+        <pre id="revisionText">${escapeHtml(selected.text || history.currentText || "")}</pre>
+      </article>
+    </section>
+  </main>
+  <script>
+    const revisions = ${safeScriptJson(entries)};
+    const title = document.getElementById("revisionTitle");
+    const summary = document.getElementById("revisionSummary");
+    const time = document.getElementById("revisionTime");
+    const text = document.getElementById("revisionText");
+    document.querySelectorAll(".entry").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".entry").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        const revision = revisions[Number(button.dataset.historyIndex)] || revisions[0] || {};
+        title.textContent = revision.title || "Revision";
+        summary.textContent = revision.summary || "";
+        time.textContent = revision.time || "";
+        text.textContent = revision.text || "";
+      });
+    });
+  </script>
+</body>
+</html>`;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeCss(value) {
+  return String(value || "").replace(/[;{}<>]/g, "");
+}
+
+function safeScriptJson(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
+}
+
 async function readProjects() {
   const file = storePath();
   let projects = [];
@@ -2240,6 +2497,7 @@ ipcMain.handle("read-pdf", readPdf);
 ipcMain.handle("open-pdf", openPdf);
 ipcMain.handle("download-pdf", downloadPdf);
 ipcMain.handle("open-external-link", openExternalLink);
+ipcMain.handle("open-history-window", openHistoryWindow);
 ipcMain.handle("read-agents", readAgents);
 ipcMain.handle("save-agents", saveAgents);
 ipcMain.handle("terminal-create", createTerminal);

@@ -71,6 +71,14 @@
             <span aria-hidden="true">&#8635;</span>
             <span>Refresh Project</span>
           </button>
+          <button id="historyButton" class="topbar-action-button" type="button" title="History">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+              <path d="M3 4v5h5"></path>
+              <path d="M12 7v5l3 2"></path>
+            </svg>
+            <span>History</span>
+          </button>
           <button class="settingsButton topbar-action-button" type="button" title="Settings">
             <svg class="topbar-icon settings-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
@@ -96,6 +104,13 @@
               <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
                 <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.08a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.08A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7A2 2 0 1 1 7.03 4.2l.06.06A1.7 1.7 0 0 0 8.97 4.6 1.7 1.7 0 0 0 10 3.04V3a2 2 0 1 1 4 0v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.8 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.08A1.7 1.7 0 0 0 19.4 15Z"></path>
+              </svg>
+            </button>
+            <button id="railHelpButton" class="file-footer-icon" type="button" aria-label="Open help" title="Help">
+              <svg class="help-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9.1 9a3 3 0 1 1 5.8 1c-.5 1.2-1.9 1.7-2.5 2.7-.2.3-.3.8-.3 1.3"></path>
+                <path d="M12 17h.01"></path>
+                <circle cx="12" cy="12" r="9"></circle>
               </svg>
             </button>
           </div>
@@ -130,6 +145,7 @@
           </div>
           <div id="fileTree" class="file-tree" aria-label="Project files"></div>
           <section id="fileOutline" class="file-outline" aria-label="File outline" hidden>
+            <div id="fileOutlineResizeHandle" class="file-outline-resize-handle" role="separator" aria-label="Resize file outline" tabindex="0"></div>
             <button id="fileOutlineToggle" class="file-outline-title" type="button">
               <span aria-hidden="true">▾</span>
               <span>File outline</span>
@@ -176,7 +192,7 @@
             <div class="source-mode-actions" aria-label="Editor mode">
               <button class="mode-button active" id="sourceModeButton" type="button">Code</button>
               <button class="mode-button" id="visualModeButton" type="button">Visual</button>
-              <span id="vimModeIndicator" class="vim-mode-indicator" data-vim-state="off">Vim off</span>
+              <span id="vimModeIndicator" class="vim-mode-indicator" data-vim-state="off" hidden></span>
             </div>
           </div>
           <div id="textTabs" class="text-tabs" aria-label="Open text files"></div>
@@ -245,22 +261,47 @@
             <div class="pdf-header-actions">
               <div class="pdf-action-segment" aria-label="PDF actions">
                 <button id="saveButton" class="pdf-action-button" type="button">Save</button>
-                <button id="compileButton" class="pdf-action-button" type="button">Compile PDF</button>
-                <button id="openPdfButton" class="pdf-action-button" type="button">Open PDF</button>
-                <button id="downloadPdfButton" class="pdf-action-button" type="button">Download PDF</button>
-                <button id="historyButton" class="pdf-action-button history-action-button" type="button" title="History">
+                <button id="compileButton" class="pdf-action-button" type="button">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 12a9 9 0 1 0 3-6.7"></path>
-                    <path d="M3 4v5h5"></path>
-                    <path d="M12 7v5l3 2"></path>
+                    <path d="M12 3v4"></path>
+                    <path d="m9 6 3 3 3-3"></path>
+                    <path d="M5 12a7 7 0 0 0 14 0"></path>
                   </svg>
-                  <span>History</span>
+                  <span>Compile PDF</span>
+                </button>
+                <button id="openPdfButton" class="pdf-action-button" type="button">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                    <path d="M14 2v6h6"></path>
+                    <path d="M9 15h6"></path>
+                  </svg>
+                  <span>Open PDF</span>
+                </button>
+                <button id="downloadPdfButton" class="pdf-action-button" type="button">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v12"></path>
+                    <path d="m7 10 5 5 5-5"></path>
+                    <path d="M5 21h14"></path>
+                  </svg>
+                  <span>Download PDF</span>
                 </button>
               </div>
               <div class="pdf-controls">
-                <button id="pdfZoomOutButton" type="button" aria-label="Zoom PDF out">-</button>
+                <button id="pdfZoomOutButton" type="button" aria-label="Zoom PDF out">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="m16 16 5 5"></path>
+                    <path d="M8 11h6"></path>
+                  </svg>
+                </button>
                 <span id="pdfZoomLabel">100%</span>
-                <button id="pdfZoomInButton" type="button" aria-label="Zoom PDF in">+</button>
+                <button id="pdfZoomInButton" type="button" aria-label="Zoom PDF in">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="m16 16 5 5"></path>
+                    <path d="M11 8v6M8 11h6"></path>
+                  </svg>
+                </button>
               </div>
               <span id="pdfPageIndicator" class="pdf-page-indicator">Page 0 / 0</span>
             </div>

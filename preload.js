@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld("localOverleaf", {
   openPdf: (projectId) => ipcRenderer.invoke("open-pdf", projectId),
   downloadPdf: (projectId) => ipcRenderer.invoke("download-pdf", projectId),
   openExternalLink: (url) => ipcRenderer.invoke("open-external-link", url),
+  openHistoryWindow: (payload) => ipcRenderer.invoke("open-history-window", payload),
   readAgents: (projectId) => ipcRenderer.invoke("read-agents", projectId),
   saveAgents: (projectId, text) => ipcRenderer.invoke("save-agents", { projectId, text }),
   createTerminal: (projectId, kind, options = {}) => ipcRenderer.invoke("terminal-create", { projectId, kind, ...options }),
