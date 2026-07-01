@@ -8621,3 +8621,101 @@ body[data-theme="dark"] .pdf-loading {
   white-space: pre-wrap !important;
   word-break: break-word;
 }
+
+/* PDF page and preview cleanup: keep rendered pages square and make the sidebar theme-aware. */
+.pdf-viewer {
+  background: var(--pdf-bg) !important;
+}
+
+.pdf-viewer.pdf-dark-render,
+body[data-theme="dark"] .pdf-viewer {
+  background: var(--pdf-dark-bg) !important;
+}
+
+.pdf-page {
+  background: var(--pdf-paper) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 72%, transparent), 0 6px 18px rgba(31, 41, 55, 0.12) !important;
+  overflow: hidden !important;
+}
+
+.pdf-page canvas {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.pdf-viewer.pdf-dark-render .pdf-page {
+  background: var(--pdf-dark-paper) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 78%, transparent), 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+}
+
+.pdf-sidebar {
+  background: color-mix(in srgb, var(--panel) 92%, var(--pdf-bg)) !important;
+  border-right: 1px solid var(--border) !important;
+  scrollbar-color: var(--scrollbar-thumb) transparent !important;
+  scrollbar-width: thin !important;
+}
+
+body[data-theme="dark"] .pdf-sidebar {
+  background: color-mix(in srgb, var(--panel) 90%, var(--pdf-dark-bg)) !important;
+}
+
+.pdf-thumbnail-list {
+  align-items: stretch !important;
+  display: grid !important;
+  gap: 12px !important;
+  padding: 2px 0 10px !important;
+}
+
+.pdf-thumbnail {
+  align-items: center !important;
+  background: color-mix(in srgb, var(--panel) 72%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  display: grid !important;
+  justify-items: center !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 6px !important;
+  width: 100% !important;
+}
+
+.pdf-thumbnail:hover,
+.pdf-thumbnail.active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel)) !important;
+  border-color: color-mix(in srgb, var(--accent) 56%, transparent) !important;
+}
+
+.pdf-thumbnail canvas {
+  background: var(--pdf-paper) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent) !important;
+  display: block !important;
+  height: auto !important;
+  max-width: 100% !important;
+}
+
+body[data-theme="dark"] .pdf-thumbnail canvas {
+  background: var(--pdf-dark-paper) !important;
+}
+
+.pdf-thumbnail span {
+  display: none !important;
+}
+
+/* End-of-file transparent PDF overrides. */
+body.transparent-theme .pdf-viewer {
+  background: transparent !important;
+}
+
+body.transparent-theme .pdf-sidebar {
+  background: color-mix(in srgb, var(--panel) var(--transparent-chrome-alpha, 18%), transparent) !important;
+}
+
+body.transparent-theme .pdf-thumbnail {
+  background: color-mix(in srgb, var(--glass) var(--transparent-card-alpha, 30%), transparent) !important;
+}
