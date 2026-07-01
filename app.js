@@ -121,8 +121,6 @@ const settingsNavButtons = Array.from(document.querySelectorAll(".settings-nav-b
 const settingsPanels = Array.from(document.querySelectorAll("[data-settings-panel]"));
 const settingsThemePreset = document.getElementById("settingsThemePreset");
 const settingsThemeToggle = document.getElementById("settingsThemeToggle");
-const settingsTransparentOpacityRange = document.getElementById("settingsTransparentOpacityRange");
-const settingsTransparentOpacityValue = document.getElementById("settingsTransparentOpacityValue");
 const settingsAccentPicker = document.getElementById("settingsAccentPicker");
 const settingsFileSidebarToggle = document.getElementById("settingsFileSidebarToggle");
 const settingsPdfRenderModeButtons = Array.from(document.querySelectorAll("[data-pdf-render-mode]"));
@@ -185,8 +183,6 @@ const DEFAULT_GITHUB_REMOTE = "https://github.com/axel-slid/agentdesk-latex-docu
 const PROFILE_STORAGE_KEY = "latexStudioAiProfile";
 const REMOTE_STORAGE_KEY = "latexStudioRemoteWorkspace";
 const DEFAULT_GITHUB_STORAGE_KEY = "latexStudioDefaultGithubRemote";
-const TRANSPARENT_OPACITY_STORAGE_KEY = "latexStudioTransparentOpacity";
-const DEFAULT_TRANSPARENT_OPACITY = 18;
 const CLOSE_ICON_SVG = `
   <svg class="icon icon-x" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M18 6 6 18M6 6l12 12"></path>
@@ -2241,7 +2237,6 @@ function setupSettings() {
   const preset = THEME_PRESETS[savedPreset];
   const savedTheme = (preset && preset.theme) || localStorage.getItem("latexStudioTheme") || "light";
   const savedAccent = (preset && preset.accent) || normalizeHexColor(localStorage.getItem("latexStudioAccent")) || DEFAULT_ACCENT;
-  const transparentOpacity = transparentOpacityValue(localStorage.getItem(TRANSPARENT_OPACITY_STORAGE_KEY));
   const showSidebar = localStorage.getItem("latexStudioShowSidebar") === "true";
   const pdfMinWidth = clampNumber(Number(localStorage.getItem("latexStudioPdfMinWidth")), 480, 760, DEFAULT_PDF_MIN_WIDTH);
   const fileWidth = clampNumber(Number(localStorage.getItem("latexStudioFileWidth")), MIN_FILE_WIDTH, MAX_FILE_WIDTH, DEFAULT_FILE_WIDTH);
@@ -2273,7 +2268,6 @@ function setupSettings() {
   aiProfile = readAiProfile();
 
   applyTheme(savedTheme, savedAccent, { presetId: savedPreset });
-  applyTransparentOpacity(transparentOpacity, { persist: false });
   syncSurfaceThemesToAppTheme(savedTheme, { persist: false });
   applyLayoutSettings({ showSidebar, pdfMinWidth, fileWidth });
   setFileOutlineHeight(fileOutlineHeight, { persist: false });
@@ -2319,13 +2313,6 @@ function setupSettings() {
     localStorage.setItem("latexStudioAccent", accent);
     renderPdf({ showLoading: false, preserveView: true });
   });
-
-  if (settingsTransparentOpacityRange) {
-    settingsTransparentOpacityRange.addEventListener("input", () => {
-      applyTransparentOpacity(settingsTransparentOpacityRange.value);
-      renderPdf({ showLoading: false, preserveView: true });
-    });
-  }
 
   settingsAccentPicker.addEventListener("input", () => {
     const accent = normalizeHexColor(settingsAccentPicker.value) || DEFAULT_ACCENT;
@@ -2480,35 +2467,6 @@ function applyTheme(theme, accent, { presetId = "custom" } = {}) {
   updateVimModeIndicator();
 }
 
-function transparentOpacityValue(value) {
-  return clampNumber(Number(value), 6, 70, DEFAULT_TRANSPARENT_OPACITY);
-}
-
-function applyTransparentOpacity(value, { persist = true } = {}) {
-  const chrome = transparentOpacityValue(value);
-  const dialog = Math.min(84, chrome + 14);
-  const card = Math.min(80, chrome + 12);
-  const editorAlpha = Math.max(0, chrome - 6);
-  const gutter = Math.max(0, chrome - 10);
-  const divider = Math.min(72, chrome + 4);
-  const entries = [
-    ["--transparent-chrome-alpha", `${chrome}%`],
-    ["--transparent-dialog-alpha", `${dialog}%`],
-    ["--transparent-card-alpha", `${card}%`],
-    ["--transparent-editor-alpha", `${editorAlpha}%`],
-    ["--transparent-gutter-alpha", `${gutter}%`],
-    ["--transparent-divider-alpha", `${divider}%`]
-  ];
-
-  entries.forEach(([name, nextValue]) => {
-    document.documentElement.style.setProperty(name, nextValue);
-    document.body.style.setProperty(name, nextValue);
-  });
-  if (settingsTransparentOpacityRange) settingsTransparentOpacityRange.value = String(chrome);
-  if (settingsTransparentOpacityValue) settingsTransparentOpacityValue.textContent = `${chrome}%`;
-  if (persist) localStorage.setItem(TRANSPARENT_OPACITY_STORAGE_KEY, String(chrome));
-}
-
 function syncSurfaceThemesToAppTheme(theme, { persist = true } = {}) {
   const mode = theme === "dark" ? "dark" : "light";
   pdfDarkMode = mode === "dark";
@@ -2618,8 +2576,9 @@ function setSshConnectionState(state = "disconnected", message = "") {
   const visible = connected || connecting || Boolean(message);
   sshConnectionBadge.hidden = !visible;
   sshConnectionBadge.dataset.state = state;
+  sshConnectionBadge.title = connected ? remoteWorkspaceLabel(remoteWorkspace) : "";
   sshConnectionLabel.textContent = message || (connected
-    ? `SSH ${remoteWorkspaceLabel(remoteWorkspace)}`
+    ? "SSH connected"
     : connecting
       ? "SSH connecting..."
       : "SSH disconnected");
@@ -2802,7 +2761,7 @@ async function connectSshProject() {
     sshProjectStatus.textContent = "Authenticating SSH connection...";
     setStatusClass(sshProjectStatus);
   }
-  setSshConnectionState("connecting", `SSH connecting to ${remoteWorkspaceLabel(pendingRemote)}`);
+  setSshConnectionState("connecting", "SSH connecting");
   if (connectSshProjectButton) connectSshProjectButton.disabled = true;
 
   try {
@@ -2826,7 +2785,7 @@ async function connectSshProject() {
     closeSshProjectPanel({ value: remoteWorkspace });
     if (shouldStartTerminal) await openVerifiedRemoteWorkspace();
   } catch (error) {
-    setSshConnectionState("error", "SSH connection failed");
+    setSshConnectionState("error", "SSH failed");
     if (sshProjectStatus) {
       sshProjectStatus.textContent = formatSshConnectionError(error, pendingRemote);
       setStatusClass(sshProjectStatus, "error");

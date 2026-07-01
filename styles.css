@@ -8719,3 +8719,36 @@ body.transparent-theme .pdf-sidebar {
 body.transparent-theme .pdf-thumbnail {
   background: color-mix(in srgb, var(--glass) var(--transparent-card-alpha, 30%), transparent) !important;
 }
+
+/* Keep the SSH badge from taking over the editor title bar. */
+.topbar {
+  grid-template-columns: minmax(170px, 0.85fr) minmax(120px, auto) minmax(0, 1fr) !important;
+  overflow: hidden;
+}
+
+.topbar-left {
+  grid-column: 1 !important;
+  justify-self: start !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.topbar-left .project-back-button {
+  flex: 0 0 auto !important;
+}
+
+.topbar-left .ssh-connection-badge {
+  flex: 0 1 132px !important;
+  height: 24px !important;
+  max-width: 132px !important;
+  padding: 0 8px !important;
+}
+
+.top-document-title-wrap {
+  grid-column: 2 !important;
+  max-width: min(34vw, 520px) !important;
+}
+
+.topbar-actions {
+  grid-column: 3 !important;
+}

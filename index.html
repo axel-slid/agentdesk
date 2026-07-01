@@ -69,13 +69,15 @@
 
     <section class="editor-screen" id="editorScreen" hidden>
       <header class="topbar">
-        <button id="backToProjectsButton" class="project-back-button" type="button" title="Back to projects">
-          <span aria-hidden="true">&larr;</span>
-          <span>Projects</span>
-        </button>
-        <div id="sshConnectionBadge" class="ssh-connection-badge" data-state="disconnected" hidden>
-          <span class="ssh-connection-dot" aria-hidden="true"></span>
-          <span id="sshConnectionLabel">SSH disconnected</span>
+        <div class="topbar-left">
+          <button id="backToProjectsButton" class="project-back-button" type="button" title="Back to projects">
+            <span aria-hidden="true">&larr;</span>
+            <span>Projects</span>
+          </button>
+          <div id="sshConnectionBadge" class="ssh-connection-badge" data-state="disconnected" hidden>
+            <span class="ssh-connection-dot" aria-hidden="true"></span>
+            <span id="sshConnectionLabel">SSH disconnected</span>
+          </div>
         </div>
         <div class="top-document-title-wrap">
           <p id="activeDocumentTitle" class="top-document-title">No document loaded</p>
@@ -671,10 +673,6 @@
             <label class="setting-row">
               <span>Dark mode</span>
               <input id="settingsThemeToggle" type="checkbox">
-            </label>
-            <label class="setting-column">
-              <span>Transparent opacity <strong id="settingsTransparentOpacityValue">18%</strong></span>
-              <input id="settingsTransparentOpacityRange" type="range" min="6" max="70" step="1" value="18">
             </label>
             <label class="setting-row">
               <span>Accent color</span>
