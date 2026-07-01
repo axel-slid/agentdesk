@@ -13,6 +13,7 @@ const defaultTexPath = path.join(repoRoot, "papers", "sashimi2026_synthetic_cnf"
 const homeDir = process.env.HOME || "";
 const latexDocumentsRemoteUrl = "https://github.com/axel-slid/agentdesk-latex-documents.git";
 const latexSourceExtensions = new Set([".tex", ".ltx", ".bib", ".bst", ".cls", ".sty"]);
+const appIconPngPath = path.join(repoRoot, "assets", "icon.png");
 
 let mainWindow;
 const terminalSessions = new Map();
@@ -23,6 +24,8 @@ const terminalPath = [
   path.join(homeDir, "bin"),
   process.env.PATH || ""
 ].join(path.delimiter);
+
+app.setName("AgentDesk");
 
 function resolveRepoRoot() {
   const configPath = path.join(__dirname, "local-config.json");
@@ -41,6 +44,7 @@ function createWindow() {
     minWidth: 1180,
     minHeight: 700,
     title: "AgentDesk",
+    ...(fs.existsSync(appIconPngPath) ? { icon: appIconPngPath } : {}),
     backgroundColor: "#00000000",
     transparent: true,
     ...(process.platform === "darwin"
@@ -59,6 +63,10 @@ function createWindow() {
       sandbox: true
     }
   });
+
+  if (process.platform === "darwin" && app.dock && fs.existsSync(appIconPngPath)) {
+    app.dock.setIcon(appIconPngPath);
+  }
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
   mainWindow.once("ready-to-show", () => mainWindow.show());
@@ -2128,7 +2136,7 @@ function terminalPreset(kind, cwd, options = {}) {
   if (kind === "ssh") {
     const remote = normalizeRemoteOptions(options.remote);
     if (!remote.host) throw new Error("Choose a New SSH Project before opening an SSH terminal.");
-    const controlPath = sshControlPath(remote);
+    const controlPath = remote.controlPath || sshControlPath(remote);
     fs.mkdirSync(path.dirname(controlPath), { recursive: true });
     const target = remoteTarget(remote);
     const controlArgs = ["-S", controlPath, "-o", "ControlMaster=auto", "-o", "ControlPersist=8h"];
@@ -2147,7 +2155,7 @@ function terminalPreset(kind, cwd, options = {}) {
   if (kind === "ssh-auth") {
     const remote = normalizeRemoteOptions(options.remote);
     if (!remote.host) throw new Error("Enter a server before connecting.");
-    const controlPath = sshControlPath(remote);
+    const controlPath = remote.controlPath || sshControlPath(remote);
     fs.mkdirSync(path.dirname(controlPath), { recursive: true });
     const target = remoteTarget(remote);
     return {
@@ -2180,7 +2188,8 @@ function normalizeRemoteOptions(remote = {}) {
     user: String(remote.user || parsed.user || "").trim(),
     host: String(parsed.host || remote.server || remote.host || "").trim(),
     path: String(remote.path || "").trim(),
-    shell: String(remote.shell || "").trim()
+    shell: String(remote.shell || "").trim(),
+    controlPath: String(remote.controlPath || "").trim()
   };
 }
 
@@ -2297,6 +2306,70 @@ function shellQuoteRemotePath(value) {
   if (raw === "~") return "~";
   if (raw.startsWith("~/")) return `~/${shellQuote(raw.slice(2))}`;
   return shellQuote(raw);
+}
+
+function remoteWorkspaceCachePath(remote = {}) {
+  const normalized = normalizeRemoteOptions(remote);
+  const key = `${normalized.user || "user"}@${normalized.host || "host"}:${normalized.path || "~"}`;
+  const hash = crypto.createHash("sha1").update(key).digest("hex").slice(0, 20);
+  return path.join(app.getPath("userData"), "remote-workspaces", `${safeCacheName(normalized.host || "ssh")}-${hash}`);
+}
+
+function safeWorkspacePath(root, relativePath = "") {
+  const workspaceRoot = path.resolve(root);
+  const resolved = path.resolve(workspaceRoot, String(relativePath || "").replace(/^\/+/, ""));
+  if (resolved !== workspaceRoot && !resolved.startsWith(`${workspaceRoot}${path.sep}`)) {
+    throw new Error("File path escapes the local SSH workspace mirror.");
+  }
+  return resolved;
+}
+
+function remoteWorkspaceRsyncSource(remote = {}) {
+  const normalized = normalizeRemoteOptions(remote);
+  const rawPath = String(normalized.path || "~").trim() || "~";
+  const remotePath = rawPath.endsWith("/") ? rawPath : `${rawPath}/`;
+  const quotedPath = remotePath === "~/" ? "~/" : shellQuoteRemotePath(remotePath);
+  return `${remoteTarget(normalized)}:${quotedPath}`;
+}
+
+function rsyncSshCommand(remote = {}) {
+  const normalized = normalizeRemoteOptions(remote);
+  const controlPath = normalized.controlPath || sshControlPath(normalized);
+  fs.mkdirSync(path.dirname(controlPath), { recursive: true });
+  return [
+    resolveExecutable("ssh"),
+    "-S", controlPath,
+    "-o", "ControlMaster=auto",
+    "-o", "ControlPersist=8h",
+    "-o", "BatchMode=yes"
+  ].join(" ");
+}
+
+async function mirrorRemoteWorkspace(remote = {}, destination) {
+  const normalized = normalizeRemoteOptions(remote);
+  if (!normalized.host) throw new Error("Missing SSH server.");
+  await fsp.mkdir(destination, { recursive: true });
+  const args = [
+    "-az",
+    "--delete",
+    "--exclude", ".git/",
+    "--exclude", "node_modules/",
+    "--exclude", "__pycache__/",
+    "--exclude", ".venv/",
+    "--exclude", "venv/",
+    "-e", rsyncSshCommand(normalized),
+    remoteWorkspaceRsyncSource(normalized),
+    `${destination}${path.sep}`
+  ];
+
+  try {
+    await execFileAsync(resolveExecutable("rsync"), args, {
+      timeout: 120000,
+      maxBuffer: 1024 * 1024 * 12
+    });
+  } catch (error) {
+    throw new Error(`Could not mirror the SSH workspace locally.\n\n${formatMainError(error)}`);
+  }
 }
 
 function terminalEnv(cwd) {
@@ -2511,6 +2584,42 @@ print(json.dumps({"name": os.path.basename(path), "relativePath": relative.repla
   };
 }
 
+async function readRemotePdf(_event, payload = {}) {
+  const normalized = normalizeRemoteOptions(payload.remote || {});
+  const relativePath = String(payload.relativePath || "").replace(/^\/+/, "");
+  if (!relativePath) throw new Error("Choose a remote PDF first.");
+  if (path.extname(relativePath).toLowerCase() !== ".pdf") {
+    throw new Error("Only remote PDF files can be opened in the PDF viewer.");
+  }
+  const script = `
+import base64, os, sys
+root = os.path.abspath(os.path.expanduser(sys.argv[1]))
+relative = sys.argv[2].lstrip("/")
+path = os.path.abspath(os.path.join(root, relative))
+if path != root and not path.startswith(root + os.sep):
+    raise SystemExit("Path escapes remote workspace")
+if not os.path.isfile(path):
+    raise SystemExit(f"PDF not found: {relative}")
+with open(path, "rb") as handle:
+    sys.stdout.write(base64.b64encode(handle.read()).decode("ascii"))
+`;
+  try {
+    const result = await execFileAsync(resolveExecutable("ssh"), sshRemoteCommandArgs(normalized, ["python3", "-c", script, normalized.path || "~", relativePath]), {
+      timeout: 30000,
+      maxBuffer: 1024 * 1024 * 96
+    });
+    const pdf = Buffer.from(result.stdout || "", "base64");
+    return pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
+  } catch (error) {
+    const localPdfPath = safeWorkspacePath(remoteWorkspaceCachePath(normalized), relativePath);
+    if (fs.existsSync(localPdfPath)) {
+      const pdf = await fsp.readFile(localPdfPath);
+      return pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength);
+    }
+    throw error;
+  }
+}
+
 async function saveRemoteFile(_event, payload = {}) {
   const normalized = normalizeRemoteOptions(payload.remote || {});
   const relativePath = String(payload.relativePath || "").replace(/^\/+/, "");
@@ -2541,6 +2650,51 @@ with open(path, "wb") as handle:
       editable: true,
       image: false
     }
+  };
+}
+
+async function compileRemoteManuscript(_event, payload = {}) {
+  const normalized = normalizeRemoteOptions(payload.remote || {});
+  const relativePath = String(payload.relativePath || "").replace(/^\/+/, "");
+  if (!relativePath) throw new Error("Choose a remote TeX file first.");
+  if (path.extname(relativePath).toLowerCase() !== ".tex") {
+    throw new Error("Switch to a TeX file before compiling.");
+  }
+  const localRoot = remoteWorkspaceCachePath(normalized);
+  await mirrorRemoteWorkspace(normalized, localRoot);
+
+  const localTexPath = safeWorkspacePath(localRoot, relativePath);
+  await fsp.mkdir(path.dirname(localTexPath), { recursive: true });
+  await fsp.writeFile(localTexPath, String(payload.tex || ""), "utf8");
+
+  const compileProject = {
+    id: `remote:${crypto.createHash("sha1").update(localRoot).digest("hex").slice(0, 12)}`,
+    name: `SSH ${normalized.host}`,
+    texPath: localTexPath
+  };
+  const output = await runTectonic(compileProject);
+  const pdfPath = pdfPathFor(compileProject);
+  if (!fs.existsSync(pdfPath)) {
+    throw new Error(`${output}\n\nCompile finished locally but ${path.basename(pdfPath)} was not found.`);
+  }
+
+  const pdf = await fsp.readFile(pdfPath);
+  const compiledPdfRelativePath = path.relative(localRoot, pdfPath).split(path.sep).join("/");
+  return {
+    file: {
+      name: path.basename(relativePath),
+      relativePath,
+      kind: "file",
+      editable: true,
+      image: false
+    },
+    output: output || `Compiled ${path.basename(relativePath)} locally from the SSH workspace.`,
+    compiledPdfRelativePath,
+    compiledPdfName: path.basename(pdfPath),
+    localWorkspacePath: localRoot,
+    localPdfPath: pdfPath,
+    pdf: pdf.buffer.slice(pdf.byteOffset, pdf.byteOffset + pdf.byteLength),
+    compileWarning: false
   };
 }
 
@@ -2830,6 +2984,7 @@ function fileDescriptor(project, filePath) {
 
 async function runTectonic(project) {
   const entryPath = await compileEntryPath(project);
+  await ensureLatexSupportFiles(entryPath);
   const cwd = path.dirname(entryPath);
   const entry = path.basename(entryPath);
   const outputPath = pdfPathFor({ ...project, texPath: entryPath });
@@ -2861,6 +3016,89 @@ async function runTectonic(project) {
   }
 
   throw new Error(`Could not compile ${entry}.\n\n${failures.join("\n\n")}`);
+}
+
+async function ensureLatexSupportFiles(entryPath) {
+  let source = "";
+  try {
+    source = await fsp.readFile(entryPath, "utf8");
+  } catch (error) {
+    return;
+  }
+
+  const cwd = path.dirname(entryPath);
+  await ensureLatexClassFile(cwd, source, "llncs.cls");
+  await ensureLatexFigureAssets(cwd, source);
+}
+
+async function ensureLatexClassFile(cwd, source, className) {
+  if (!new RegExp(`\\\\documentclass(?:\\[[^\\]]*\\])?\\{${className.replace(/\.cls$/i, "")}\\}`, "i").test(source)) return;
+  const target = path.join(cwd, className);
+  if (fs.existsSync(target)) return;
+  const candidate = latexSupportFileCandidates(className).find((filePath) => fs.existsSync(filePath));
+  if (!candidate) return;
+  await fsp.copyFile(candidate, target);
+}
+
+async function ensureLatexFigureAssets(cwd, source) {
+  const figures = latexIncludedFigureNames(source);
+  if (!figures.length) return;
+
+  const targetDir = path.join(cwd, "figures");
+  const missing = figures.filter((figureName) => !latexFigureExists(targetDir, figureName));
+  if (!missing.length) return;
+
+  const candidateDir = latexFigureDirectoryCandidates().find((dirPath) => (
+    fs.existsSync(dirPath)
+      && missing.some((figureName) => latexFigureExists(dirPath, figureName))
+  ));
+  if (!candidateDir) return;
+
+  await fsp.mkdir(targetDir, { recursive: true });
+  for (const figureName of missing) {
+    const sourcePath = latexFigurePath(candidateDir, figureName);
+    if (!sourcePath) continue;
+    await fsp.copyFile(sourcePath, path.join(targetDir, path.basename(sourcePath)));
+  }
+}
+
+function latexIncludedFigureNames(source) {
+  return Array.from(source.matchAll(/\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}/g))
+    .map((match) => String(match[1] || "").trim().replace(/^['"]|['"]$/g, ""))
+    .map((value) => value.replace(/^\.\/+/, "").replace(/^figures\//, ""))
+    .filter(Boolean);
+}
+
+function latexFigureExists(dirPath, figureName) {
+  return Boolean(latexFigurePath(dirPath, figureName));
+}
+
+function latexFigurePath(dirPath, figureName) {
+  const base = path.basename(figureName);
+  const names = path.extname(base)
+    ? [base]
+    : ["png", "jpg", "jpeg", "pdf", "eps"].map((extension) => `${base}.${extension}`);
+  return names.map((name) => path.join(dirPath, name)).find((candidate) => fs.existsSync(candidate)) || "";
+}
+
+function latexSupportFileCandidates(fileName) {
+  return [
+    path.join(repoRoot, fileName),
+    path.join(repoRoot, "papers", "sashimi2026_synthetic_cnf", fileName),
+    path.join(homeDir, "Downloads", "manuscript", fileName),
+    path.join(homeDir, "Downloads", "stanford_research", "canary_CREST", "projects", "neurofibroma", "papers", "sashimi2026_synthetic_cnf", fileName),
+    path.join(app.getPath("userData"), "latex-documents-repo", "Manuscript", fileName)
+  ];
+}
+
+function latexFigureDirectoryCandidates() {
+  return [
+    path.join(repoRoot, "figures"),
+    path.join(repoRoot, "papers", "sashimi2026_synthetic_cnf", "figures"),
+    path.join(homeDir, "Downloads", "manuscript", "figures"),
+    path.join(homeDir, "Downloads", "stanford_research", "canary_CREST", "projects", "neurofibroma", "papers", "sashimi2026_synthetic_cnf", "figures"),
+    path.join(app.getPath("userData"), "latex-documents-repo", "Manuscript", "figures")
+  ];
 }
 
 async function compileEntryPath(project) {
@@ -3166,8 +3404,61 @@ async function pushProjectToConfiguredGithub(project, latexFiles) {
   };
 }
 
-async function pullProjectFromGithub(_event, projectId) {
-  const project = await getProject(projectId);
+async function pullProjectFromGithub(_event, payload) {
+  const options = payload && typeof payload === "object"
+    ? payload
+    : { projectId: payload };
+  const project = await getProject(options.projectId);
+  const defaultRemote = normalizeGithubRemote(options.defaultRemote || latexDocumentsRemoteUrl) || latexDocumentsRemoteUrl;
+  let defaultError = null;
+
+  try {
+    return await pullProjectFromDefaultGithub(project, defaultRemote);
+  } catch (error) {
+    defaultError = error;
+  }
+
+  if (!project.githubRemote) throw defaultError;
+
+  try {
+    return await pullProjectFromConfiguredGithub(project);
+  } catch (projectError) {
+    throw new Error([
+      "Could not pull from the default GitHub repo or the project GitHub remote.",
+      `Default GitHub: ${formatErrorMessage(defaultError)}`,
+      `Project GitHub: ${formatErrorMessage(projectError)}`
+    ].join("\n\n"));
+  }
+}
+
+async function pullProjectFromDefaultGithub(project, defaultRemote) {
+  const repoPath = await ensureLatexDocumentsRepo(defaultRemote);
+  const folder = defaultGithubProjectFolderName(project);
+  const sourceRoot = path.join(repoPath, folder);
+  const stat = await fsp.stat(sourceRoot).catch(() => null);
+  if (!stat || !stat.isDirectory()) {
+    throw new Error(`No ${folder} folder found in the default GitHub repo.`);
+  }
+
+  const latexFiles = await listLatexFilesInRoot(sourceRoot);
+  if (!latexFiles.length) throw new Error(`No LaTeX source files found in ${folder} in the default GitHub repo.`);
+
+  await copyLatexFiles(sourceRoot, projectRootFor(project), latexFiles);
+  await touchProject(project.id);
+
+  const projects = await readProjects();
+  const updatedProject = projects.find((item) => item.id === project.id) || project;
+  return {
+    ok: true,
+    project: decorateProject(updatedProject),
+    files: latexFiles,
+    remote: defaultRemote,
+    source: "default",
+    folder
+  };
+}
+
+async function pullProjectFromConfiguredGithub(project) {
   const repoPath = await ensureProjectGithubRepo(project);
   const latexFiles = await listLatexFilesInRoot(repoPath);
   if (!latexFiles.length) throw new Error("No LaTeX source files found in the project GitHub repo.");
@@ -3181,8 +3472,18 @@ async function pullProjectFromGithub(_event, projectId) {
     ok: true,
     project: decorateProject(updatedProject),
     files: latexFiles,
-    remote: project.githubRemote
+    remote: project.githubRemote,
+    source: "project"
   };
+}
+
+function defaultGithubProjectFolderName(project) {
+  const sourceRoot = projectRootFor(project);
+  return sanitizeArchiveBaseName(project.displayName || project.name || path.basename(sourceRoot));
+}
+
+function formatErrorMessage(error) {
+  return error && error.message ? error.message : String(error || "Unknown error");
 }
 
 function latexDocumentsRepoPath() {
@@ -3285,7 +3586,9 @@ ipcMain.handle("save-project-settings", saveProjectSettings);
 ipcMain.handle("list-project-files", listProjectFiles);
 ipcMain.handle("list-remote-files", listRemoteFiles);
 ipcMain.handle("read-remote-file", readRemoteFile);
+ipcMain.handle("read-remote-pdf", readRemotePdf);
 ipcMain.handle("save-remote-file", saveRemoteFile);
+ipcMain.handle("compile-remote-manuscript", compileRemoteManuscript);
 ipcMain.handle("verify-ssh-connection", verifySshConnection);
 ipcMain.handle("project-file-action", projectFileAction);
 ipcMain.handle("choose-project-files", chooseProjectFiles);

@@ -10,6 +10,43 @@ AgentDesk is currently distributed from this GitHub repository. Packaged
 Windows and Linux installers are not published yet, so download the source
 archive or clone the repository and run the Electron app locally.
 
+### macOS App
+
+To install AgentDesk as a normal macOS application with its Dock icon:
+
+```bash
+git clone https://github.com/axel-slid/agentdesk.git
+cd agentdesk
+npm install
+npm run install:mac
+open /Applications/AgentDesk.app
+```
+
+You can also install the GitHub package globally and run the explicit app
+installer command:
+
+```bash
+npm install -g github:axel-slid/agentdesk
+agentdesk install
+agentdesk open
+```
+
+`npm install` does not silently copy anything into `/Applications`. Use
+`agentdesk install` or `npm run install:mac` when you want the app bundle
+created and installed. Once AgentDesk is open, right-click its Dock icon and
+choose **Options** > **Keep in Dock**.
+
+Useful package commands:
+
+```bash
+npm run make:icons
+npm run package:mac
+npm run install:mac
+agentdesk package
+agentdesk install
+agentdesk open
+```
+
 ### Windows
 
 Requirements:

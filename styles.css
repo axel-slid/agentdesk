@@ -1066,8 +1066,9 @@ p {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.72) inset, 0 10px 28px rgba(31, 41, 55, 0.08);
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(0, 1fr) minmax(120px, auto) minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
   min-width: 0;
+  overflow: hidden;
   padding: 5px 10px 5px 78px;
   -webkit-app-region: drag;
 }
@@ -1075,9 +1076,9 @@ p {
 .topbar-left {
   align-items: center;
   display: flex;
-  flex: 1 1 auto;
   gap: 10px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .top-document-title {
@@ -8497,6 +8498,83 @@ body.transparent-theme .CodeMirror-code {
   border-radius: 9px !important;
 }
 
+.project-tools {
+  grid-template-columns: minmax(220px, 1fr) auto auto auto !important;
+}
+
+.project-sort-control {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  gap: 7px;
+  height: 38px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.project-sort-control span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.project-sort-control select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: none;
+  color: var(--text);
+  cursor: pointer;
+  font: 700 13px/1 var(--sans);
+  height: 34px;
+  min-width: 142px;
+  outline: 0;
+  padding: 0 28px 0 10px;
+}
+
+.project-sort-control {
+  position: relative;
+}
+
+.project-sort-control::after {
+  border: solid currentColor;
+  border-width: 0 1.8px 1.8px 0;
+  content: "";
+  height: 6px;
+  pointer-events: none;
+  position: absolute;
+  right: 10px;
+  top: 14px;
+  transform: rotate(45deg);
+  width: 6px;
+}
+
+.project-sort-control select:hover,
+.project-sort-control select:focus-visible {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.hero-actions .icon-only-action {
+  align-items: center !important;
+  display: inline-flex !important;
+  height: 34px !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  width: 34px !important;
+}
+
+.hero-actions .icon-only-action .icon {
+  display: block !important;
+  height: 18px !important;
+  margin: 0 !important;
+  width: 18px !important;
+}
+
+.hero-actions .icon-only-action::after {
+  left: 22% !important;
+  right: 22% !important;
+}
+
 .project-card-copy {
   min-width: 0 !important;
   padding-right: 96px !important;
@@ -8545,48 +8623,57 @@ body[data-theme="dark"] .file-header-actions .icon-button::after {
 
 .ssh-connection-badge {
   align-items: center;
-  background: color-mix(in srgb, var(--panel) 82%, transparent);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
   color: var(--muted);
   display: inline-flex;
-  flex: 0 1 auto;
-  font-size: 12px;
-  font-weight: 700;
-  gap: 7px;
-  height: 30px;
+  flex: 0 0 auto;
+  height: 28px;
+  justify-content: center;
   line-height: 1;
-  max-width: min(300px, 24vw);
-  min-width: 0;
+  min-width: 28px;
   overflow: hidden;
-  padding: 0 10px;
-  white-space: nowrap;
+  padding: 0;
+  position: relative;
+  width: 28px;
 }
 
 .ssh-connection-badge[hidden] {
   display: none !important;
 }
 
-.ssh-connection-badge span:last-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.ssh-connection-icon {
+  fill: none;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 18px;
 }
 
-.ssh-connection-dot {
+.ssh-connection-status-dot {
   background: var(--muted);
+  border: 2px solid var(--panel);
   border-radius: 999px;
-  flex: 0 0 auto;
   height: 8px;
+  position: absolute;
+  right: 3px;
+  top: 3px;
   width: 8px;
 }
 
-.ssh-connection-badge[data-state="connecting"] .ssh-connection-dot {
+.ssh-connection-badge[data-state="connecting"] .ssh-connection-status-dot {
   background: var(--accent);
   box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
 }
 
-.ssh-connection-badge[data-state="connected"] .ssh-connection-dot {
+.ssh-connection-badge[data-state="connected"] {
+  color: var(--text);
+}
+
+.ssh-connection-badge[data-state="connected"] .ssh-connection-status-dot {
   background: var(--green);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent);
 }
@@ -8595,7 +8682,7 @@ body[data-theme="dark"] .file-header-actions .icon-button::after {
   color: var(--red);
 }
 
-.ssh-connection-badge[data-state="error"] .ssh-connection-dot {
+.ssh-connection-badge[data-state="error"] .ssh-connection-status-dot {
   background: var(--red);
 }
 
@@ -8720,9 +8807,24 @@ body.transparent-theme .pdf-thumbnail {
   background: color-mix(in srgb, var(--glass) var(--transparent-card-alpha, 30%), transparent) !important;
 }
 
+/* File outline labels should never spill into the editor pane. */
+.file-outline-body {
+  overflow-x: hidden !important;
+}
+
+.file-outline .file-outline-item {
+  display: block !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-align: left !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
 /* Keep the SSH badge from taking over the editor title bar. */
 .topbar {
-  grid-template-columns: minmax(170px, 0.85fr) minmax(120px, auto) minmax(0, 1fr) !important;
+  grid-template-columns: max-content minmax(0, 1fr) max-content !important;
   overflow: hidden;
 }
 
@@ -8738,17 +8840,925 @@ body.transparent-theme .pdf-thumbnail {
 }
 
 .topbar-left .ssh-connection-badge {
-  flex: 0 1 132px !important;
-  height: 24px !important;
-  max-width: 132px !important;
-  padding: 0 8px !important;
+  flex: 0 0 auto !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  padding: 0 !important;
+  width: 28px !important;
 }
 
 .top-document-title-wrap {
   grid-column: 2 !important;
-  max-width: min(34vw, 520px) !important;
+  max-width: min(100%, 720px) !important;
 }
 
 .topbar-actions {
   grid-column: 3 !important;
+}
+
+/* Match editor topbar controls to the project-page action style. */
+.project-back-button,
+.topbar-action-button {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  position: relative !important;
+}
+
+.project-back-button:hover,
+.project-back-button:focus-visible,
+.topbar-action-button:hover,
+.topbar-action-button:focus-visible {
+  background: transparent !important;
+}
+
+.project-back-button::after,
+.topbar-action-button::after {
+  background: var(--accent);
+  border-radius: 999px;
+  bottom: 1px;
+  content: "";
+  height: 2px;
+  left: 14%;
+  opacity: 0;
+  position: absolute;
+  right: 14%;
+  transform: scaleX(0.45);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.project-back-button:hover::after,
+.project-back-button:focus-visible::after,
+.topbar-action-button:hover::after,
+.topbar-action-button:focus-visible::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.topbar-action-button:disabled::after {
+  display: none;
+}
+
+/* Final PDF thumbnail sizing: thumbnails are buttons, so override global button height. */
+.pdf-thumbnail-list {
+  align-items: center !important;
+  gap: 12px !important;
+  overflow-x: hidden !important;
+}
+
+.pdf-thumbnail,
+body.transparent-theme .pdf-thumbnail {
+  align-items: center !important;
+  aspect-ratio: auto !important;
+  display: flex !important;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  justify-content: center !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  padding: 6px !important;
+}
+
+.pdf-thumbnail canvas {
+  aspect-ratio: auto !important;
+  display: block !important;
+  height: auto !important;
+  max-height: none !important;
+  max-width: calc(100% - 4px) !important;
+  object-fit: contain !important;
+}
+
+/* Title editing must stay readable in dark and high-contrast themes. */
+body[data-theme="dark"] .top-document-title-input,
+body[data-contrast="high"] .top-document-title-input {
+  background: color-mix(in srgb, var(--panel) 96%, #000) !important;
+  border-color: var(--border-strong) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 54%, transparent), 0 8px 22px rgba(0, 0, 0, 0.34) !important;
+  color: var(--text) !important;
+  caret-color: var(--accent) !important;
+  text-shadow: none !important;
+}
+
+/* Current polish: templates action placement and dark PDF preview behavior. */
+.templates-header {
+  align-items: center !important;
+  display: grid !important;
+  gap: 14px !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  justify-content: stretch !important;
+  margin-bottom: 18px !important;
+  min-width: 0 !important;
+}
+
+.templates-header h2 {
+  margin: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.template-add-button {
+  align-items: center !important;
+  display: inline-flex !important;
+  gap: 7px !important;
+  justify-self: end !important;
+  padding: 0 12px !important;
+  white-space: nowrap !important;
+}
+
+.template-add-button .icon-plus {
+  fill: none !important;
+  height: 16px !important;
+  stroke: currentColor !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  stroke-width: 2.2 !important;
+  width: 16px !important;
+}
+
+.pdf-viewer {
+  align-items: initial !important;
+  display: block !important;
+  justify-items: initial !important;
+}
+
+.pdf-page {
+  display: block !important;
+  margin: 0 auto 22px !important;
+  max-width: none !important;
+}
+
+.pdf-viewer.pdf-dark-render .pdf-page {
+  background: var(--pdf-dark-paper) !important;
+}
+
+.pdf-viewer.pdf-dark-render .pdf-page canvas {
+  background: var(--pdf-dark-paper) !important;
+}
+
+body[data-theme="dark"] .pdf-thumbnail canvas:not(.pdf-canvas-dark-adaptive),
+.pdf-thumbnail canvas.pdf-canvas-dark-filter {
+  background: var(--pdf-paper) !important;
+  filter: var(--pdf-page-filter) !important;
+}
+
+.pdf-thumbnail-list.pdf-dark-render .pdf-thumbnail {
+  background: color-mix(in srgb, var(--pdf-dark-paper) 82%, var(--panel)) !important;
+  border-color: transparent !important;
+}
+
+.pdf-thumbnail-list.pdf-dark-render .pdf-thumbnail canvas.pdf-canvas-dark-adaptive {
+  background: var(--pdf-dark-paper) !important;
+  filter: none !important;
+}
+
+.pdf-thumbnail-list.pdf-invert-pages .pdf-thumbnail canvas {
+  background: var(--pdf-paper) !important;
+  filter: var(--pdf-dark-filter) !important;
+}
+
+.pdf-thumbnail,
+.pdf-thumbnail:hover,
+.pdf-thumbnail.active {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.pdf-thumbnail canvas,
+.pdf-thumbnail.active canvas {
+  box-shadow: none !important;
+}
+
+.pdf-viewer-shell.pdf-sidebar-visible {
+  grid-template-columns: 148px minmax(0, 1fr) !important;
+}
+
+.pdf-sidebar {
+  overflow-x: hidden !important;
+  padding-left: 12px !important;
+  padding-right: 18px !important;
+  scrollbar-gutter: stable !important;
+}
+
+.pdf-thumbnail {
+  background: transparent !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+.pdf-thumbnail canvas {
+  max-width: calc(100% - 4px) !important;
+}
+
+.pdf-viewer {
+  overflow-x: auto !important;
+}
+
+.pdf-page,
+.pdf-viewer.pdf-dark-render .pdf-page {
+  box-shadow: none !important;
+}
+
+body[data-theme="dark"] .project-preview {
+  background: var(--pdf-dark-paper) !important;
+}
+
+body[data-theme="dark"] .project-preview img,
+body[data-theme="dark"] .project-preview canvas:not(.pdf-canvas-dark-adaptive) {
+  background: var(--pdf-paper) !important;
+  filter: invert(0.9) hue-rotate(180deg) contrast(1.16) brightness(1.08) saturate(0.95) !important;
+}
+
+body[data-theme="dark"] .project-preview canvas.pdf-canvas-dark-adaptive {
+  background: var(--pdf-dark-paper) !important;
+  filter: none !important;
+}
+
+.project-preview img,
+.project-preview canvas,
+.pdf-thumbnail canvas,
+.pdf-page canvas {
+  image-rendering: auto !important;
+}
+
+body[data-theme="dark"] .pdf-thumbnail canvas:not(.pdf-canvas-dark-adaptive),
+.pdf-thumbnail canvas.pdf-canvas-dark-filter {
+  filter: invert(0.9) hue-rotate(180deg) contrast(1.16) brightness(1.08) saturate(0.95) !important;
+}
+
+.pdf-page canvas,
+.pdf-thumbnail canvas,
+.project-preview img,
+.project-preview canvas {
+  outline: 1px solid color-mix(in srgb, var(--border-strong) 72%, transparent) !important;
+  outline-offset: -1px !important;
+}
+
+body[data-theme="dark"] .pdf-page canvas,
+body[data-theme="dark"] .pdf-thumbnail canvas,
+body[data-theme="dark"] .project-preview img,
+body[data-theme="dark"] .project-preview canvas {
+  outline-color: color-mix(in srgb, var(--text) 24%, var(--border-strong)) !important;
+}
+
+.pdf-thumbnail.active canvas {
+  outline: 2px solid color-mix(in srgb, var(--accent) 76%, var(--border-strong)) !important;
+  outline-offset: -2px !important;
+}
+
+/* Final controls/layout cleanup. */
+.project-tools {
+  grid-template-columns: minmax(220px, 1fr) auto auto auto !important;
+  overflow: visible !important;
+}
+
+.project-sort-control {
+  display: none !important;
+}
+
+.project-sort-menu-wrap {
+  position: relative;
+}
+
+.project-sort-button {
+  align-items: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  display: inline-flex !important;
+  height: 34px !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  position: relative !important;
+  width: 36px !important;
+}
+
+.project-sort-button:hover,
+.project-sort-button[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--text) 10%, transparent) !important;
+}
+
+.project-sort-menu {
+  background: color-mix(in srgb, var(--panel) 96%, var(--bg)) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24) !important;
+  display: grid !important;
+  gap: 2px !important;
+  min-width: 178px !important;
+  padding: 6px !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: calc(100% + 8px) !important;
+  z-index: 90 !important;
+}
+
+.project-sort-menu[hidden] {
+  display: none !important;
+}
+
+.project-sort-menu button {
+  align-items: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  display: flex !important;
+  font: 700 13px/1.2 var(--sans) !important;
+  height: auto !important;
+  justify-content: space-between !important;
+  min-height: 32px !important;
+  padding: 8px 10px !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+
+.project-sort-menu button.active,
+.project-sort-menu button:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent) !important;
+}
+
+.project-sort-menu button.active::after {
+  content: "";
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  height: 8px;
+  margin-left: 14px;
+  transform: rotate(45deg) translateY(-1px);
+  width: 4px;
+}
+
+.editor-fullscreen-button {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  flex: 0 0 32px !important;
+  height: 32px !important;
+  margin-left: 24px !important;
+  padding: 0 !important;
+  position: relative !important;
+  width: 32px !important;
+}
+
+.editor-fullscreen-button .icon {
+  transform: translateX(8px) !important;
+}
+
+.editor-fullscreen-button:hover,
+.editor-fullscreen-button.active {
+  background: transparent !important;
+}
+
+.editor-fullscreen-button::after,
+#pdfReaderButton::after {
+  background: var(--accent) !important;
+  border-radius: 999px !important;
+  bottom: -3px !important;
+  content: "" !important;
+  height: 2px !important;
+  left: 18% !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  right: 18% !important;
+  transform: scaleX(0.4) !important;
+  transition: opacity 140ms ease, transform 140ms ease !important;
+}
+
+.editor-fullscreen-button:hover::after,
+.editor-fullscreen-button:focus-visible::after,
+.editor-fullscreen-button.active::after,
+#pdfReaderButton:hover::after,
+#pdfReaderButton:focus-visible::after,
+#pdfReaderButton[aria-pressed="true"]::after {
+  opacity: 1 !important;
+  transform: scaleX(1) !important;
+}
+
+.workspace.editor-fullscreen {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.workspace.editor-fullscreen .file-pane,
+.workspace.editor-fullscreen .file-splitter,
+.workspace.editor-fullscreen .file-rail,
+.workspace.editor-fullscreen .source-rail,
+.workspace.editor-fullscreen .splitter,
+.workspace.editor-fullscreen .preview-rail,
+.workspace.editor-fullscreen .preview-pane,
+.workspace.editor-fullscreen .terminal-panel {
+  display: none !important;
+}
+
+.workspace.editor-fullscreen .source-pane {
+  display: grid !important;
+  grid-column: 1 / -1 !important;
+  grid-template-rows: 52px auto minmax(0, 1fr) !important;
+  min-width: 0 !important;
+}
+
+.history-entry {
+  align-items: start !important;
+  display: grid !important;
+  gap: 6px !important;
+  height: auto !important;
+  justify-items: stretch !important;
+  line-height: 1.25 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 10px !important;
+  white-space: normal !important;
+}
+
+.history-entry strong,
+.history-entry span,
+.history-entry small {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.history-entry span {
+  display: block !important;
+}
+
+.log-panel:not(.log-collapsed) {
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
+.log-panel:not(.log-collapsed) .log-resize-handle,
+.log-panel:not(.log-collapsed) .log-header {
+  display: none !important;
+}
+
+.pdf-thumbnail-list.pdf-dark-render .pdf-thumbnail {
+  background: transparent !important;
+}
+
+.pdf-thumbnail-list.pdf-dark-render .pdf-thumbnail canvas.pdf-canvas-dark-adaptive {
+  background: var(--pdf-dark-paper) !important;
+  filter: none !important;
+}
+
+.pdf-thumbnail-list.pdf-invert-pages .pdf-thumbnail canvas,
+.pdf-thumbnail canvas.pdf-canvas-dark-filter {
+  background: var(--pdf-paper) !important;
+  filter: var(--pdf-dark-filter) !important;
+}
+
+/* Must stay last: collapsed Terminal and Log rails should use one opaque color. */
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed,
+.source-pane.terminal-collapsed .terminal-collapsed-rail,
+.log-panel.log-collapsed .log-collapsed-rail,
+#terminalCollapsedButton,
+#compileLogCollapsedButton {
+  background: var(--terminal-header-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed {
+  border-top-color: var(--border) !important;
+}
+
+.source-pane.terminal-collapsed,
+.preview-pane.log-collapsed {
+  position: relative !important;
+}
+
+.source-pane.terminal-collapsed::after,
+.preview-pane.log-collapsed::after {
+  background: var(--terminal-header-bg) !important;
+  border-top: 1px solid var(--border) !important;
+  bottom: 0 !important;
+  content: "" !important;
+  height: 34px !important;
+  left: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  right: 0 !important;
+  z-index: 20 !important;
+}
+
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed {
+  position: relative !important;
+  z-index: 21 !important;
+}
+
+.source-pane.terminal-collapsed .terminal-collapsed-rail,
+.log-panel.log-collapsed .log-collapsed-rail {
+  position: relative !important;
+  z-index: 22 !important;
+}
+
+/* Must stay after transparent-theme overrides: Terminal and Log use one surface. */
+.terminal-panel,
+.log-panel {
+  background: var(--terminal-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+.terminal-header,
+.terminal-tabs,
+.log-header {
+  background: var(--terminal-header-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--terminal-text) !important;
+}
+
+.terminal-workbench,
+.terminal-body,
+.terminal-instance,
+.terminal-instance .xterm,
+.terminal-instance .xterm-screen,
+.terminal-instance .xterm-viewport,
+#compileLog {
+  background: var(--terminal-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+body.transparent-theme .terminal-panel,
+body.transparent-theme .log-panel,
+body.transparent-theme .terminal-header,
+body.transparent-theme .terminal-tabs,
+body.transparent-theme .log-header,
+body.transparent-theme .terminal-workbench,
+body.transparent-theme .terminal-body,
+body.transparent-theme .terminal-instance,
+body.transparent-theme .terminal-instance .xterm,
+body.transparent-theme .terminal-instance .xterm-screen,
+body.transparent-theme .terminal-instance .xterm-viewport,
+body.transparent-theme #compileLog {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Must stay after transparent-theme overrides: Terminal and Log use one surface. */
+.terminal-panel,
+.log-panel {
+  background: var(--terminal-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+.terminal-header,
+.terminal-tabs,
+.log-header {
+  background: var(--terminal-header-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--terminal-text) !important;
+}
+
+.terminal-workbench,
+.terminal-body,
+.terminal-instance,
+.terminal-instance .xterm,
+.terminal-instance .xterm-screen,
+.terminal-instance .xterm-viewport,
+#compileLog {
+  background: var(--terminal-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+body.transparent-theme .terminal-panel,
+body.transparent-theme .log-panel,
+body.transparent-theme .terminal-header,
+body.transparent-theme .terminal-tabs,
+body.transparent-theme .log-header,
+body.transparent-theme .terminal-workbench,
+body.transparent-theme .terminal-body,
+body.transparent-theme .terminal-instance,
+body.transparent-theme .terminal-instance .xterm,
+body.transparent-theme .terminal-instance .xterm-screen,
+body.transparent-theme .terminal-instance .xterm-viewport,
+body.transparent-theme #compileLog {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.source-pane.terminal-collapsed,
+.preview-pane.log-collapsed {
+  position: relative !important;
+}
+
+.source-pane.terminal-collapsed::after,
+.preview-pane.log-collapsed::after {
+  background: var(--terminal-header-bg) !important;
+  border-top: 1px solid var(--border) !important;
+  bottom: 0 !important;
+  content: "" !important;
+  height: 34px !important;
+  left: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  right: 0 !important;
+  z-index: 20 !important;
+}
+
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed {
+  position: relative !important;
+  z-index: 21 !important;
+}
+
+.source-pane.terminal-collapsed .terminal-collapsed-rail,
+.log-panel.log-collapsed .log-collapsed-rail {
+  position: relative !important;
+  z-index: 22 !important;
+}
+
+/* Keep collapsed bottom rails visually identical across editor and PDF panes. */
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed {
+  background: var(--terminal-header-bg) !important;
+  border-top-color: var(--border) !important;
+}
+
+.source-pane.terminal-collapsed .terminal-collapsed-rail,
+.log-panel.log-collapsed .log-collapsed-rail,
+.collapsed-panel-rail,
+.collapsed-panel-rail:hover {
+  background: var(--terminal-header-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+.project-preview.pdf-dark-render:not(.pdf-invert-pages) canvas,
+.pdf-thumbnail-list.pdf-dark-render:not(.pdf-invert-pages) .pdf-thumbnail canvas.pdf-canvas-dark-adaptive {
+  background: var(--pdf-dark-paper) !important;
+  filter: none !important;
+}
+
+.project-preview canvas.pdf-canvas-dark-adaptive,
+.pdf-thumbnail canvas.pdf-canvas-dark-adaptive {
+  background: var(--pdf-dark-paper) !important;
+  filter: none !important;
+}
+
+/* Final PDF/rail alignment pass. Keep all PDF preview surfaces using the same render colors. */
+body.transparent-theme[data-theme="dark"] {
+  --pdf-dark-paper: #3c3c3c !important;
+  --pdf-dark-bg: #2f3438 !important;
+}
+
+.project-card .project-preview,
+.project-card .project-preview img,
+.project-card .project-preview canvas {
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+.project-card .project-preview {
+  border-color: transparent !important;
+}
+
+.pdf-viewer.pdf-dark-render .pdf-page,
+.pdf-viewer.pdf-dark-render .pdf-page canvas,
+.pdf-thumbnail-list.pdf-dark-render .pdf-thumbnail canvas.pdf-canvas-dark-adaptive,
+body[data-theme="dark"] .project-preview.pdf-dark-render canvas.pdf-canvas-dark-adaptive {
+  background: var(--pdf-dark-paper) !important;
+  filter: none !important;
+}
+
+.pdf-thumbnail-list.pdf-dark-render .pdf-thumbnail {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.pdf-thumbnail-list.pdf-invert-pages .pdf-thumbnail canvas,
+.pdf-thumbnail canvas.pdf-canvas-dark-filter,
+body[data-theme="dark"] .project-preview.pdf-invert-pages canvas,
+body[data-theme="dark"] .project-preview canvas.pdf-canvas-dark-filter {
+  background: var(--pdf-paper) !important;
+  filter: var(--pdf-dark-filter) !important;
+}
+
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed,
+.collapsed-panel-rail {
+  background: var(--terminal-header-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--terminal-text) !important;
+}
+
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed {
+  border-top: 1px solid var(--border) !important;
+}
+
+.collapsed-panel-rail:hover {
+  background: var(--terminal-header-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+#pdfReaderButton {
+  margin-left: 6px !important;
+  width: 36px !important;
+}
+
+#pdfReaderButton .icon {
+  transform: translateX(3px) !important;
+}
+
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed {
+  background: var(--panel) !important;
+  border-top-color: var(--border) !important;
+}
+
+.collapsed-panel-rail,
+.collapsed-panel-rail:hover {
+  background: transparent !important;
+  color: var(--text) !important;
+}
+
+body[data-theme="dark"] .project-preview {
+  background: var(--pdf-dark-bg) !important;
+}
+
+body[data-theme="dark"] .project-preview canvas.pdf-canvas-dark-adaptive {
+  background: var(--pdf-dark-paper) !important;
+  filter: none !important;
+}
+
+body[data-theme="dark"] .project-preview.pdf-invert-pages canvas,
+body[data-theme="dark"] .project-preview canvas.pdf-canvas-dark-filter {
+  background: var(--pdf-paper) !important;
+  filter: var(--pdf-dark-filter) !important;
+}
+
+body[data-theme="dark"] .project-preview img,
+body[data-theme="dark"] .project-preview canvas:not(.pdf-canvas-dark-adaptive):not(.pdf-canvas-dark-filter) {
+  background: var(--pdf-paper) !important;
+  filter: var(--pdf-page-filter) !important;
+}
+
+body.transparent-theme .settings-backdrop:not([hidden]) {
+  -webkit-backdrop-filter: blur(46px) saturate(170%) brightness(0.96) !important;
+  backdrop-filter: blur(46px) saturate(170%) brightness(0.96) !important;
+  background: color-mix(in srgb, var(--bg) 30%, rgba(0, 0, 0, 0.28)) !important;
+}
+
+body.transparent-theme .settings-drawer,
+body.transparent-theme .settings-panel,
+body.transparent-theme .templates-panel,
+body.transparent-theme .new-project-panel,
+body.transparent-theme .ssh-project-panel,
+body.transparent-theme .history-panel,
+body.transparent-theme .command-palette,
+body.transparent-theme .project-sort-menu,
+body.transparent-theme .file-context-menu,
+body.transparent-theme .spell-context-menu,
+body.transparent-theme .project-context-segment,
+body.transparent-theme .help-menu {
+  -webkit-backdrop-filter: blur(38px) saturate(170%) brightness(1.02) !important;
+  backdrop-filter: blur(38px) saturate(170%) brightness(1.02) !important;
+  background: rgba(248, 250, 252, 0.72) !important;
+}
+
+body.transparent-theme[data-theme="dark"] .settings-drawer,
+body.transparent-theme[data-theme="dark"] .settings-panel,
+body.transparent-theme[data-theme="dark"] .templates-panel,
+body.transparent-theme[data-theme="dark"] .new-project-panel,
+body.transparent-theme[data-theme="dark"] .ssh-project-panel,
+body.transparent-theme[data-theme="dark"] .history-panel,
+body.transparent-theme[data-theme="dark"] .command-palette,
+body.transparent-theme[data-theme="dark"] .project-sort-menu,
+body.transparent-theme[data-theme="dark"] .file-context-menu,
+body.transparent-theme[data-theme="dark"] .spell-context-menu,
+body.transparent-theme[data-theme="dark"] .project-context-segment,
+body.transparent-theme[data-theme="dark"] .help-menu {
+  background: rgba(12, 18, 28, 0.78) !important;
+}
+
+body.transparent-theme .project-sort-menu,
+body.transparent-theme .file-context-menu,
+body.transparent-theme .spell-context-menu,
+body.transparent-theme .project-context-segment,
+body.transparent-theme .help-menu {
+  -webkit-backdrop-filter: blur(64px) saturate(190%) brightness(1.04) !important;
+  backdrop-filter: blur(64px) saturate(190%) brightness(1.04) !important;
+  overflow: hidden !important;
+}
+
+body.transparent-theme .project-sort-menu button,
+body.transparent-theme .file-context-menu button,
+body.transparent-theme .spell-context-menu button,
+body.transparent-theme .project-context-segment button,
+body.transparent-theme .help-menu button {
+  background: transparent !important;
+}
+
+.pdf-thumbnail canvas {
+  background: var(--pdf-paper) !important;
+  filter: var(--pdf-page-filter) !important;
+}
+
+.pdf-thumbnail-list.pdf-dark-render .pdf-thumbnail canvas.pdf-canvas-dark-adaptive {
+  background: var(--pdf-dark-paper) !important;
+  filter: none !important;
+}
+
+.pdf-thumbnail-list.pdf-invert-pages .pdf-thumbnail canvas,
+.pdf-thumbnail canvas.pdf-canvas-dark-filter {
+  background: var(--pdf-paper) !important;
+  filter: var(--pdf-dark-filter) !important;
+}
+
+/* Must stay last: collapsed Terminal and Log rails should use one opaque color. */
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed,
+.source-pane.terminal-collapsed .terminal-collapsed-rail,
+.log-panel.log-collapsed .log-collapsed-rail,
+#terminalCollapsedButton,
+#compileLogCollapsedButton {
+  background: var(--terminal-header-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed {
+  border-top-color: var(--border) !important;
+}
+
+.source-pane.terminal-collapsed,
+.preview-pane.log-collapsed {
+  position: relative !important;
+}
+
+.source-pane.terminal-collapsed::after,
+.preview-pane.log-collapsed::after {
+  background: var(--terminal-header-bg) !important;
+  border-top: 1px solid var(--border) !important;
+  bottom: 0 !important;
+  content: "" !important;
+  height: 34px !important;
+  left: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  right: 0 !important;
+  z-index: 20 !important;
+}
+
+.source-pane.terminal-collapsed .terminal-panel,
+.log-panel.log-collapsed {
+  position: relative !important;
+  z-index: 21 !important;
+}
+
+.source-pane.terminal-collapsed .terminal-collapsed-rail,
+.log-panel.log-collapsed .log-collapsed-rail {
+  position: relative !important;
+  z-index: 22 !important;
+}
+
+/* Must stay after transparent-theme overrides: Terminal and Log use one surface. */
+.terminal-panel,
+.log-panel {
+  background: var(--terminal-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+.terminal-header,
+.terminal-tabs,
+.log-header {
+  background: var(--terminal-header-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--terminal-text) !important;
+}
+
+.terminal-workbench,
+.terminal-body,
+.terminal-instance,
+.terminal-instance .xterm,
+.terminal-instance .xterm-screen,
+.terminal-instance .xterm-viewport,
+#compileLog {
+  background: var(--terminal-bg) !important;
+  color: var(--terminal-text) !important;
+}
+
+body.transparent-theme .terminal-panel,
+body.transparent-theme .log-panel,
+body.transparent-theme .terminal-header,
+body.transparent-theme .terminal-tabs,
+body.transparent-theme .log-header,
+body.transparent-theme .terminal-workbench,
+body.transparent-theme .terminal-body,
+body.transparent-theme .terminal-instance,
+body.transparent-theme .terminal-instance .xterm,
+body.transparent-theme .terminal-instance .xterm-screen,
+body.transparent-theme .terminal-instance .xterm-viewport,
+body.transparent-theme #compileLog {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }

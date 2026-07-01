@@ -4,6 +4,8 @@ const projectGrid = document.getElementById("projectGrid");
 const projectEmpty = document.getElementById("projectEmpty");
 const projectHeroTitle = document.getElementById("projectHeroTitle");
 const projectSearch = document.getElementById("projectSearch");
+const projectSortButton = document.getElementById("projectSortButton");
+const projectSortMenu = document.getElementById("projectSortMenu");
 const projectGridButton = document.getElementById("projectGridButton");
 const projectRowsButton = document.getElementById("projectRowsButton");
 const addProjectButton = document.getElementById("addProjectButton");
@@ -17,7 +19,6 @@ const projectImportButtons = Array.from(document.querySelectorAll("[data-project
 const refreshProjectsButton = document.getElementById("refreshProjectsButton");
 const backToProjectsButton = document.getElementById("backToProjectsButton");
 const sshConnectionBadge = document.getElementById("sshConnectionBadge");
-const sshConnectionLabel = document.getElementById("sshConnectionLabel");
 const commandPalette = document.getElementById("commandPalette");
 const commandPaletteInput = document.getElementById("commandPaletteInput");
 const commandPaletteList = document.getElementById("commandPaletteList");
@@ -88,6 +89,7 @@ const vimModeIndicator = document.getElementById("vimModeIndicator");
 const undoButton = document.getElementById("undoButton");
 const redoButton = document.getElementById("redoButton");
 const minimapToggleButton = document.getElementById("minimapToggleButton");
+const editorFullscreenButton = document.getElementById("editorFullscreenButton");
 const editorTitle = document.getElementById("editorTitle");
 const activeDocumentTitle = document.getElementById("activeDocumentTitle");
 const editTitleButton = document.getElementById("editTitleButton");
@@ -124,8 +126,6 @@ const settingsThemeToggle = document.getElementById("settingsThemeToggle");
 const settingsAccentPicker = document.getElementById("settingsAccentPicker");
 const settingsFileSidebarToggle = document.getElementById("settingsFileSidebarToggle");
 const settingsPdfRenderModeButtons = Array.from(document.querySelectorAll("[data-pdf-render-mode]"));
-const settingsPdfGuardRange = document.getElementById("settingsPdfGuardRange");
-const settingsPdfGuardValue = document.getElementById("settingsPdfGuardValue");
 const settingsVimModeToggle = document.getElementById("settingsVimModeToggle");
 const settingsRelativeLineNumbersToggle = document.getElementById("settingsRelativeLineNumbersToggle");
 const settingsMinimapToggle = document.getElementById("settingsMinimapToggle");
@@ -138,8 +138,6 @@ const saveRemoteButton = document.getElementById("saveRemoteButton");
 const openRemoteTerminalButton = document.getElementById("openRemoteTerminalButton");
 const remoteStatus = document.getElementById("remoteStatus");
 const defaultGithubRemoteInput = document.getElementById("defaultGithubRemoteInput");
-const saveDefaultGithubButton = document.getElementById("saveDefaultGithubButton");
-const defaultGithubStatus = document.getElementById("defaultGithubStatus");
 const projectGithubRemoteInput = document.getElementById("projectGithubRemoteInput");
 const saveProjectSettingsButton = document.getElementById("saveProjectSettingsButton");
 const pullProjectGithubButton = document.getElementById("pullProjectGithubButton");
@@ -456,7 +454,8 @@ const HIGH_CONTRAST_PRESETS = new Set([
   "pastel-noir-hc",
   "pastel-ink-hc",
   "pastel-aurora-hc",
-  "pastel-plum-hc"
+  "pastel-plum-hc",
+  "aurora-contrast-hc"
 ]);
 const TRANSPARENT_PRESETS = new Set([
   "glass-light",
@@ -1892,6 +1891,163 @@ const THEME_PRESETS = {
       "--pdf-bg": "#0b050d",
       "--pdf-paper": "#ffffff"
     }
+  },
+  "prism-light": {
+    theme: "light",
+    accent: "#7c3aed",
+    background: "radial-gradient(circle at 14% 12%, rgba(124, 58, 237, 0.24), transparent 30%), radial-gradient(circle at 84% 8%, rgba(14, 165, 233, 0.22), transparent 28%), linear-gradient(135deg, #fbfdff, #edf4ff 58%, #f7eafe)",
+    colors: {
+      "--bg": "#edf4ff",
+      "--glass": "rgba(255, 255, 255, 0.72)",
+      "--glass-strong": "rgba(255, 255, 255, 0.9)",
+      "--panel": "rgba(255, 255, 255, 0.9)",
+      "--page": "#ffffff",
+      "--text": "#172033",
+      "--muted": "#5d6880",
+      "--border": "rgba(93, 104, 128, 0.26)",
+      "--border-strong": "rgba(76, 64, 128, 0.38)",
+      "--red": "#d12b6a",
+      "--green": "#07835f",
+      "--blue": "#2563eb",
+      "--blue-dark": "#1d4ed8",
+      "--cm-bg": "#ffffff",
+      "--cm-gutter": "#eef4ff",
+      "--cm-text": "#172033",
+      "--cm-keyword": "#7c3aed",
+      "--cm-variable": "#2563eb",
+      "--cm-atom": "#0891b2",
+      "--cm-comment": "#7a8499",
+      "--cm-string": "#0f766e",
+      "--cm-number": "#db2777",
+      "--pdf-bg": "#cfdaf0",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "frosted-candy": {
+    theme: "light",
+    accent: "#ec4899",
+    background: "radial-gradient(circle at 18% 16%, rgba(236, 72, 153, 0.24), transparent 30%), radial-gradient(circle at 90% 18%, rgba(45, 212, 191, 0.24), transparent 30%), linear-gradient(135deg, #fff7fb, #edfdf9 54%, #eef2ff)",
+    colors: {
+      "--bg": "#f4fbff",
+      "--glass": "rgba(255, 255, 255, 0.7)",
+      "--glass-strong": "rgba(255, 255, 255, 0.9)",
+      "--panel": "rgba(255, 255, 255, 0.9)",
+      "--page": "#ffffff",
+      "--text": "#1f2937",
+      "--muted": "#64748b",
+      "--border": "rgba(100, 116, 139, 0.24)",
+      "--border-strong": "rgba(148, 76, 128, 0.38)",
+      "--red": "#db2777",
+      "--green": "#0f766e",
+      "--blue": "#2563eb",
+      "--blue-dark": "#1e40af",
+      "--cm-bg": "#ffffff",
+      "--cm-gutter": "#f6eef8",
+      "--cm-text": "#1f2937",
+      "--cm-keyword": "#be185d",
+      "--cm-variable": "#2563eb",
+      "--cm-atom": "#0f766e",
+      "--cm-comment": "#7c8597",
+      "--cm-string": "#047857",
+      "--cm-number": "#c026d3",
+      "--pdf-bg": "#d7e2ef",
+      "--pdf-paper": "#ffffff"
+    }
+  },
+  "sunset-gradient": {
+    theme: "dark",
+    accent: "#ff9f6e",
+    background: "radial-gradient(circle at 18% 8%, rgba(255, 159, 110, 0.28), transparent 32%), radial-gradient(circle at 82% 14%, rgba(168, 85, 247, 0.22), transparent 30%), linear-gradient(135deg, #160f20, #241832 54%, #0c1222)",
+    colors: {
+      "--bg": "#0c1222",
+      "--glass": "rgba(22, 15, 32, 0.82)",
+      "--glass-strong": "rgba(36, 24, 50, 0.94)",
+      "--panel": "rgba(16, 20, 34, 0.94)",
+      "--page": "#fff8f2",
+      "--text": "#f8f2ec",
+      "--muted": "#d1c4bf",
+      "--border": "rgba(255, 190, 150, 0.18)",
+      "--border-strong": "rgba(255, 213, 181, 0.34)",
+      "--red": "#ff7a90",
+      "--green": "#8ee6b1",
+      "--blue": "#93c5fd",
+      "--blue-dark": "#60a5fa",
+      "--cm-bg": "#141827",
+      "--cm-gutter": "#201729",
+      "--cm-text": "#f8f2ec",
+      "--cm-keyword": "#ff9f6e",
+      "--cm-variable": "#93c5fd",
+      "--cm-atom": "#8ee6b1",
+      "--cm-comment": "#a99a98",
+      "--cm-string": "#ffd166",
+      "--cm-number": "#f0abfc",
+      "--pdf-bg": "#0c1222",
+      "--pdf-paper": "#fff8f2",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.1) sepia(0.08)"
+    }
+  },
+  "lagoon-gradient": {
+    theme: "dark",
+    accent: "#67e8f9",
+    background: "radial-gradient(circle at 12% 10%, rgba(103, 232, 249, 0.2), transparent 30%), radial-gradient(circle at 92% 12%, rgba(52, 211, 153, 0.18), transparent 28%), linear-gradient(135deg, #031b2a, #062f3d 52%, #04131f)",
+    colors: {
+      "--bg": "#04131f",
+      "--glass": "rgba(3, 27, 42, 0.82)",
+      "--glass-strong": "rgba(6, 47, 61, 0.94)",
+      "--panel": "rgba(5, 24, 36, 0.94)",
+      "--page": "#f5ffff",
+      "--text": "#effcff",
+      "--muted": "#b6d9df",
+      "--border": "rgba(103, 232, 249, 0.18)",
+      "--border-strong": "rgba(180, 250, 255, 0.36)",
+      "--red": "#fb7185",
+      "--green": "#34d399",
+      "--blue": "#67e8f9",
+      "--blue-dark": "#22d3ee",
+      "--cm-bg": "#062333",
+      "--cm-gutter": "#052030",
+      "--cm-text": "#effcff",
+      "--cm-keyword": "#a78bfa",
+      "--cm-variable": "#67e8f9",
+      "--cm-atom": "#34d399",
+      "--cm-comment": "#7aa9b0",
+      "--cm-string": "#f8e16c",
+      "--cm-number": "#f0abfc",
+      "--pdf-bg": "#04131f",
+      "--pdf-paper": "#f5ffff",
+      "--pdf-page-filter": "invert(0.86) hue-rotate(180deg) contrast(0.9) brightness(1.1)"
+    }
+  },
+  "aurora-contrast-hc": {
+    theme: "dark",
+    accent: "#7fffd4",
+    background: "radial-gradient(circle at 18% 8%, rgba(127, 255, 212, 0.26), transparent 30%), radial-gradient(circle at 82% 10%, rgba(190, 140, 255, 0.28), transparent 30%), linear-gradient(135deg, #020910, #071f2c 52%, #150b24)",
+    colors: {
+      "--bg": "#020910",
+      "--glass": "rgba(2, 9, 16, 0.95)",
+      "--glass-strong": "rgba(7, 31, 44, 0.99)",
+      "--panel": "rgba(2, 12, 20, 0.98)",
+      "--page": "#fbfffd",
+      "--text": "#fbfffd",
+      "--muted": "#d9fff5",
+      "--border": "rgba(127, 255, 212, 0.7)",
+      "--border-strong": "rgba(232, 255, 248, 0.98)",
+      "--red": "#ffb3c7",
+      "--green": "#7fffd4",
+      "--blue": "#b9dcff",
+      "--blue-dark": "#8fc4ff",
+      "--cm-bg": "#03131d",
+      "--cm-gutter": "#082636",
+      "--cm-text": "#fbfffd",
+      "--cm-keyword": "#e5b8ff",
+      "--cm-variable": "#b9dcff",
+      "--cm-atom": "#7fffd4",
+      "--cm-comment": "#a8d2d1",
+      "--cm-string": "#fff1a8",
+      "--cm-number": "#ffc3ae",
+      "--pdf-bg": "#020910",
+      "--pdf-paper": "#ffffff"
+    }
   }
 };
 const DEFAULT_FILE_WIDTH = 240;
@@ -1992,8 +2148,12 @@ let pdfZoom = DEFAULT_PDF_ZOOM;
 let pdfDarkMode = false;
 let pdfRenderMode = "adaptive";
 let selectedPdfRelativePath = "";
+let remoteCompiledPdfRelativePath = "";
+let remoteCompiledPdfBuffer = null;
 let pdfSidebarVisible = false;
 let minimapVisible = true;
+let editorFullscreenActive = false;
+let editorFullscreenSnapshot = null;
 let textWrappingEnabled = true;
 let spellCheckEnabled = false;
 let selectionAgentChoice = "codex";
@@ -2001,6 +2161,7 @@ let remoteWorkspace = { user: "", host: "", path: "" };
 let defaultGithubRemote = DEFAULT_GITHUB_REMOTE;
 let hiddenBuiltInTemplates = [];
 let projectViewMode = "grid";
+let projectSortMode = "favorites";
 let vimModeEnabled = false;
 let vimModeState = "off";
 let relativeLineNumbersEnabled = false;
@@ -2238,7 +2399,6 @@ function setupSettings() {
   const savedTheme = (preset && preset.theme) || localStorage.getItem("latexStudioTheme") || "light";
   const savedAccent = (preset && preset.accent) || normalizeHexColor(localStorage.getItem("latexStudioAccent")) || DEFAULT_ACCENT;
   const showSidebar = localStorage.getItem("latexStudioShowSidebar") === "true";
-  const pdfMinWidth = clampNumber(Number(localStorage.getItem("latexStudioPdfMinWidth")), 480, 760, DEFAULT_PDF_MIN_WIDTH);
   const fileWidth = clampNumber(Number(localStorage.getItem("latexStudioFileWidth")), MIN_FILE_WIDTH, MAX_FILE_WIDTH, DEFAULT_FILE_WIDTH);
   const fileOutlineHeight = clampNumber(Number(localStorage.getItem("latexStudioFileOutlineHeight")), MIN_FILE_OUTLINE_HEIGHT, MAX_FILE_OUTLINE_HEIGHT, DEFAULT_FILE_OUTLINE_HEIGHT);
   const fileOutlineCollapsed = localStorage.getItem("latexStudioFileOutlineCollapsed") === "true";
@@ -2257,6 +2417,7 @@ function setupSettings() {
       || (localStorage.getItem("latexStudioPdfInvertPages") === "true" ? "invert" : "adaptive")
   );
   projectViewMode = localStorage.getItem("latexStudioProjectView") === "rows" ? "rows" : "grid";
+  projectSortMode = normalizeProjectSortMode(localStorage.getItem("latexStudioProjectSort"));
   vimModeEnabled = localStorage.getItem("latexStudioVimMode") === "true";
   relativeLineNumbersEnabled = localStorage.getItem("latexStudioRelativeLineNumbers") === "true";
   minimapVisible = localStorage.getItem("latexStudioMinimapVisible") !== "false";
@@ -2269,7 +2430,7 @@ function setupSettings() {
 
   applyTheme(savedTheme, savedAccent, { presetId: savedPreset });
   syncSurfaceThemesToAppTheme(savedTheme, { persist: false });
-  applyLayoutSettings({ showSidebar, pdfMinWidth, fileWidth });
+  applyLayoutSettings({ showSidebar, fileWidth });
   setFileOutlineHeight(fileOutlineHeight, { persist: false });
   setFileOutlineCollapsed(fileOutlineCollapsed, { persist: false });
   applySourceLayout({ collapsed: sourceCollapsed });
@@ -2295,7 +2456,9 @@ function setupSettings() {
   applySpellCheckSetting();
   updateSaveButtonVisibility();
   updateProjectViewButtons();
+  updateProjectSortControl();
   updatePdfZoomLabel();
+  updateEditorFullscreenButton();
   updateProjectHeroGreeting({ rotate: true });
 
   settingsThemePreset.addEventListener("change", () => {
@@ -2333,6 +2496,7 @@ function setupSettings() {
       localStorage.setItem("latexStudioPdfRenderMode", pdfRenderMode);
       updatePdfRenderModeButtons();
       renderPdf({ showLoading: false });
+      if (projectScreen && !projectScreen.hidden) renderProjectGrid();
     });
   });
 
@@ -2372,11 +2536,6 @@ function setupSettings() {
     else clearTimeout(autoSaveTimer);
   });
 
-  settingsPdfGuardRange.addEventListener("input", () => {
-    const width = clampNumber(Number(settingsPdfGuardRange.value), 480, 760, DEFAULT_PDF_MIN_WIDTH);
-    applyLayoutSettings({ showSidebar: settingsFileSidebarToggle.checked, pdfMinWidth: width, fileWidth: getFileSidebarWidth() });
-    localStorage.setItem("latexStudioPdfMinWidth", String(width));
-  });
   settingsSearchInput.addEventListener("input", updateSettingsSearch);
 
   settingsNavButtons.forEach((button) => {
@@ -2393,7 +2552,7 @@ function setupSettings() {
     saveRemoteWorkspace();
     createTerminalSession("ssh");
   });
-  if (saveDefaultGithubButton) saveDefaultGithubButton.addEventListener("click", saveDefaultGithubRemote);
+  if (defaultGithubRemoteInput) defaultGithubRemoteInput.addEventListener("input", saveDefaultGithubRemote);
   if (saveProjectSettingsButton) saveProjectSettingsButton.addEventListener("click", saveProjectSettings);
   if (pullProjectGithubButton) pullProjectGithubButton.addEventListener("click", pullActiveProjectFromGithub);
   if (closeSshProjectButton) closeSshProjectButton.addEventListener("click", () => closeSshProjectPanel());
@@ -2475,6 +2634,7 @@ function syncSurfaceThemesToAppTheme(theme, { persist = true } = {}) {
   compileLogPanel.dataset.logTheme = mode;
   applyPdfRenderMode();
   refreshTerminalThemes();
+  if (projectScreen && !projectScreen.hidden) renderProjectGrid();
 
   if (persist) {
     localStorage.setItem("latexStudioPdfDarkMode", String(pdfDarkMode));
@@ -2552,7 +2712,8 @@ function normalizeRemoteWorkspace(value) {
   return {
     user: String(value && value.user ? value.user : parsedHost.user).trim(),
     host: String(parsedHost.host).trim(),
-    path: String(value && value.path ? value.path : "").trim()
+    path: String(value && value.path ? value.path : "").trim(),
+    controlPath: String(value && value.controlPath ? value.controlPath : "").trim()
   };
 }
 
@@ -2570,22 +2731,54 @@ function remoteWorkspaceLabel(remote = remoteWorkspace) {
 }
 
 function setSshConnectionState(state = "disconnected", message = "") {
-  if (!sshConnectionBadge || !sshConnectionLabel) return;
+  if (!sshConnectionBadge) return;
   const connected = state === "connected";
   const connecting = state === "connecting";
   const visible = connected || connecting || Boolean(message);
-  sshConnectionBadge.hidden = !visible;
-  sshConnectionBadge.dataset.state = state;
-  sshConnectionBadge.title = connected ? remoteWorkspaceLabel(remoteWorkspace) : "";
-  sshConnectionLabel.textContent = message || (connected
+  const stateLabel = message || (connected
     ? "SSH connected"
     : connecting
-      ? "SSH connecting..."
+      ? "SSH connecting"
       : "SSH disconnected");
+  const targetLabel = connected ? remoteWorkspaceLabel(remoteWorkspace) : "";
+  sshConnectionBadge.hidden = !visible;
+  sshConnectionBadge.dataset.state = state;
+  sshConnectionBadge.title = targetLabel ? `${stateLabel}: ${targetLabel}` : stateLabel;
+  sshConnectionBadge.setAttribute("aria-label", sshConnectionBadge.title);
 }
 
 function isRemoteProject() {
   return Boolean(activeProject && activeProject.remote);
+}
+
+function normalizeRelativeDocumentPath(value = "") {
+  return String(value || "").replace(/^\/+/, "");
+}
+
+function clearRemoteCompiledPdf() {
+  remoteCompiledPdfRelativePath = "";
+  remoteCompiledPdfBuffer = null;
+}
+
+function rememberRemoteCompiledPdf(result = {}) {
+  const relativePath = normalizeRelativeDocumentPath(result.compiledPdfRelativePath || "");
+  if (!relativePath || !result.pdf) {
+    clearRemoteCompiledPdf();
+    return;
+  }
+  remoteCompiledPdfRelativePath = relativePath;
+  remoteCompiledPdfBuffer = result.pdf;
+}
+
+function remotePdfBufferForRender(relativePath = "") {
+  const requestedPath = normalizeRelativeDocumentPath(relativePath);
+  if (remoteCompiledPdfBuffer && requestedPath && requestedPath === remoteCompiledPdfRelativePath) {
+    return remoteCompiledPdfBuffer;
+  }
+  if (remoteCompiledPdfBuffer && !requestedPath && remoteCompiledPdfRelativePath) {
+    return remoteCompiledPdfBuffer;
+  }
+  return null;
 }
 
 function readDefaultGithubRemote() {
@@ -2593,18 +2786,14 @@ function readDefaultGithubRemote() {
 }
 
 function populateDefaultGithubForm() {
-  if (!defaultGithubRemoteInput || !defaultGithubStatus) return;
+  if (!defaultGithubRemoteInput) return;
   defaultGithubRemoteInput.value = defaultGithubRemote || DEFAULT_GITHUB_REMOTE;
-  defaultGithubStatus.textContent = "Used when a project does not have its own GitHub remote.";
-  setStatusClass(defaultGithubStatus);
 }
 
 function saveDefaultGithubRemote() {
-  if (!defaultGithubRemoteInput || !defaultGithubStatus) return;
+  if (!defaultGithubRemoteInput) return;
   defaultGithubRemote = defaultGithubRemoteInput.value.trim() || DEFAULT_GITHUB_REMOTE;
   localStorage.setItem(DEFAULT_GITHUB_STORAGE_KEY, defaultGithubRemote);
-  defaultGithubStatus.textContent = `Default GitHub saved: ${defaultGithubRemote}`;
-  setStatusClass(defaultGithubStatus, "ok");
 }
 
 function normalizeAgentChoice(value) {
@@ -2773,6 +2962,7 @@ async function connectSshProject() {
     const verification = await window.localOverleaf.verifySshConnection(pendingRemote);
     remoteWorkspace = normalizeRemoteWorkspace({
       ...pendingRemote,
+      ...((verification && verification.remote) || {}),
       path: verification && verification.root ? verification.root : pendingRemote.path
     });
     localStorage.setItem(REMOTE_STORAGE_KEY, JSON.stringify(remoteWorkspace));
@@ -2863,6 +3053,11 @@ function cleanupSshAuthSession() {
 
 async function openVerifiedRemoteWorkspace() {
   setSshConnectionState("connected");
+  resetTextTabs();
+  selectedPdfRelativePath = "";
+  clearRemoteCompiledPdf();
+  projectFiles = [];
+  editor.setValue("");
   activeProject = {
     id: `remote:${remoteWorkspaceLabel(remoteWorkspace)}`,
     name: `SSH ${remoteWorkspace.host}`,
@@ -2874,7 +3069,7 @@ async function openVerifiedRemoteWorkspace() {
   activeDocumentTitle.textContent = `SSH: ${remoteWorkspaceLabel(remoteWorkspace)}`;
   pdfTitle.textContent = "SSH workspace";
   pdfMeta.textContent = remoteWorkspace.path || remoteWorkspace.host;
-  pdfViewer.innerHTML = '<div class="pdf-loading">Remote workspace. Compile or open PDFs from the SSH terminal.</div>';
+  pdfViewer.innerHTML = '<div class="pdf-loading">Remote workspace. Open a TeX file to compile it locally.</div>';
   fileTree.innerHTML = '<div class="file-message">Loading remote files...</div>';
   setFileSidebarVisible(true, { persist: false });
   setTerminalCollapsed(false, { persist: false });
@@ -2949,12 +3144,10 @@ function withProfileContext(prompt) {
   return context ? `${context}\n\nUser request:\n${prompt}` : prompt;
 }
 
-function applyLayoutSettings({ showSidebar, pdfMinWidth, fileWidth = getFileSidebarWidth() }) {
+function applyLayoutSettings({ showSidebar, pdfMinWidth = DEFAULT_PDF_MIN_WIDTH, fileWidth = getFileSidebarWidth() }) {
   workspace.classList.toggle("files-hidden", !showSidebar);
   fileRail.hidden = showSidebar;
   settingsFileSidebarToggle.checked = showSidebar;
-  settingsPdfGuardRange.value = String(pdfMinWidth);
-  settingsPdfGuardValue.textContent = `${pdfMinWidth}px`;
   workspace.style.setProperty("--pdf-min-width", `${pdfMinWidth}px`);
   workspace.style.setProperty("--file-width", `${fileWidth}px`);
 }
@@ -2983,6 +3176,72 @@ function setMinimapVisible(visible) {
   settingsMinimapToggle.checked = minimapVisible;
   localStorage.setItem("latexStudioMinimapVisible", String(minimapVisible));
   applyMinimapVisibility();
+}
+
+function updateEditorFullscreenButton() {
+  if (!editorFullscreenButton) return;
+  const label = editorFullscreenActive ? "Exit editor fullscreen" : "Enter editor fullscreen";
+  editorFullscreenButton.setAttribute("aria-label", label);
+  editorFullscreenButton.setAttribute("title", label);
+  editorFullscreenButton.setAttribute("aria-pressed", String(editorFullscreenActive));
+  editorFullscreenButton.classList.toggle("active", editorFullscreenActive);
+}
+
+function refreshEditorFullscreenLayout() {
+  requestAnimationFrame(() => {
+    if (editor) editor.refresh();
+    scheduleSourceMinimapUpdate();
+    updateSourceMinimapViewport();
+    scheduleTerminalFit();
+  });
+}
+
+function setEditorFullscreen(active) {
+  const next = Boolean(active);
+  if (next === editorFullscreenActive) {
+    updateEditorFullscreenButton();
+    return;
+  }
+
+  if (next) {
+    editorFullscreenSnapshot = {
+      showSidebar: !workspace.classList.contains("files-hidden"),
+      fileWidth: getFileSidebarWidth(),
+      sourceCollapsed: workspace.classList.contains("source-hidden"),
+      pdfCollapsed: workspace.classList.contains("pdf-hidden"),
+      terminalCollapsed: sourcePane.classList.contains("terminal-collapsed"),
+      terminalMaximized: sourcePane.classList.contains("terminal-maximized"),
+      compileLogCollapsed: compileLogPanel.classList.contains("log-collapsed"),
+      compileLogMaximized: previewPane.classList.contains("log-maximized")
+    };
+    editorFullscreenActive = true;
+    workspace.classList.add("editor-fullscreen");
+    sourcePane.classList.remove("terminal-maximized");
+    previewPane.classList.remove("log-maximized");
+    setSourceCollapsed(false, { persist: false });
+    setFileSidebarVisible(false, { persist: false });
+    setPdfCollapsed(true, { persist: false });
+    setTerminalCollapsed(true, { persist: false });
+    setCompileLogCollapsed(true, { persist: false });
+  } else {
+    const snapshot = editorFullscreenSnapshot || {};
+    editorFullscreenActive = false;
+    workspace.classList.remove("editor-fullscreen");
+    applyLayoutSettings({
+      showSidebar: snapshot.showSidebar !== false,
+      fileWidth: snapshot.fileWidth || getFileSidebarWidth()
+    });
+    setSourceCollapsed(Boolean(snapshot.sourceCollapsed), { persist: false });
+    setPdfCollapsed(Boolean(snapshot.pdfCollapsed), { persist: false });
+    setTerminalCollapsed(Boolean(snapshot.terminalCollapsed), { persist: false });
+    setCompileLogCollapsed(Boolean(snapshot.compileLogCollapsed), { persist: false });
+    sourcePane.classList.toggle("terminal-maximized", Boolean(snapshot.terminalMaximized) && !snapshot.terminalCollapsed);
+    previewPane.classList.toggle("log-maximized", Boolean(snapshot.compileLogMaximized) && !snapshot.compileLogCollapsed);
+    editorFullscreenSnapshot = null;
+  }
+
+  updateEditorFullscreenButton();
+  refreshEditorFullscreenLayout();
 }
 
 function applyPdfSidebarVisibility({ persist = true } = {}) {
@@ -3026,7 +3285,7 @@ function applySpellCheckSetting() {
 }
 
 function setFileSidebarVisible(show, { persist = true } = {}) {
-  applyLayoutSettings({ showSidebar: show, pdfMinWidth: getPdfMinimumWidth(), fileWidth: getFileSidebarWidth() });
+  applyLayoutSettings({ showSidebar: show, fileWidth: getFileSidebarWidth() });
   if (persist) localStorage.setItem("latexStudioShowSidebar", String(show));
   renderPdf({ showLoading: false });
 }
@@ -3097,7 +3356,7 @@ function setFileOutlineCollapsed(collapsed, { persist = true } = {}) {
 }
 
 function getPdfMinimumWidth() {
-  return clampNumber(Number(settingsPdfGuardRange.value), 480, 760, DEFAULT_PDF_MIN_WIDTH);
+  return DEFAULT_PDF_MIN_WIDTH;
 }
 
 function getTerminalHeight() {
@@ -3471,6 +3730,7 @@ function syncActiveTextTabFromEditor() {
 function resetTextTabs() {
   openTextTabs = [];
   activeTextTabPath = "";
+  activeFile = null;
   activeMediaFile = null;
   renderTextTabs();
 }
@@ -3856,6 +4116,7 @@ function wireEvents() {
   undoButton.addEventListener("click", () => editor.undo());
   redoButton.addEventListener("click", () => editor.redo());
   if (minimapToggleButton) minimapToggleButton.addEventListener("click", () => setMinimapVisible(!minimapVisible));
+  if (editorFullscreenButton) editorFullscreenButton.addEventListener("click", () => setEditorFullscreen(!editorFullscreenActive));
   if (fileHeaderRefreshButton) fileHeaderRefreshButton.addEventListener("click", refreshActiveProject);
   newFileButton.addEventListener("click", () => createProjectFile("file"));
   newFolderButton.addEventListener("click", () => createProjectFile("folder"));
@@ -3887,6 +4148,16 @@ function wireEvents() {
   wireProjectDrop(projectDropZone);
   refreshProjectsButton.addEventListener("click", loadProjects);
   projectSearch.addEventListener("input", renderProjectGrid);
+  if (projectSortButton) projectSortButton.addEventListener("click", toggleProjectSortMenu);
+  if (projectSortMenu) {
+    projectSortMenu.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const button = event.target.closest("[data-project-sort]");
+      if (!button) return;
+      setProjectSort(button.dataset.projectSort);
+      setProjectSortMenuOpen(false);
+    });
+  }
   projectGridButton.addEventListener("click", () => setProjectView("grid"));
   projectRowsButton.addEventListener("click", () => setProjectView("rows"));
   backToProjectsButton.addEventListener("click", showProjects);
@@ -3973,6 +4244,7 @@ function wireEvents() {
     closeFileContextMenu();
     closeProjectContextMenu();
     closeSpellContextMenu();
+    setProjectSortMenuOpen(false);
     if (pdfFileMenu) pdfFileMenu.hidden = true;
     if (!selectionCodexPopover.contains(document.activeElement)) hideSelectionCodexPopover();
   });
@@ -4033,6 +4305,12 @@ function handleGlobalShortcut(event) {
     if (sshProjectPanel && !sshProjectPanel.hidden) {
       event.preventDefault();
       closeSshProjectPanel();
+      return;
+    }
+
+    if (projectSortMenu && !projectSortMenu.hidden) {
+      event.preventDefault();
+      setProjectSortMenuOpen(false);
       return;
     }
 
@@ -4125,7 +4403,7 @@ function openSettings() {
   populateDefaultGithubForm();
   settingsBackdrop.hidden = false;
   settingsDrawer.hidden = false;
-  const activeSection = nextAllowedSettingsSection(settingsDrawer.dataset.activeSection || "general");
+  const activeSection = nextAllowedSettingsSection(settingsDrawer.dataset.activeSection || "workspace");
   setSettingsPanel(activeSection);
   updateSettingsSearch();
 }
@@ -4292,7 +4570,8 @@ async function renderRealTemplatePreview(card, template, previewKind) {
 
     const context = canvas.getContext("2d");
     context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
-    await page.render({ canvasContext: context, viewport }).promise;
+    preparePdfCanvasForRender(context, canvas);
+    await page.render({ canvasContext: context, viewport, background: "#ffffff" }).promise;
     if (!card.isConnected) return;
 
     preview.classList.remove("template-preview-source");
@@ -4604,7 +4883,7 @@ function settingsSectionAllowed(section) {
 function nextAllowedSettingsSection(section) {
   const exists = settingsPanels.some((panel) => panel.dataset.settingsPanel === section);
   if (exists && settingsSectionAllowed(section)) return section;
-  return "general";
+  return "workspace";
 }
 
 function setSettingsPanel(section) {
@@ -5048,6 +5327,55 @@ function setProjectView(view) {
   renderProjectGrid();
 }
 
+function setProjectSort(mode) {
+  projectSortMode = normalizeProjectSortMode(mode);
+  localStorage.setItem("latexStudioProjectSort", projectSortMode);
+  updateProjectSortControl();
+  renderProjectGrid();
+}
+
+function normalizeProjectSortMode(mode) {
+  return ["favorites", "recent", "name-asc", "name-desc", "folder", "tex"].includes(mode) ? mode : "favorites";
+}
+
+function projectSortLabel(mode = projectSortMode) {
+  return {
+    favorites: "Favorites first",
+    recent: "Recently edited",
+    "name-asc": "Name A-Z",
+    "name-desc": "Name Z-A",
+    folder: "Folder",
+    tex: "TeX file"
+  }[normalizeProjectSortMode(mode)] || "Favorites first";
+}
+
+function updateProjectSortControl() {
+  if (projectSortButton) {
+    projectSortButton.title = `Sort: ${projectSortLabel()}`;
+    projectSortButton.setAttribute("aria-label", `Sort documents: ${projectSortLabel()}`);
+  }
+  if (projectSortMenu) {
+    projectSortMenu.querySelectorAll("[data-project-sort]").forEach((button) => {
+      const active = button.dataset.projectSort === projectSortMode;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-checked", String(active));
+    });
+  }
+}
+
+function setProjectSortMenuOpen(open) {
+  if (!projectSortButton || !projectSortMenu) return;
+  const next = Boolean(open);
+  projectSortMenu.hidden = !next;
+  projectSortButton.setAttribute("aria-expanded", String(next));
+}
+
+function toggleProjectSortMenu(event) {
+  if (event) event.stopPropagation();
+  if (!projectSortMenu) return;
+  setProjectSortMenuOpen(projectSortMenu.hidden);
+}
+
 function updateProjectViewButtons() {
   projectGridButton.classList.toggle("active", projectViewMode === "grid");
   projectRowsButton.classList.toggle("active", projectViewMode === "rows");
@@ -5057,6 +5385,10 @@ function updateProjectViewButtons() {
 function applyPdfRenderMode() {
   pdfViewer.classList.toggle("pdf-dark-render", pdfDarkMode && pdfRenderMode !== "original");
   pdfViewer.classList.toggle("pdf-invert-pages", pdfDarkMode && pdfRenderMode === "invert");
+  if (pdfThumbnailList) {
+    pdfThumbnailList.classList.toggle("pdf-dark-render", pdfDarkMode && pdfRenderMode !== "original");
+    pdfThumbnailList.classList.toggle("pdf-invert-pages", pdfDarkMode && pdfRenderMode === "invert");
+  }
 }
 
 function setupTerminalPanel() {
@@ -5686,11 +6018,12 @@ async function loadProjects() {
 
 function renderProjectGrid() {
   updateProjectViewButtons();
+  updateProjectSortControl();
   const query = projectSearch.value.trim().toLowerCase();
-  const visibleProjects = projects.filter((project) => {
+  const visibleProjects = sortProjectsForDisplay(projects.filter((project) => {
     const haystack = `${project.displayName || ""} ${project.name} ${project.texName} ${project.folderName} ${project.texPath}`.toLowerCase();
     return haystack.includes(query);
-  });
+  }));
 
   projectGrid.innerHTML = "";
   projectEmpty.hidden = visibleProjects.length > 0;
@@ -5752,6 +6085,33 @@ function renderProjectGrid() {
     projectGrid.appendChild(card);
     renderProjectPreview(card, project);
   });
+}
+
+function sortProjectsForDisplay(items) {
+  const collator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
+  const byRecent = (a, b) => dateValue(b.modifiedAt || b.updatedAt || b.lastOpenedAt) - dateValue(a.modifiedAt || a.updatedAt || a.lastOpenedAt);
+  const byName = (a, b) => collator.compare(projectDisplaySortName(a), projectDisplaySortName(b));
+  const byFavorite = (a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite));
+  const byFolder = (a, b) => collator.compare(String(a.folderName || ""), String(b.folderName || "")) || byName(a, b);
+  const byTex = (a, b) => collator.compare(String(a.texName || ""), String(b.texName || "")) || byName(a, b);
+
+  return [...items].sort((a, b) => {
+    if (projectSortMode === "recent") return byRecent(a, b) || byName(a, b);
+    if (projectSortMode === "name-asc") return byName(a, b);
+    if (projectSortMode === "name-desc") return byName(b, a);
+    if (projectSortMode === "folder") return byFolder(a, b);
+    if (projectSortMode === "tex") return byTex(a, b);
+    return byFavorite(a, b) || byRecent(a, b) || byName(a, b);
+  });
+}
+
+function projectDisplaySortName(project) {
+  return String(project.displayName || project.name || project.folderName || "");
+}
+
+function dateValue(value) {
+  const time = Date.parse(value || "");
+  return Number.isFinite(time) ? time : 0;
 }
 
 function showProjectContextMenu(event, project) {
@@ -5908,8 +6268,12 @@ async function toggleProjectFavorite(project) {
 async function renderProjectPreview(card, project) {
   const preview = card.querySelector(".project-preview");
   if (!preview || !project.pdfExists) return;
-  if (project.previewImageUrl) {
+  const canUseCachedPreview = project.previewImageUrl && (!pdfDarkMode || pdfRenderMode === "original");
+  preview.classList.toggle("pdf-dark-render", pdfDarkMode && pdfRenderMode !== "original");
+  preview.classList.toggle("pdf-invert-pages", pdfDarkMode && pdfRenderMode === "invert");
+  if (canUseCachedPreview) {
     const image = previewImageElement(project.previewImageUrl, `${project.name} preview`);
+    image.classList.add("project-preview-raster");
     preview.replaceChildren(image);
     try {
       await image.decode();
@@ -5946,13 +6310,16 @@ async function renderProjectPreview(card, project) {
 
     const context = canvas.getContext("2d");
     context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
-    await page.render({ canvasContext: context, viewport }).promise;
+    preparePdfCanvasForRender(context, canvas);
+    await page.render({ canvasContext: context, viewport, background: "#ffffff" }).promise;
     if (!card.isConnected) return;
 
-    preview.replaceChildren(canvas);
-    if (window.localOverleaf.cacheProjectPreview) {
+    if (window.localOverleaf.cacheProjectPreview && !pdfDarkMode) {
       window.localOverleaf.cacheProjectPreview(project.id, canvas.toDataURL("image/png")).catch(() => {});
     }
+    canvas.classList.add("project-preview-raster");
+    applyPdfPreviewCanvasRenderMode(context, canvas);
+    preview.replaceChildren(canvas);
   } catch (error) {
     if (!card.isConnected) return;
     preview.innerHTML = '<span class="project-preview-message">Preview unavailable</span>';
@@ -6061,6 +6428,7 @@ function projectPathFromFile(file) {
 async function openProject(projectId) {
   resetTextTabs();
   selectedPdfRelativePath = "";
+  clearRemoteCompiledPdf();
   setSshConnectionState("disconnected");
   const project = projects.find((item) => item.id === projectId);
   activeProject = project || { id: projectId, name: "Project", texName: "main.tex" };
@@ -6108,6 +6476,7 @@ async function loadManuscript(projectId = activeProject && activeProject.id) {
     activeProject = data.project;
     resetTextTabs();
     selectedPdfRelativePath = "";
+    clearRemoteCompiledPdf();
     setActiveLoadedTextFile(data.file, data.tex);
     editor.setValue(data.tex);
     setMode("source");
@@ -6152,6 +6521,7 @@ async function loadProjectFile(relativePath, { confirmUnsaved = true, preview = 
   setSaveState("Loading...");
 
   try {
+    let compiledAfterLoad = false;
     const data = isRemoteProject()
       ? await window.localOverleaf.readRemoteFile(remoteWorkspace, relativePath)
       : await window.localOverleaf.load(activeProject.id, relativePath);
@@ -6165,8 +6535,15 @@ async function loadProjectFile(relativePath, { confirmUnsaved = true, preview = 
     updateStats();
     scheduleSourceMinimapUpdate();
     renderVisualEditor();
+    if (isRemoteProject() && /\.tex$/i.test(relativePath)) {
+      if (!selectedPdfRelativePath) selectedPdfRelativePath = pdfRelativePathForActiveSource();
+      updatePdfTitleFromSelection();
+      pdfMeta.textContent = "Compiling locally...";
+      await compileManuscript({ manual: false });
+      compiledAfterLoad = true;
+    }
     setSaveState("Saved", "ok");
-    compileLog.textContent = `Loaded ${activeFile.relativePath}.`;
+    if (!compiledAfterLoad) compileLog.textContent = `Loaded ${activeFile.relativePath}.`;
   } catch (error) {
     setSaveState("Load failed", "error");
     compileLog.textContent = formatError(error);
@@ -6186,11 +6563,16 @@ async function loadProjectFiles() {
     const data = isRemoteProject()
       ? await window.localOverleaf.listRemoteFiles(remoteWorkspace)
       : await window.localOverleaf.listProjectFiles(activeProject.id);
+    const shouldOpenRemoteEntry = isRemoteProject() && !activeFile && !openTextTabs.length;
     if (!isRemoteProject()) activeProject = data.project || activeProject;
     projectFiles = data.files || [];
     updateActiveDocumentTitle();
     populateProjectSettingsForm();
     renderFileTree();
+    if (shouldOpenRemoteEntry) {
+      const entry = findDefaultTexFileNode(projectFiles);
+      if (entry) await loadProjectFile(entry.relativePath, { confirmUnsaved: false, preview: false });
+    }
   } catch (error) {
     fileTree.innerHTML = `<div class="file-message file-error">${escapeHtml(formatError(error))}</div>`;
   }
@@ -6227,16 +6609,46 @@ function projectPdfFiles() {
   return flattenProjectFileNodes(projectFiles).filter(isPdfFileNode);
 }
 
+function findDefaultTexFileNode(nodes = []) {
+  const texFiles = flattenProjectFileNodes(nodes).filter((node) => (
+    node && node.kind === "file" && /\.tex$/i.test(node.name || node.relativePath || "")
+  ));
+  return texFiles.find((node) => /(^|\/)manuscript\/main\.tex$/i.test(node.relativePath || ""))
+    || texFiles.find((node) => /(^|\/)main\.tex$/i.test(node.relativePath || node.name || ""))
+    || texFiles[0]
+    || null;
+}
+
+function pdfRelativePathForActiveSource() {
+  const relativePath = activeFile && activeFile.relativePath ? String(activeFile.relativePath) : "";
+  if (!/\.tex$/i.test(relativePath)) return "";
+  return relativePath.replace(/\.tex$/i, ".pdf");
+}
+
+function inferredRemotePdfRelativePath() {
+  if (selectedPdfRelativePath) return selectedPdfRelativePath;
+  const pdfs = projectPdfFiles();
+  const sourcePdf = pdfRelativePathForActiveSource();
+  if (sourcePdf && pdfs.some((node) => node.relativePath === sourcePdf)) return sourcePdf;
+  const mainPdf = pdfs.find((node) => /(^|\/)main\.pdf$/i.test(node.relativePath || node.name || ""));
+  return (mainPdf && mainPdf.relativePath) || (pdfs[0] && pdfs[0].relativePath) || sourcePdf || "main.pdf";
+}
+
+function pdfRelativePathForRender() {
+  return isRemoteProject() ? inferredRemotePdfRelativePath() : selectedPdfRelativePath;
+}
+
 function activePdfName() {
-  if (selectedPdfRelativePath) return selectedPdfRelativePath.split("/").pop() || selectedPdfRelativePath;
+  const relativePath = isRemoteProject() ? inferredRemotePdfRelativePath() : selectedPdfRelativePath;
+  if (relativePath) return relativePath.split("/").pop() || relativePath;
   return (activeProject && activeProject.pdfName) || "main.pdf";
 }
 
 function updatePdfTitleFromSelection() {
   if (!pdfTitle || !activeProject) return;
   pdfTitle.textContent = activePdfName();
-  pdfTitle.title = isRemoteProject() ? activePdfName() : "Choose PDF";
-  pdfTitle.classList.toggle("clickable", !isRemoteProject());
+  pdfTitle.title = "Choose PDF";
+  pdfTitle.classList.toggle("clickable", true);
 }
 
 function togglePdfFileMenu(event) {
@@ -6251,7 +6663,7 @@ function togglePdfFileMenu(event) {
 
 function renderPdfFileMenu() {
   const pdfs = projectPdfFiles();
-  if (!pdfFileMenu || !activeProject || isRemoteProject()) return;
+  if (!pdfFileMenu || !activeProject) return;
   const menuPdfs = [...pdfs];
   if (selectedPdfRelativePath && !menuPdfs.some((node) => node.relativePath === selectedPdfRelativePath)) {
     menuPdfs.unshift({
@@ -6264,7 +6676,9 @@ function renderPdfFileMenu() {
   defaultButton.type = "button";
   defaultButton.className = "pdf-file-option";
   defaultButton.classList.toggle("active", !selectedPdfRelativePath);
-  defaultButton.textContent = (activeProject && activeProject.pdfName) || "Compiled PDF";
+  defaultButton.textContent = isRemoteProject()
+    ? `Next to source: ${inferredRemotePdfRelativePath()}`
+    : ((activeProject && activeProject.pdfName) || "Compiled PDF");
   defaultButton.addEventListener("click", () => selectPdfFile(""));
   pdfFileMenu.appendChild(defaultButton);
   menuPdfs.forEach((node) => {
@@ -6489,6 +6903,7 @@ function updateFileOutline() {
     button.type = "button";
     button.className = `file-outline-item level-${item.level}`;
     button.textContent = item.label;
+    button.title = item.label;
     button.addEventListener("click", () => jumpToSourceLine(item.line));
     fileOutlineBody.appendChild(button);
   });
@@ -6908,9 +7323,76 @@ async function saveManuscript({ auto = false } = {}) {
 async function compileManuscript({ manual = false } = {}) {
   if (!activeProject) return;
   if (isRemoteProject()) {
-    await saveManuscript();
-    compileLog.textContent = "Saved remote file. Compile from the SSH terminal for remote workspaces.";
-    setCompileState("Remote workspace saved", "ok");
+    if (activeMediaFile) {
+      compileLog.textContent = "Switch to a text file before compiling.";
+      return;
+    }
+    if (!activeFile || !/\.tex$/i.test(activeFile.relativePath || "")) {
+      compileLog.textContent = "Choose a remote TeX file before compiling.";
+      return;
+    }
+    if (isCompiling) {
+      pendingCompile = true;
+      setCompileState("Compile queued");
+      return;
+    }
+
+    clearTimeout(autoCompileTimer);
+    clearTimeout(autoSaveTimer);
+    setBusy(true);
+    isCompiling = true;
+    setSaveState("Saving...");
+    setCompileState(manual ? "Compiling locally..." : "Auto compiling locally...");
+    compileLog.textContent = `Mirroring SSH workspace and compiling ${activeFile.name || activeFile.relativePath} locally...`;
+
+    try {
+      const tex = getSourceText();
+      const saveResult = await window.localOverleaf.saveRemoteFile(remoteWorkspace, activeFile.relativePath, tex);
+      activeFile = saveResult.file || activeFile;
+      const result = await window.localOverleaf.compileRemote(remoteWorkspace, activeFile.relativePath, tex);
+      activeFile = result.file || activeFile;
+      selectedPdfRelativePath = result.compiledPdfRelativePath || pdfRelativePathForActiveSource();
+      rememberRemoteCompiledPdf(result);
+      savedText = tex;
+      updateActiveTextTabAfterSave(activeFile, tex);
+      updateEditorFileTitle();
+      updateActiveDocumentTitle();
+      updatePdfTitleFromSelection();
+      setSaveState(`Saved ${timeStamp()}`, "ok");
+      setCompileState(
+        result.compileWarning
+          ? `${manual ? "Compile warning" : "Auto compile warning"} ${timeStamp()}`
+          : `${manual ? "Compiled" : "Auto compiled"} ${timeStamp()}`,
+        result.compileWarning ? "error" : "ok"
+      );
+      compileLog.textContent = result.output || "Compiled successfully.";
+      setBusy(false);
+      setPdf({ preserveView: true }).catch((error) => {
+        setCompileState("PDF render failed", "error");
+        compileLog.textContent = formatError(error);
+      });
+    } catch (error) {
+      setSaveState(getSourceText() === savedText ? "Saved" : "Unsaved changes");
+      setCompileState("Compile failed", "error");
+      const errorText = formatError(error);
+      compileLog.textContent = errorText;
+      const fallbackPdf = selectedPdfRelativePath || pdfRelativePathForActiveSource() || inferredRemotePdfRelativePath();
+      if (fallbackPdf) {
+        selectedPdfRelativePath = fallbackPdf;
+        updatePdfTitleFromSelection();
+        const renderedFallback = await setPdf({ preserveView: true, showLoading: false, preserveLogOnError: true });
+        if (renderedFallback) {
+          compileLog.textContent = `${errorText}\n\nShowing existing ${activePdfName()} from the local SSH mirror. Compile failed, so this PDF may be stale.`;
+        }
+      }
+    } finally {
+      isCompiling = false;
+      setBusy(false);
+      if (pendingCompile) {
+        pendingCompile = false;
+        scheduleAutoCompile("Changes queued while compiling");
+      }
+    }
     return;
   }
   if (activeMediaFile) {
@@ -7049,16 +7531,10 @@ async function pushActiveProjectToGithub() {
 
 async function pullActiveProjectFromGithub() {
   if (!activeProject || !window.localOverleaf || !window.localOverleaf.pullProjectFromGithub) return;
-  const remote = (projectGithubRemoteInput && projectGithubRemoteInput.value.trim()) || activeProject.githubRemote || "";
-  if (!remote) {
-    openSettings();
-    setSettingsPanel("project");
-    projectSettingsStatus.textContent = "Set a project GitHub remote before pulling.";
-    setStatusClass(projectSettingsStatus, "error");
-    return;
-  }
+  const projectRemote = (projectGithubRemoteInput && projectGithubRemoteInput.value.trim()) || activeProject.githubRemote || "";
+  const defaultRemote = defaultGithubRemote || DEFAULT_GITHUB_REMOTE;
 
-  const confirmed = window.confirm("Pull will overwrite local LaTeX source files from the project GitHub repo. Continue?");
+  const confirmed = window.confirm("Pull will overwrite local LaTeX source files. AgentDesk will try the default GitHub repo first, then the project GitHub remote if needed. Continue?");
   if (!confirmed) return;
 
   setBusy(true);
@@ -7069,11 +7545,14 @@ async function pullActiveProjectFromGithub() {
     if (!activeMediaFile && getSourceText() !== savedText) {
       await saveManuscript();
     }
-    const result = await window.localOverleaf.pullProjectFromGithub(activeProject.id);
+    const result = await window.localOverleaf.pullProjectFromGithub(activeProject.id, { defaultRemote });
     activeProject = result.project || activeProject;
     setCompileState(`Pulled ${result.files ? result.files.length : 0} LaTeX files`, "ok");
+    const sourceLabel = result.source === "default"
+      ? `default GitHub${result.folder ? ` (${result.folder})` : ""}`
+      : "project GitHub";
     compileLog.textContent = [
-      `Pulled LaTeX sources from ${result.remote || remote}.`,
+      `Pulled LaTeX sources from ${sourceLabel}: ${result.remote || projectRemote || defaultRemote}.`,
       result.files && result.files.length ? result.files.join("\n") : ""
     ].filter(Boolean).join("\n\n");
     await loadManuscript(activeProject.id);
@@ -7998,30 +8477,33 @@ function restorePdfViewState(state) {
 }
 
 async function setPdf(options = {}) {
-  await renderPdf(options);
+  return renderPdf(options);
 }
 
-async function renderPdf({ showLoading = true, preserveView = false } = {}) {
-  if (!activeProject || editorScreen.hidden) return;
-  if (isRemoteProject()) {
-    pdfViewer.innerHTML = '<div class="pdf-loading">Remote workspace. Compile or open PDFs from the SSH terminal.</div>';
-    pdfMeta.textContent = remoteWorkspace.path || remoteWorkspace.host || "Remote";
-    return;
-  }
+async function renderPdf({ showLoading = true, preserveView = false, preserveLogOnError = false } = {}) {
+  if (!activeProject || editorScreen.hidden) return false;
 
   const token = ++pdfRenderToken;
   const zoomForRender = pdfZoom;
+  const pdfRelativePath = pdfRelativePathForRender();
   const hasExistingPages = Boolean(pdfViewer.querySelector(".pdf-page"));
   const preservedViewState = preserveView ? capturePdfViewState() : null;
   applyPdfRenderMode();
   if (showLoading || !hasExistingPages) {
     pdfViewer.innerHTML = '<div class="pdf-loading">Rendering PDF...</div>';
   }
+  if (isRemoteProject()) {
+    updatePdfTitleFromSelection();
+    pdfMeta.textContent = pdfRelativePath || remoteWorkspace.path || remoteWorkspace.host || "Remote";
+  }
 
   try {
+    const remotePdfBuffer = isRemoteProject() ? remotePdfBufferForRender(pdfRelativePath) : null;
     const [pdfjsLib, pdfBuffer] = await Promise.all([
       loadPdfJs(),
-      window.localOverleaf.readPdf(activeProject.id, selectedPdfRelativePath)
+      isRemoteProject()
+        ? (remotePdfBuffer || window.localOverleaf.readRemotePdf(remoteWorkspace, pdfRelativePath))
+        : window.localOverleaf.readPdf(activeProject.id, pdfRelativePath)
     ]);
 
     if (token !== pdfRenderToken) return;
@@ -8034,14 +8516,18 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
     updatePdfTitleFromSelection();
     pdfMeta.textContent = `${pdf.numPages} pages`;
     const nextPageTextLines = new Map();
+    const renderedPageCanvases = new Map();
 
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
       if (token !== pdfRenderToken) return;
 
       const page = await pdf.getPage(pageNumber);
-      const scale = Math.min(MAX_PDF_RENDER_SCALE, PDF_BASE_RENDER_SCALE * zoomForRender);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const fitScale = pdfFitScaleForPage(baseViewport.width);
+      const baseScale = Math.min(PDF_BASE_RENDER_SCALE, fitScale);
+      const scale = Math.min(MAX_PDF_RENDER_SCALE, baseScale * zoomForRender);
       const viewport = page.getViewport({ scale });
-      const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+      const outputScale = pdfCanvasOutputScale("page");
 
       const pageShell = document.createElement("div");
       pageShell.className = "pdf-page";
@@ -8061,6 +8547,7 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
 
       const context = canvas.getContext("2d");
       context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+      preparePdfCanvasForRender(context, canvas);
 
       const textContent = await page.getTextContent();
       nextPageTextLines.set(pageNumber, buildPdfTextLines(textContent, viewport, pdfjsLib));
@@ -8071,8 +8558,9 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
       pageShell.appendChild(canvas);
       if (linkLayer) pageShell.appendChild(linkLayer);
       fragment.appendChild(pageShell);
-      await page.render({ canvasContext: context, viewport }).promise;
-      if (pdfDarkMode && pdfRenderMode === "adaptive") applyDarkPdfCanvas(context, canvas);
+      await page.render({ canvasContext: context, viewport, background: "#ffffff" }).promise;
+      applyPdfCanvasRenderMode(context, canvas);
+      renderedPageCanvases.set(pageNumber, canvas);
     }
 
     if (token !== pdfRenderToken) return;
@@ -8091,15 +8579,20 @@ async function renderPdf({ showLoading = true, preserveView = false } = {}) {
     }
     if (pdfZoom !== zoomForRender) applyPdfLiveZoom();
     updatePdfPageIndicator();
-    await renderPdfThumbnails(pdf, pdfjsLib, token);
+    await renderPdfThumbnails(pdf, pdfjsLib, token, renderedPageCanvases);
+    return true;
   } catch (error) {
-    if (token !== pdfRenderToken) return;
-    pdfViewer.innerHTML = '<div class="pdf-loading pdf-error">Could not render PDF. AgentDesk tried compiling the TeX entry; see Log for details.</div>';
-    compileLog.textContent = formatError(error);
+    if (token !== pdfRenderToken) return false;
+    pdfViewer.innerHTML = isRemoteProject()
+      ? `<div class="pdf-loading pdf-error">Could not render ${escapeHtml(activePdfName())}. Click Compile PDF to generate it locally or choose another PDF from the title.</div>`
+      : '<div class="pdf-loading pdf-error">Could not render PDF. AgentDesk tried compiling the TeX entry; see Log for details.</div>';
+    pdfMeta.textContent = isRemoteProject() ? (pdfRelativePath || "Remote PDF unavailable") : pdfMeta.textContent;
+    if (!preserveLogOnError) compileLog.textContent = formatError(error);
+    return false;
   }
 }
 
-async function renderPdfThumbnails(pdf, pdfjsLib, token) {
+async function renderPdfThumbnails(pdf, pdfjsLib, token, renderedPageCanvases = new Map()) {
   if (!pdfThumbnailList) return;
   if (!pdfSidebarVisible) {
     pdfThumbnailList.innerHTML = "";
@@ -8109,12 +8602,18 @@ async function renderPdfThumbnails(pdf, pdfjsLib, token) {
   pdfThumbnailList.innerHTML = "";
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     if (token !== pdfRenderToken) return;
+    const sourceCanvas = renderedPageCanvases.get(pageNumber);
+    if (sourceCanvas) {
+      appendPdfThumbnailFromSource(pageNumber, sourceCanvas);
+      continue;
+    }
+
     const page = await pdf.getPage(pageNumber);
     const baseViewport = page.getViewport({ scale: 1 });
-    const targetWidth = 96;
+    const targetWidth = pdfThumbnailTargetWidth();
     const scale = targetWidth / baseViewport.width;
     const viewport = page.getViewport({ scale });
-    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+    const outputScale = pdfCanvasOutputScale("thumbnail");
     const button = document.createElement("button");
     button.className = "pdf-thumbnail";
     button.type = "button";
@@ -8128,16 +8627,163 @@ async function renderPdfThumbnails(pdf, pdfjsLib, token) {
     canvas.style.height = `${Math.floor(viewport.height)}px`;
     const context = canvas.getContext("2d");
     context.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+    preparePdfCanvasForRender(context, canvas);
     button.prepend(canvas);
     button.addEventListener("click", () => {
       const pageEl = pdfViewer.querySelector(`.pdf-page[data-page="${pageNumber}"]`);
       if (pageEl) pdfViewer.scrollTo({ top: pageEl.offsetTop - 12, behavior: "smooth" });
     });
     pdfThumbnailList.appendChild(button);
-    await page.render({ canvasContext: context, viewport }).promise;
-    if (pdfDarkMode && pdfRenderMode === "adaptive") applyDarkPdfCanvas(context, canvas);
+    await page.render({ canvasContext: context, viewport, background: "#ffffff" }).promise;
+    applyPdfPreviewCanvasRenderMode(context, canvas);
   }
   updatePdfPageIndicator();
+}
+
+function appendPdfThumbnailFromSource(pageNumber, sourceCanvas) {
+  const sourceWidth = Number(sourceCanvas.dataset.renderedWidth) || sourceCanvas.width;
+  const sourceHeight = Number(sourceCanvas.dataset.renderedHeight) || sourceCanvas.height;
+  if (!sourceWidth || !sourceHeight) return;
+
+  const targetWidth = pdfThumbnailTargetWidth();
+  const targetHeight = targetWidth * (sourceHeight / sourceWidth);
+  const outputScale = pdfCanvasOutputScale("thumbnail");
+  const button = document.createElement("button");
+  button.className = "pdf-thumbnail";
+  button.type = "button";
+  button.dataset.page = String(pageNumber);
+  button.setAttribute("aria-label", `Page ${pageNumber}`);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.floor(targetWidth * outputScale);
+  canvas.height = Math.floor(targetHeight * outputScale);
+  canvas.style.width = `${Math.floor(targetWidth)}px`;
+  canvas.style.height = `${Math.floor(targetHeight)}px`;
+  canvas.classList.toggle("pdf-canvas-dark-adaptive", sourceCanvas.classList.contains("pdf-canvas-dark-adaptive"));
+  canvas.classList.toggle("pdf-canvas-dark-filter", sourceCanvas.classList.contains("pdf-canvas-dark-filter"));
+
+  const context = canvas.getContext("2d");
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  preparePdfCanvasForRender(context, canvas);
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
+  applyPdfPreviewCanvasRenderMode(context, canvas, { sourceCanvas });
+  mirrorPdfCanvasDisplayStyle(sourceCanvas, canvas);
+
+  button.prepend(canvas);
+  button.addEventListener("click", () => {
+    const pageEl = pdfViewer.querySelector(`.pdf-page[data-page="${pageNumber}"]`);
+    if (pageEl) pdfViewer.scrollTo({ top: pageEl.offsetTop - 12, behavior: "smooth" });
+  });
+  pdfThumbnailList.appendChild(button);
+}
+
+function mirrorPdfCanvasDisplayStyle(sourceCanvas, targetCanvas) {
+  if (!sourceCanvas || !targetCanvas || !sourceCanvas.isConnected) return;
+  const sourceStyle = getComputedStyle(sourceCanvas);
+  targetCanvas.style.setProperty("background-color", sourceStyle.backgroundColor || "transparent", "important");
+  targetCanvas.style.setProperty("filter", sourceStyle.filter && sourceStyle.filter !== "none" ? sourceStyle.filter : "none", "important");
+}
+
+function applyPdfPreviewCanvasRenderMode(context, canvas, { sourceCanvas = null } = {}) {
+  canvas.classList.remove("pdf-canvas-dark-adaptive", "pdf-canvas-dark-filter");
+  if (sourceCanvas) {
+    if (sourceCanvas.classList.contains("pdf-canvas-dark-filter")) {
+      canvas.classList.add("pdf-canvas-dark-filter");
+      return;
+    }
+    if (sourceCanvas.classList.contains("pdf-canvas-dark-adaptive")) {
+      canvas.classList.add("pdf-canvas-dark-adaptive");
+      return;
+    }
+  }
+
+  if (!pdfDarkMode || pdfRenderMode === "original") return;
+
+  if (pdfRenderMode === "invert") {
+    canvas.classList.add("pdf-canvas-dark-filter");
+    return;
+  }
+
+  if (!sourceCanvas || !sourceCanvas.classList.contains("pdf-canvas-dark-adaptive")) {
+    applyDarkPdfCanvas(context, canvas);
+  }
+  canvas.classList.add("pdf-canvas-dark-adaptive");
+  normalizePdfThumbnailDarkPreview(context, canvas);
+}
+
+function normalizePdfThumbnailDarkPreview(context, canvas) {
+  if (!pdfDarkMode || pdfRenderMode !== "adaptive") return;
+
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  const paper = cssColorToRgb(themeColor("--pdf-dark-paper", "#111827"), { r: 17, g: 24, b: 39 });
+  const paperLuminance = 0.2126 * paper.r + 0.7152 * paper.g + 0.0722 * paper.b;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const r = data[index];
+    const g = data[index + 1];
+    const b = data[index + 2];
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const chroma = max - min;
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    const saturation = max === 0 ? 0 : chroma / max;
+    if (saturation > 0.22 || luminance >= paperLuminance + 8) continue;
+
+    const amount = clampNumber((paperLuminance + 22 - luminance) / (paperLuminance + 22), 0, 0.86, 0);
+    data[index] = Math.round(r + (paper.r - r) * amount);
+    data[index + 1] = Math.round(g + (paper.g - g) * amount);
+    data[index + 2] = Math.round(b + (paper.b - b) * amount);
+  }
+
+  context.putImageData(imageData, 0, 0);
+}
+
+function pdfFitScaleForPage(pageWidth) {
+  const fallback = Math.min(MAX_PDF_RENDER_SCALE, PDF_BASE_RENDER_SCALE);
+  if (!pdfViewer || !pageWidth) return fallback;
+
+  const style = getComputedStyle(pdfViewer);
+  const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+  const paddingRight = Number.parseFloat(style.paddingRight) || 0;
+  const availableWidth = Math.max(220, pdfViewer.clientWidth - paddingLeft - paddingRight - 64);
+  return clampNumber(availableWidth / pageWidth, 0.25, MAX_PDF_RENDER_SCALE, fallback);
+}
+
+function pdfThumbnailTargetWidth() {
+  const sidebarWidth = pdfSidebar ? pdfSidebar.clientWidth : 0;
+  return Math.round(clampNumber(sidebarWidth - 40, 72, 124, 100));
+}
+
+function pdfCanvasOutputScale(kind = "page") {
+  const deviceScale = window.devicePixelRatio || 1;
+  const minimum = kind === "thumbnail" ? 3 : 2.5;
+  const maximum = kind === "thumbnail" ? 4 : 3.25;
+  return clampNumber(Math.max(deviceScale, minimum), 1, maximum, minimum);
+}
+
+function preparePdfCanvasForRender(context, canvas) {
+  context.save();
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.globalCompositeOperation = "source-over";
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.restore();
+}
+
+function applyPdfCanvasRenderMode(context, canvas) {
+  canvas.classList.remove("pdf-canvas-dark-adaptive", "pdf-canvas-dark-filter");
+  if (!pdfDarkMode) return;
+
+  if (pdfRenderMode === "adaptive") {
+    applyDarkPdfCanvas(context, canvas);
+    canvas.classList.add("pdf-canvas-dark-adaptive");
+    return;
+  }
+
+  canvas.classList.add("pdf-canvas-dark-filter");
 }
 
 function buildPdfLinkLayer(annotations, viewport) {
@@ -8211,18 +8857,31 @@ function applyDarkPdfCanvas(context, canvas) {
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
   const figureBoxes = detectPdfFigureBoxes(data, canvas.width, canvas.height);
-  const paper = cssColorToRgb(themeColor("--pdf-dark-paper", "#111827"), { r: 17, g: 24, b: 39 });
-  const text = cssColorToRgb(themeColor("--text", "#f8fafc"), { r: 248, g: 250, b: 252 });
+  const basePaper = cssColorToRgb(themeColor("--pdf-dark-paper", "#111827"), { r: 17, g: 24, b: 39 });
+  const baseText = cssColorToRgb(themeColor("--text", "#f8fafc"), { r: 248, g: 250, b: 252 });
+  const paper = basePaper;
+  const text = mixRgb(baseText, { r: 255, g: 255, b: 255 }, 0.18);
 
   for (let index = 0; index < data.length; index += 4) {
+    const alpha = data[index + 3] / 255;
+    let r = data[index];
+    let g = data[index + 1];
+    let b = data[index + 2];
+    if (alpha < 1) {
+      r = Math.round(r * alpha + 255 * (1 - alpha));
+      g = Math.round(g * alpha + 255 * (1 - alpha));
+      b = Math.round(b * alpha + 255 * (1 - alpha));
+      data[index] = r;
+      data[index + 1] = g;
+      data[index + 2] = b;
+      data[index + 3] = 255;
+    }
+
     const pixelIndex = index / 4;
     const x = pixelIndex % canvas.width;
     const y = Math.floor(pixelIndex / canvas.width);
     if (pointInBoxes(x, y, figureBoxes)) continue;
 
-    const r = data[index];
-    const g = data[index + 1];
-    const b = data[index + 2];
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const chroma = max - min;
@@ -8232,13 +8891,22 @@ function applyDarkPdfCanvas(context, canvas) {
 
     if (!neutral && luminance < 242) continue;
 
-    const mix = clampNumber(luminance / 255, 0, 1, 1);
+    const mix = Math.pow(clampNumber(luminance / 255, 0, 1, 1), 1.42);
     data[index] = Math.round(text.r + (paper.r - text.r) * mix);
     data[index + 1] = Math.round(text.g + (paper.g - text.g) * mix);
     data[index + 2] = Math.round(text.b + (paper.b - text.b) * mix);
   }
 
   context.putImageData(imageData, 0, 0);
+}
+
+function mixRgb(from, to, amount) {
+  const ratio = clampNumber(amount, 0, 1, 0);
+  return {
+    r: Math.round(from.r + (to.r - from.r) * ratio),
+    g: Math.round(from.g + (to.g - from.g) * ratio),
+    b: Math.round(from.b + (to.b - from.b) * ratio)
+  };
 }
 
 function detectPdfFigureBoxes(data, width, height) {
